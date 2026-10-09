@@ -10,6 +10,11 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-09 — Tear Sheet: Download PDF & Email', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'The Tear Sheet now has Download PDF, Email… and Print buttons. Download PDF builds a clean, light-theme, multi-page PDF on the server (vector charts, same sections as the page) and saves it as TICKER_TearSheet_date.pdf.',
+    'Email… sends a short summary (verdict, fair value, score, top strengths/risks, your optional note) with the full PDF attached to up to 10 addresses. It needs a one-time SMTP setup in backend/.env — until then the panel shows the exact lines to add. Email is opt-in and rate-limited (20 per hour), with an optional EMAIL_ALLOWED_RECIPIENTS allowlist, because the API has no login.',
+  ]},
   { type: 'h3', text: '2026-10-09 — Tear Sheet: 10-Year Financial Track Record', tabId: 'tearsheet' },
   { type: 'bullets', items: [
     'The Tear Sheet\'s financial track record now covers up to the last 10 fiscal years (was 4), pulled from SEC EDGAR 10-K filings with Yahoo Finance filling gaps and supplying balance-sheet items. Revenue/EPS CAGRs now span 9 years, and the historical P/E that anchors the valuation verdict now spans up to 10 fiscal year-ends.',

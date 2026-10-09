@@ -55,7 +55,7 @@ Stock Monitor started as a simple watchlist with live prices and has grown into 
 | **Chart Compare** | Normalised return chart for up to 5 stocks over 1M/3M/6M/1Y. Fundamentals side-by-side table. |
 | **Fundamentals** | Side-by-side 21-metric comparison for up to 5 stocks. Best-in-class (green) / worst-in-class (red) highlighting. |
 | **Backtester** | Test MA Crossover, RSI Reversal, or Bollinger Bands strategies on historical data. Returns total return, alpha, max drawdown, Sharpe, win rate, and full trade log. |
-| **Tear Sheet** | One-page company snapshot for deciding whether to invest: business overview, 5-year performance vs. the S&P 500, 10-year revenue/margin/EPS/FCF track record (SEC filings), balance-sheet quality, valuation multiples vs. the company's own 10-year P/E history, consensus estimates and revisions, earnings-beat record, analyst ratings/targets, ownership and insider activity. Ends in a cheap-or-expensive verdict (median of historical-P/E, PEG, 10-year DCF and discounted analyst-target models), 12-month bear/base/bull and 5-year annualised return scenarios, a six-pillar scorecard, and auto-generated strengths/risks. Print-friendly. |
+| **Tear Sheet** | One-page company snapshot for deciding whether to invest: business overview, 5-year performance vs. the S&P 500, 10-year revenue/margin/EPS/FCF track record (SEC filings), balance-sheet quality, valuation multiples vs. the company's own 10-year P/E history, consensus estimates and revisions, earnings-beat record, analyst ratings/targets, ownership and insider activity. Ends in a cheap-or-expensive verdict (median of historical-P/E, PEG, 10-year DCF and discounted analyst-target models), 12-month bear/base/bull and 5-year annualised return scenarios, a six-pillar scorecard, and auto-generated strengths/risks. Download it as a PDF or email it (PDF attached) from the page. |
 | **DCF Valuation** | Intrinsic value calculator: EPS, growth rate, WACC, terminal growth, margin of safety. Live 10-year projection table. Undervalued / Overvalued / Fairly Valued verdict. |
 | **Unusual Options** | Scans options chains for abnormally high volume vs open interest across watchlist symbols (nearest 3 expiries). Vol/OI ≥ 10× highlighted in amber. |
 
@@ -122,6 +122,19 @@ Optional, for scheduled digests (put these in `backend/.env`, see AI Tools → D
 TELEGRAM_BOT_TOKEN=123456:ABC...
 TELEGRAM_CHAT_ID=123456789
 ```
+
+Optional, for emailing a Tear Sheet (Research → Tear Sheet → Email…). Use an app password for Gmail/Outlook (Google Account → Security → 2-Step Verification → App passwords), not your account password:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587                  # 465 = implicit TLS; SMTP_SECURITY=starttls|ssl|none overrides
+SMTP_USER=you@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM=StockMonitor <you@gmail.com>   # optional, defaults to SMTP_USER
+EMAIL_ALLOWED_RECIPIENTS=you@gmail.com,@yourfamily.org   # optional allowlist of addresses / @domains
+```
+
+The API has no login, so email is off until SMTP is configured, is capped at 10 recipients per message and 20 sends per hour, and — if you ever deploy the app where others can reach it — you should set `EMAIL_ALLOWED_RECIPIENTS`.
 
 ### Frontend
 
@@ -198,6 +211,9 @@ Bypass for a specific commit with `git commit --no-verify` if you hit a false po
 | `GET /api/signals?symbols=AAPL,MSFT` | Multi-timeframe technical signals |
 | `GET /api/fundamentals?symbols=AAPL,MSFT` | 21-metric fundamental comparison |
 | `GET /api/tear-sheet/{symbol}` | Full company tear sheet (profile, performance, financials, valuation verdict, estimates, analysts, ownership) |
+| `GET /api/tear-sheet/{symbol}/pdf` | The tear sheet as a PDF download |
+| `POST /api/tear-sheet/{symbol}/email` | Email the tear sheet (summary + PDF attachment) via SMTP; body `{to, note}` |
+| `GET /api/tear-sheet-share/status` | Whether SMTP email is configured |
 | `GET /api/dcf/{symbol}` | Pre-fill DCF inputs from yfinance |
 | `GET /api/options/{symbol}` | Options chain (nearest expiry) |
 | `GET /api/unusual-options` | Unusual options activity scan |
@@ -254,6 +270,8 @@ stockmonitor/
 │   │                        drops that section, not the digest
 │   ├── digest_render.py     Structured digest → Telegram HTML / plain text
 │   ├── digest_channels.py   Delivery channels (Telegram; token redacted from all errors)
+│   ├── tear_sheet_pdf.py    Tear Sheet → multi-page PDF (reportlab, vector charts)
+│   ├── email_sender.py      SMTP delivery with attachments (password redacted, recipient validation/caps/allowlist)
 │   ├── digest_service.py    Settings, due-time + catch-up logic, at-most-once claiming,
 │   │                        retries, audit log, and the background scheduler thread
 │   ├── routers/             Feature areas extracted out of main.py as FastAPI APIRouters
@@ -345,6 +363,7 @@ stockmonitor/
 │   │   ├── ai_morning_briefing.py       AI Tools → Morning Briefing
 │   │   ├── range_screener.py            Research → Range Screener (30/60/90d support/resistance scan)
 │   │   ├── tear_sheet.py                Research → Tear Sheet (one-page company snapshot + valuation verdict)
+│   │   ├── tear_sheet_share.py          Tear Sheet → PDF download + email
 │   │   ├── digest.py                    AI Tools → Digests (settings, preview, send, history)
 │   │   ├── crypto_dashboard.py          Markets → Crypto
 │   │   ├── ai_portfolio_review.py       AI Tools → Portfolio Review — _fetch_quote deferred
@@ -359,7 +378,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (285 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (356 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real stockmonitor.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal

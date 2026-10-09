@@ -4,6 +4,27 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-09 — Tear Sheet: Download PDF & Email
+
+Sharing for the Tear Sheet. Previously the only export was the browser's print dialog, which can't be attached to anything.
+
+### New
+- `backend/tear_sheet_pdf.py` — `build_pdf(sheet)` renders the same dict the page uses as a multi-page letter PDF with reportlab (new dependency, `reportlab>=4.0`): header band with verdict, football-field valuation chart, scorecard bars, takeaways, business, performance (returns table, growth-of-100 vs. SPY, price with 50/200-day MAs), 10-year financials (grouped bars + table), balance sheet, valuation multiples and P/E-history bars, 12-month and 5-year return scenarios, estimates/revisions/earnings record, analyst ratings (rating bars, target range, recent changes), ownership. All charts are vector drawings. Light print theme; footer with page numbers on every page. ~0.05s to render, ~30 KB.
+- `GET /api/tear-sheet/{symbol}/pdf` — download. `POST /api/tear-sheet/{symbol}/email` — sends a plain-text + HTML summary with the PDF attached. `GET /api/tear-sheet-share/status` — drives the UI. Both use the same cached sheet as the page (`routers/tear_sheet.load_tear_sheet`, factored out of the JSON endpoint), so a shared PDF matches what was on screen.
+- `backend/email_sender.py` — stdlib `smtplib` sender configured from `backend/.env` (`SMTP_HOST/PORT/USER/PASSWORD/FROM/SECURITY`; STARTTLS on 587, implicit TLS on 465). Friendly errors for bad login (points at app passwords), refused recipients and unreachable hosts; the password is redacted from every error. Mirrors `digest_channels.py`.
+- UI: Download PDF / Email… / Print buttons on the Tear Sheet header. The Email panel takes comma-separated recipients and an optional note, remembers the last recipients (localStorage, guarded), and when SMTP isn't configured shows the exact `.env` lines to add instead of a form.
+
+### Safety (the API has no login and CORS is `*`)
+- Email is opt-in: nothing sends until SMTP is configured. Recipients are strictly validated (CR/LF and header-injection attempts rejected, subject newlines stripped), capped at 10 per message and 20 sends per hour per process (429), and `EMAIL_ALLOWED_RECIPIENTS` (addresses and/or `@domain`) can restrict who may receive mail (403). The user's note is HTML-escaped and limited to 1000 chars. The status endpoint exposes only a boolean, never host/user/sender.
+- Text passes through a Windows-1252 sanitiser so a CJK company name or stray symbol can't fail the render (replaced with `?`).
+
+### Tests
+- Backend 356 (+71): PDF contents for every section, 10-year columns, fund/currency/bank states, non-Latin text, pagination of very long content, chart helpers; recipient parsing/dedupe/injection, allowlist, rate limit, SMTP conversation (STARTTLS, implicit TLS, no-login relay, attachment contents, redaction); endpoint status codes (400/403/404/422/429/502/503) and that nothing is built or sent on invalid input. Frontend `TearSheet.test.jsx` 42/42 (+19): download filename/fallback/error/busy state, setup-instructions state, send body, remembered recipients, validation, server/network errors.
+
+### Verified
+- Live PDF download for AAPL (5 pages, correct headers) and every page rendered to an image and inspected. A real email sent through the running backend to a local SMTP sink using the actual SMTP protocol: both recipients got it, multipart text+HTML+PDF structure was correct, the attached PDF opened and was byte-identical in size to the download, the note was HTML-escaped. No credentials appeared in logs.
+- Not verified: delivery through a real provider (Gmail/Outlook) — no credentials were available; and nothing was checked in a browser.
+
 ## 2026-10-09 — Tear Sheet: 10-Year Financial Track Record
 
 Follow-up to the same day's Company Tear Sheet entry below, which showed only the 4 fiscal years yfinance serves.

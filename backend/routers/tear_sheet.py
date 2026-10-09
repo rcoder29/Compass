@@ -977,8 +977,9 @@ def _compute_tear_sheet(sym: str) -> dict:
         return {"symbol": sym, "error": str(e)}
 
 
-@router.get("/api/tear-sheet/{symbol}")
-async def get_tear_sheet(symbol: str):
+async def load_tear_sheet(symbol: str) -> dict:
+    """Cached tear sheet for a symbol; shared by the JSON endpoint and the PDF/email share endpoints
+    (routers/tear_sheet_share.py) so a shared PDF is built from exactly what the page showed."""
     sym = symbol.upper().strip()
     cache_key = f"tearsheet:{sym}"
     cached = cache_get(cache_key, _TEAR_SHEET_TTL)
@@ -989,3 +990,8 @@ async def get_tear_sheet(symbol: str):
     if not result.get("error"):
         cache_set(cache_key, result)
     return result
+
+
+@router.get("/api/tear-sheet/{symbol}")
+async def get_tear_sheet(symbol: str):
+    return await load_tear_sheet(symbol)

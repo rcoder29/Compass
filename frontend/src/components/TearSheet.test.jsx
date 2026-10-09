@@ -62,8 +62,18 @@ const sheet = (over = {}) => ({
   ...over,
 })
 
-function mockFetch(payload) {
-  global.fetch = vi.fn().mockResolvedValue({ json: () => Promise.resolve(payload) })
+const jsonRes = (body, ok = true) => ({ ok, json: () => Promise.resolve(body), headers: { get: () => null } })
+
+// Routes by URL so the share-status call the page makes on load doesn't receive the sheet payload.
+function mockFetch(payload, { emailConfigured = false, extra } = {}) {
+  global.fetch = vi.fn(async (url, opts) => {
+    if (extra) {
+      const r = await extra(url, opts)
+      if (r) return r
+    }
+    if (String(url).includes('/tear-sheet-share/status')) return jsonRes({ emailConfigured, maxRecipients: 10 })
+    return jsonRes(payload)
+  })
 }
 
 async function build(symbol = 'acme') {
@@ -256,7 +266,7 @@ describe('TearSheet', () => {
     render(<TearSheet />)
     await build('spy')
     await waitFor(() => screen.getByTestId('verdict-label'))
-    expect(screen.getByText(/is a etf, not an operating company/)).toBeInTheDocument()
+    expect(screen.getByText(/is not an operating company \(classified as ETF\)/)).toBeInTheDocument()
     expect(screen.getByText(/No annual financial statements/)).toBeInTheDocument()
     expect(screen.getByText('No EPS estimates.')).toBeInTheDocument()
     expect(screen.queryByText('Key takeaways')).not.toBeInTheDocument()
@@ -302,7 +312,216 @@ describe('TearSheet', () => {
     render(<TearSheet />)
     await build()
     await waitFor(() => screen.getByTestId('verdict-label'))
-    fireEvent.click(screen.getByText('Print / save as PDF'))
+    fireEvent.click(screen.getByText('Print'))
     expect(window.print).toHaveBeenCalled()
+  })
+})
+
+describe('TearSheet sharing', () => {
+  beforeEach(() => {
+    window.print = vi.fn()
+    URL.createObjectURL = vi.fn(() => 'blob:fake')
+    URL.revokeObjectURL = vi.fn()
+    // jsdom under this Node version doesn't provide a usable localStorage
+    const store = new Map()
+    vi.stubGlobal('localStorage', {
+      getItem: k => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: k => store.delete(k),
+      clear: () => store.clear(),
+    })
+  })
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
+
+  const pdfRes = (over = {}) => ({
+    ok: true, blob: () => Promise.resolve(new Blob(['%PDF-1.4'])),
+    headers: { get: h => (h.toLowerCase() === 'content-disposition' ? 'attachment; filename="ACME_TearSheet_2026-10-09.pdf"' : null) },
+    ...over,
+  })
+
+  async function loaded(opts) {
+    mockFetch(sheet(), opts)
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+  }
+
+  it('offers Download PDF, Email and Print once a sheet is loaded', async () => {
+    await loaded()
+    expect(screen.getByText('Download PDF')).toBeInTheDocument()
+    expect(screen.getByText('Email…')).toBeInTheDocument()
+    expect(screen.getByText('Print')).toBeInTheDocument()
+  })
+
+  it('checks whether email is configured when the sheet loads', async () => {
+    await loaded()
+    expect(global.fetch).toHaveBeenCalledWith('/api/tear-sheet-share/status')
+  })
+
+  it('downloads the PDF under the server-provided filename', async () => {
+    const clicks = []
+    const realCreate = document.createElement.bind(document)
+    vi.spyOn(document, 'createElement').mockImplementation(tag => {
+      const el = realCreate(tag)
+      if (tag === 'a') el.click = () => clicks.push({ href: el.href, download: el.download })
+      return el
+    })
+    await loaded({ extra: url => (String(url).endsWith('/pdf') ? pdfRes() : null) })
+    fireEvent.click(screen.getByText('Download PDF'))
+    await waitFor(() => expect(clicks).toHaveLength(1))
+    expect(global.fetch).toHaveBeenCalledWith('/api/tear-sheet/ACME/pdf')
+    expect(clicks[0].download).toBe('ACME_TearSheet_2026-10-09.pdf')
+    expect(clicks[0].href).toBe('blob:fake')
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fake')
+  })
+
+  it('falls back to a default filename when the header is missing', async () => {
+    const clicks = []
+    const realCreate = document.createElement.bind(document)
+    vi.spyOn(document, 'createElement').mockImplementation(tag => {
+      const el = realCreate(tag)
+      if (tag === 'a') el.click = () => clicks.push(el.download)
+      return el
+    })
+    await loaded({ extra: url => (String(url).endsWith('/pdf') ? pdfRes({ headers: { get: () => null } }) : null) })
+    fireEvent.click(screen.getByText('Download PDF'))
+    await waitFor(() => expect(clicks).toEqual(['ACME_TearSheet.pdf']))
+  })
+
+  it('shows the server error when the PDF cannot be built', async () => {
+    await loaded({ extra: url => (String(url).endsWith('/pdf') ? jsonRes({ detail: 'No price data available for this symbol.' }, false) : null) })
+    fireEvent.click(screen.getByText('Download PDF'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('No price data available')
+    expect(URL.createObjectURL).not.toHaveBeenCalled()
+  })
+
+  it('disables the button while the PDF is being built', async () => {
+    let release
+    await loaded({ extra: url => (String(url).endsWith('/pdf') ? new Promise(r => { release = () => r(pdfRes()) }) : null) })
+    fireEvent.click(screen.getByText('Download PDF'))
+    expect(await screen.findByText('Building PDF…')).toBeDisabled()
+    release()
+    await waitFor(() => expect(screen.getByText('Download PDF')).not.toBeDisabled())
+  })
+
+  it('shows setup instructions instead of a form when email is not configured', async () => {
+    await loaded({ emailConfigured: false })
+    fireEvent.click(screen.getByText('Email…'))
+    const panel = screen.getByTestId('email-panel')
+    expect(panel).toHaveTextContent("Email isn't set up yet")
+    expect(panel).toHaveTextContent('SMTP_HOST=smtp.gmail.com')
+    expect(panel).toHaveTextContent('SMTP_PASSWORD')
+    expect(screen.queryByLabelText('Recipients')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Send ACME tear sheet/)).not.toBeInTheDocument()
+  })
+
+  it('treats a failed status check as not configured', async () => {
+    await loaded({ extra: url => (String(url).includes('/tear-sheet-share/status') ? Promise.reject(new Error('down')) : null) })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => expect(screen.getByTestId('email-panel')).toHaveTextContent("Email isn't set up yet"))
+  })
+
+  it('toggles the email panel', async () => {
+    await loaded({ emailConfigured: true })
+    expect(screen.queryByTestId('email-panel')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('Email…'))
+    expect(screen.getByTestId('email-panel')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Email…'))
+    expect(screen.queryByTestId('email-panel')).not.toBeInTheDocument()
+  })
+
+  it('sends the recipients and note, then confirms who it went to', async () => {
+    const posts = []
+    await loaded({
+      emailConfigured: true,
+      extra: (url, opts) => {
+        if (String(url).endsWith('/email')) {
+          posts.push({ url, body: JSON.parse(opts.body), method: opts.method })
+          return jsonRes({ ok: true, sent: ['a@x.com', 'b@y.org'], filename: 'ACME_TearSheet_2026-10-09.pdf' })
+        }
+        return null
+      },
+    })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => expect(screen.getByLabelText('Recipients')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('Recipients'), { target: { value: ' a@x.com, b@y.org ' } })
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Worth a look' } })
+    fireEvent.click(screen.getByText('Send ACME tear sheet'))
+    expect(await screen.findByRole('status')).toHaveTextContent('Sent to a@x.com, b@y.org with ACME_TearSheet_2026-10-09.pdf attached.')
+    expect(posts).toEqual([{ url: '/api/tear-sheet/ACME/email', method: 'POST', body: { to: 'a@x.com, b@y.org', note: 'Worth a look' } }])
+  })
+
+  it('remembers the last recipients for next time', async () => {
+    await loaded({ emailConfigured: true, extra: url => (String(url).endsWith('/email') ? jsonRes({ ok: true, sent: ['a@x.com'], filename: 'f.pdf' }) : null) })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => screen.getByLabelText('Recipients'))
+    fireEvent.change(screen.getByLabelText('Recipients'), { target: { value: 'a@x.com' } })
+    fireEvent.click(screen.getByText('Send ACME tear sheet'))
+    await screen.findByRole('status')
+    expect(localStorage.getItem('tearsheet:lastRecipients')).toBe('a@x.com')
+  })
+
+  it('prefills recipients from the last send', async () => {
+    localStorage.setItem('tearsheet:lastRecipients', 'saved@x.com')
+    await loaded({ emailConfigured: true })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => expect(screen.getByLabelText('Recipients')).toHaveValue('saved@x.com'))
+  })
+
+  it('does not call the server when no recipient is entered', async () => {
+    await loaded({ emailConfigured: true })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => screen.getByLabelText('Recipients'))
+    fireEvent.click(screen.getByText('Send ACME tear sheet'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter at least one email address')
+    expect(global.fetch).not.toHaveBeenCalledWith('/api/tear-sheet/ACME/email', expect.anything())
+  })
+
+  it.each([
+    [{ detail: 'SMTP login failed - check SMTP_USER / SMTP_PASSWORD' }, 'SMTP login failed'],
+    [{ detail: [{ msg: 'String should have at most 1000 characters' }] }, 'at most 1000 characters'],
+    [{}, 'Could not send the email.'],
+  ])('shows a readable message for server error %j', async (body, expected) => {
+    await loaded({ emailConfigured: true, extra: url => (String(url).endsWith('/email') ? jsonRes(body, false) : null) })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => screen.getByLabelText('Recipients'))
+    fireEvent.change(screen.getByLabelText('Recipients'), { target: { value: 'a@x.com' } })
+    fireEvent.click(screen.getByText('Send ACME tear sheet'))
+    expect(await screen.findByRole('alert')).toHaveTextContent(expected)
+  })
+
+  it('shows a network failure while sending', async () => {
+    await loaded({ emailConfigured: true, extra: url => (String(url).endsWith('/email') ? Promise.reject(new Error('Network down')) : null) })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => screen.getByLabelText('Recipients'))
+    fireEvent.change(screen.getByLabelText('Recipients'), { target: { value: 'a@x.com' } })
+    fireEvent.click(screen.getByText('Send ACME tear sheet'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
+  })
+
+  it('disables Send while the message is going out', async () => {
+    let release
+    await loaded({
+      emailConfigured: true,
+      extra: url => (String(url).endsWith('/email')
+        ? new Promise(r => { release = () => r(jsonRes({ ok: true, sent: ['a@x.com'], filename: 'f.pdf' })) }) : null),
+    })
+    fireEvent.click(screen.getByText('Email…'))
+    await waitFor(() => screen.getByLabelText('Recipients'))
+    fireEvent.change(screen.getByLabelText('Recipients'), { target: { value: 'a@x.com' } })
+    fireEvent.click(screen.getByText('Send ACME tear sheet'))
+    expect(await screen.findByText('Sending…')).toBeDisabled()
+    release()
+    await screen.findByRole('status')
+  })
+
+  it('resets the share panel when a different ticker is loaded', async () => {
+    await loaded({ emailConfigured: true })
+    fireEvent.click(screen.getByText('Email…'))
+    expect(screen.getByTestId('email-panel')).toBeInTheDocument()
+    mockFetch(sheet({ symbol: 'MSFT' }), { emailConfigured: true })
+    fireEvent.click(screen.getByText('MSFT'))
+    await waitFor(() => expect(screen.getByText('Download PDF')).toBeInTheDocument())
+    expect(screen.queryByTestId('email-panel')).not.toBeInTheDocument()
   })
 })

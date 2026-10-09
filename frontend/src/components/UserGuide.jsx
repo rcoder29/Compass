@@ -599,7 +599,7 @@ const GUIDE = [
       { type: 'tip', text: 'Tip: the score is far more discriminating for symbols that actually trend than for ones that don\'t — most stocks score fairly high over any given 60-day window just from normal daily noise. Width % and Touches are usually the more useful filters for narrowing down to genuinely tradeable ranges.' },
       { type: 'tip', text: 'Disclaimer: this is a mechanical pattern screen, not investment advice. A range can break down in either direction at any time — confirm with your own analysis and size positions accordingly.' },
       { type: 'h3', text: 'Tear Sheet' },
-      { type: 'p', text: 'Enter any stock ticker to get a one-page investment snapshot: what the company does, how the stock has performed against the S&P 500, how its revenue, margins, earnings and free cash flow have trended, how healthy its balance sheet is, what you are paying for it, what analysts expect, and whether it looks cheap or expensive. Found under Research → Tear Sheet. Use "Print / save as PDF" to keep a copy.' },
+      { type: 'p', text: 'Enter any stock ticker to get a one-page investment snapshot: what the company does, how the stock has performed against the S&P 500, how its revenue, margins, earnings and free cash flow have trended, how healthy its balance sheet is, what you are paying for it, what analysts expect, and whether it looks cheap or expensive. Found under Research → Tear Sheet. Use Download PDF to keep a copy, or Email… to send it to someone.' },
       { type: 'table', headers: ['Section', 'What it tells you'], rows: [
         ['Is it cheap or expensive?', 'A verdict (Significantly undervalued → Significantly overvalued) from the median of four fair-value models: historical P/E (median of up to 10 years), PEG = 1, a 10-year free-cash-flow DCF, and the discounted analyst target. The chart shows each model against today\'s price; the spread between models matters as much as the median. If fewer than two models can run (loss-making companies, funds) it says so instead of guessing.'],
         ['Scorecard', 'Six 0–100 pillars — Growth, Profitability, Financial health, Valuation, Analyst sentiment, Momentum — plus an overall score and auto-generated strengths and risks.'],
@@ -610,6 +610,12 @@ const GUIDE = [
         ['Estimates & analysts', 'Consensus EPS and revenue, estimate revisions over 30/90 days, last quarters\' beats and misses, rating distribution now vs. 3 months ago, price-target range and recent upgrades/downgrades.'],
         ['Ownership', 'Institutional and insider holdings, short interest, and six months of insider buying and selling.'],
       ]},
+      { type: 'table', headers: ['Share option', 'What it does'], rows: [
+        ['Download PDF', 'Builds a clean, light-theme multi-page PDF of the whole tear sheet (charts included) and saves it as <TICKER>_TearSheet_<date>.pdf.'],
+        ['Email…', 'Enter one or more addresses (comma-separated) and an optional note; the recipient gets a short summary — verdict, fair value, score, top strengths and risks — with the full PDF attached. Up to 10 recipients per message. Your last recipients are remembered in this browser.'],
+        ['Print', 'Your browser\'s print dialog, for printing the on-screen page directly.'],
+      ]},
+      { type: 'p', text: 'Email needs a one-time setup: add SMTP_HOST, SMTP_USER and SMTP_PASSWORD (for Gmail, an app password) to backend/.env and restart the backend. Until then the Email panel shows the exact lines to add. Optionally set EMAIL_ALLOWED_RECIPIENTS to restrict who can receive mail.' },
       { type: 'tip', text: 'Tip: simple models disagree most for high-growth companies — a PEG = 1 or DCF value will often sit far below the market price for a business with a long growth runway. Read the verdict as "what the numbers support under conservative assumptions", then judge whether the growth story justifies paying more.' },
       { type: 'tip', text: 'Disclaimer: a rules-based screen using Yahoo Finance data, not investment advice. Data can be delayed or missing, and ETFs and funds have no company financials.' },
       { type: 'h3', text: 'Price Projection' },
