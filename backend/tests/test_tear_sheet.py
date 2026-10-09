@@ -460,6 +460,289 @@ class TestBuildTearSheet:
         assert out["valuation"]["verdict"]["label"] == "Not enough data to judge"
 
 
+# ── 10-year history (SEC EDGAR) ───────────────────────────────────────────────
+
+def _fact(end, val, start=None, form="10-K", fp="FY", filed=None):
+    """One companyfacts datapoint; defaults to a full fiscal year ending `end`."""
+    if start is None:
+        start = str(pd.Timestamp(end) - pd.Timedelta(days=364))
+    return {"start": start, "end": end, "val": val, "form": form, "fp": fp,
+            "filed": filed or str(pd.Timestamp(end) + pd.Timedelta(days=40))[:10]}
+
+
+def _concept(*facts, unit="USD"):
+    return {"units": {unit: list(facts)}}
+
+
+class TestAnnualPoints:
+    def test_keeps_full_year_10k_facts(self):
+        out = ts._annual_points(_concept(_fact("2024-09-28", 100.0)))
+        assert out["2024-09-28"][1] == 100.0
+
+    def test_drops_quarterly_and_ytd_durations(self):
+        quarter = _fact("2024-12-28", 50.0, start="2024-09-29")          # 90 days
+        ytd = _fact("2024-06-29", 80.0, start="2023-10-01", fp="Q3", form="10-Q")
+        assert ts._annual_points(_concept(quarter, ytd)) == {}
+
+    def test_drops_non_fy_and_non_10k(self):
+        assert ts._annual_points(_concept(_fact("2024-09-28", 1.0, fp="Q4"), _fact("2024-09-28", 2.0, form="8-K"))) == {}
+
+    def test_53_week_year_is_kept(self):
+        out = ts._annual_points(_concept(_fact("2025-02-01", 7.0, start="2024-01-28")))  # 371 days
+        assert "2025-02-01" in out
+
+    def test_latest_filed_value_wins_for_restatements(self):
+        old = _fact("2022-12-31", 100.0, filed="2023-02-01")
+        restated = _fact("2022-12-31", 90.0, filed="2024-02-01")
+        assert ts._annual_points(_concept(old, restated))["2022-12-31"] == ("2024-02-01", 90.0)
+
+    def test_prefers_usd_then_per_share_units(self):
+        assert ts._annual_points(_concept(_fact("2024-09-28", 6.0), unit="USD/shares"))["2024-09-28"][1] == 6.0
+
+    def test_missing_units_or_dates_are_ignored(self):
+        assert ts._annual_points({"units": {}}) == {}
+        bad = {"end": "2024-09-28", "val": 1.0, "form": "10-K", "fp": "FY"}  # no start
+        assert ts._annual_points({"units": {"USD": [bad]}}) == {}
+
+
+class TestSplitFactor:
+    def _splits(self, tz=None):
+        return pd.Series([4.0, 2.0], index=pd.DatetimeIndex(["2020-08-31", "2022-06-06"], tz=tz))
+
+    def test_splits_after_filing_compound(self):
+        assert ts._split_factor_after(self._splits(), "2019-11-01") == 8.0
+
+    def test_only_later_splits_count(self):
+        assert ts._split_factor_after(self._splits(), "2021-01-01") == 2.0
+        assert ts._split_factor_after(self._splits(), "2023-01-01") == 1.0
+
+    def test_timezone_aware_index_ok(self):
+        assert ts._split_factor_after(self._splits("America/New_York"), "2019-11-01") == 8.0
+
+    @pytest.mark.parametrize("splits,filed", [(None, "2020-01-01"), (pd.Series([], dtype=float), "2020-01-01"), (None, "")])
+    def test_no_data_means_no_adjustment(self, splits, filed):
+        assert ts._split_factor_after(splits, filed) == 1.0
+
+
+class TestEdgarRows:
+    def _gaap(self):
+        return {
+            # Revenue tag changes in 2019: gaps in the first tag are filled from the second
+            "SalesRevenueNet": _concept(_fact("2017-12-31", 80.0), _fact("2018-12-31", 90.0)),
+            "RevenueFromContractWithCustomerExcludingAssessedTax": _concept(_fact("2018-12-31", 91.0), _fact("2019-12-31", 100.0)),
+            "NetIncomeLoss": _concept(_fact("2017-12-31", 8.0), _fact("2018-12-31", 9.0), _fact("2019-12-31", 10.0)),
+            "NetCashProvidedByUsedInOperatingActivities": _concept(_fact("2019-12-31", 30.0)),
+            "PaymentsToAcquirePropertyPlantAndEquipment": _concept(_fact("2019-12-31", 12.0)),
+            "EarningsPerShareDiluted": _concept(_fact("2017-12-31", 4.0, filed="2018-02-01"),
+                                                _fact("2019-12-31", 5.0, filed="2020-02-01"), unit="USD/shares"),
+        }
+
+    def test_tag_changes_are_stitched_together_with_priority_order(self):
+        rows = ts._edgar_rows_from_facts(self._gaap(), 10)
+        assert [r["fiscalYear"] for r in rows] == ["2017-12-31", "2018-12-31", "2019-12-31"]
+        # 2017 only exists under the old SalesRevenueNet tag; for 2018 both tags exist and the
+        # newer-standard RevenueFromContract... tag ranks above it in _EDGAR_CONCEPTS
+        assert [r["revenue"] for r in rows] == [80.0, 91.0, 100.0]
+
+    def test_free_cash_flow_is_ocf_minus_capex(self):
+        rows = ts._edgar_rows_from_facts(self._gaap(), 10)
+        assert rows[-1]["freeCashFlow"] == 18.0 and rows[0]["freeCashFlow"] is None
+
+    def test_eps_is_adjusted_for_splits_after_the_filing(self):
+        splits = pd.Series([4.0], index=pd.DatetimeIndex(["2019-06-01"]))
+        rows = ts._edgar_rows_from_facts(self._gaap(), 10, splits)
+        assert rows[0]["eps"] == 1.0      # filed 2018, before the split: 4.0 / 4
+        assert rows[-1]["eps"] == 5.0     # filed 2020, after the split: unchanged
+
+    def test_keeps_only_the_newest_years(self):
+        assert [r["fiscalYear"] for r in ts._edgar_rows_from_facts(self._gaap(), 2)] == ["2018-12-31", "2019-12-31"]
+
+    def test_empty_gaap_block(self):
+        assert ts._edgar_rows_from_facts({}, 10) == []
+
+
+class TestEdgarAnnualHistory:
+    def test_unknown_cik_returns_empty(self, monkeypatch):
+        import edgar_utils
+        monkeypatch.setattr(edgar_utils, "_get_cik", lambda s: None)
+        assert ts._edgar_annual_history("ZZZ") == []
+
+    def test_fetches_parses_and_caches(self, monkeypatch):
+        import edgar_utils
+        gaap = {"Revenues": _concept(_fact("2024-12-31", 100.0)), "NetIncomeLoss": _concept(_fact("2024-12-31", 10.0))}
+
+        class Resp:
+            def json(self):
+                return {"facts": {"us-gaap": gaap}}
+        urls, writes = [], []
+        monkeypatch.setattr(edgar_utils, "_get_cik", lambda s: "0000320193")
+        monkeypatch.setattr(edgar_utils, "_edgar_req", lambda url, **k: urls.append(url) or Resp())
+        monkeypatch.setattr(ts, "cache_set", lambda k, v: writes.append(k))
+        rows = ts._edgar_annual_history("AAPL")
+        assert rows[0]["revenue"] == 100.0
+        assert urls == ["https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json"]
+        assert writes == ["tearsheet_edgar:AAPL"]
+
+    def test_filer_with_no_us_gaap_facts_is_not_cached(self, monkeypatch):
+        import edgar_utils
+
+        class Resp:
+            def json(self):
+                return {"facts": {"ifrs-full": {}}}
+        writes = []
+        monkeypatch.setattr(edgar_utils, "_get_cik", lambda s: "1")
+        monkeypatch.setattr(edgar_utils, "_edgar_req", lambda url, **k: Resp())
+        monkeypatch.setattr(ts, "cache_set", lambda k, v: writes.append(k))
+        assert ts._edgar_annual_history("TSM") == [] and writes == []
+
+
+def _edgar_row(end, rev, ni=None, **kw):
+    base = {"fiscalYear": end, "revenue": rev, "netIncome": ni, "grossProfit": None, "operatingIncome": None,
+            "eps": None, "shares": None, "operatingCashFlow": None, "freeCashFlow": None}
+    base.update(kw)
+    return base
+
+
+def _yf_row(end, rev=None, ni=None, **kw):
+    base = {"fiscalYear": end, "revenue": rev, "netIncome": ni, "grossProfit": None, "operatingIncome": None,
+            "eps": None, "shares": None, "operatingCashFlow": None, "freeCashFlow": None,
+            "totalDebt": None, "cash": None, "equity": None}
+    base.update(kw)
+    return base
+
+
+class TestMergeHistory:
+    def test_without_edgar_falls_back_to_yfinance(self):
+        out = ts._merge_history([], [_yf_row("2024-09-30", 200.0), _yf_row("2025-09-30", 220.0)])
+        assert [r["revenue"] for r in out] == [200.0, 220.0] and out[1]["revenueGrowth"] == pytest.approx(0.10)
+
+    def test_yfinance_fills_gaps_and_supplies_balance_sheet(self):
+        edgar = [_edgar_row("2025-09-27", 220.0, 40.0)]
+        yf_ = [_yf_row("2025-09-30", 999.0, 999.0, grossProfit=100.0, totalDebt=55.0, cash=20.0)]  # 52-week-year date skew
+        r = ts._merge_history(edgar, yf_)[0]
+        assert r["revenue"] == 220.0 and r["netIncome"] == 40.0          # EDGAR wins where it has data
+        assert r["grossProfit"] == 100.0 and r["totalDebt"] == 55.0      # yfinance fills the rest
+        assert r["fiscalYear"] == "2025-09-27" and r["grossMargin"] == pytest.approx(100 / 220)
+
+    def test_year_only_yfinance_has_is_appended_when_newer(self):
+        out = ts._merge_history([_edgar_row("2024-12-31", 100.0)], [_yf_row("2025-12-31", 120.0)])
+        assert [r["fiscalYear"] for r in out] == ["2024-12-31", "2025-12-31"]
+
+    def test_older_yfinance_year_is_not_duplicated(self):
+        out = ts._merge_history([_edgar_row("2024-12-31", 100.0)], [_yf_row("2021-12-31", 50.0)])
+        assert [r["fiscalYear"] for r in out] == ["2024-12-31"]
+
+    def test_limit_applies_after_growth_is_computed(self):
+        edgar = [_edgar_row(f"{y}-12-31", 100.0 + 10 * i, 1.0) for i, y in enumerate(range(2013, 2026))]
+        out = ts._merge_history(edgar, [], limit=10)
+        assert len(out) == 10 and out[0]["fiscalYear"] == "2016-12-31"
+        assert out[0]["revenueGrowth"] == pytest.approx(10 / 120)   # 2016 (130) vs the trimmed-off 2015 (120)
+
+
+class TestFinalizeAndYfRows:
+    def test_yf_rows_skip_all_nan_oldest_column(self):
+        income = pd.DataFrame({pd.Timestamp("2021-12-31"): {"Total Revenue": float("nan"), "Net Income": float("nan")},
+                               pd.Timestamp("2022-12-31"): {"Total Revenue": 10.0, "Net Income": 2.0}})
+        assert [r["fiscalYear"] for r in ts._yf_history_rows(income, None, None)] == ["2022-12-31"]
+
+    def test_financial_history_signature_still_defaults_to_four_years(self):
+        cols = {pd.Timestamp(f"{y}-12-31"): {"Total Revenue": 10.0 + y - 2018, "Net Income": 1.0} for y in range(2018, 2024)}
+        assert len(ts._financial_history(pd.DataFrame(cols), None, None)) == 4
+        assert len(ts._financial_history(pd.DataFrame(cols), None, None, limit=6)) == 6
+
+
+class TestFcfAndBanks:
+    def test_trusts_ttm_when_consistent(self):
+        assert ts._pick_fcf(107.0, 99.0) == 107.0
+
+    @pytest.mark.parametrize("ttm", [30.0, 250.0])
+    def test_falls_back_to_filing_when_ttm_is_off_by_more_than_2x(self, ttm):
+        assert ts._pick_fcf(ttm, 100.0) == 100.0
+
+    def test_missing_inputs(self):
+        assert ts._pick_fcf(None, 80.0) == 80.0
+        assert ts._pick_fcf(50.0, None) == 50.0
+        assert ts._pick_fcf(None, None) is None
+
+    def test_negative_fcf_is_not_overridden(self):
+        assert ts._pick_fcf(-5.0, 100.0) == -5.0
+
+    def test_blank_cash_flow_metrics(self):
+        rows = [{"freeCashFlow": 1.0, "operatingCashFlow": 2.0, "fcfMargin": .1, "fcfGrowth": .1,
+                 "grossProfit": 3.0, "grossMargin": .3, "revenue": 10.0}]
+        ts._blank_cash_flow_metrics(rows)
+        assert rows[0]["freeCashFlow"] is None and rows[0]["grossMargin"] is None and rows[0]["revenue"] == 10.0
+
+
+class TestPriceSeriesHelpers:
+    def test_last_years_trims(self):
+        s = _series(n=3000)
+        out = ts._last_years(s, 5)
+        assert out.index[0] >= s.index[-1] - pd.DateOffset(years=5) and len(out) < len(s)
+
+    def test_last_years_none_and_short(self):
+        assert ts._last_years(None, 5) is None
+        short = _series(n=30)
+        assert len(ts._last_years(short, 5)) == 30
+
+    def test_naive_close_picks_column_with_fallback(self):
+        idx = pd.date_range("2026-01-01", periods=3)
+        df = pd.DataFrame({"Close": [1.0, 2.0, 3.0], "Adj Close": [0.9, 1.9, 2.9]}, index=idx)
+        assert ts._naive_close(df, "Adj Close").iloc[-1] == 2.9
+        assert ts._naive_close(df[["Close"]], "Adj Close").iloc[-1] == 3.0
+
+
+class TestBuildLongHistory:
+    def _edgar(self, n=10):
+        return [_edgar_row(f"{2016 + i}-12-31", 100.0 + 10 * i, 10.0 + i, eps=1.0 + i * 0.1) for i in range(n)]
+
+    def test_ten_years_flow_through_with_cagr(self):
+        out = ts._build_tear_sheet("ACME", _raw(edgar=self._edgar()))
+        assert len(out["financials"]["history"]) == 10
+        assert out["financials"]["revenueCagr"] == pytest.approx((190 / 100) ** (1 / 9) - 1)
+
+    def test_historical_pe_covers_ten_years_and_uses_median(self):
+        idx = pd.date_range("2015-12-01", "2026-10-08", freq="D")
+        px = pd.Series(range(len(idx)), index=idx, dtype=float) * 0 + 30.0
+        out = ts._build_tear_sheet("ACME", _raw(edgar=self._edgar(), hist=pd.DataFrame({"Close": px, "Adj Close": px})))
+        v = out["valuation"]
+        assert len(v["historicalPE"]) == 10 and v["historicalPEMedian"] is not None
+        assert "historicalPEAvg" not in v
+
+    def test_median_ignores_one_outlier_year(self):
+        pes = [{"pe": 20.0}, {"pe": 22.0}, {"pe": 158.0}, {"pe": 21.0}]
+        by = {f["method"]: f["value"] for f in _fv(hist_pes=pes)}
+        assert by["Historical P/E"] == pytest.approx(21.5 * 5.0)
+
+    def test_bank_has_cash_flow_metrics_blanked(self):
+        edgar = [_edgar_row("2025-12-31", 100.0, 10.0, freeCashFlow=-50.0, operatingCashFlow=-40.0, grossProfit=30.0)]
+        info = {**_raw()["info"], "industry": "Banks - Diversified", "freeCashflow": -50.0}
+        out = ts._build_tear_sheet("JPM", _raw(info=info, edgar=edgar))
+        assert out["bankNote"] is True
+        assert out["financials"]["history"][-1]["freeCashFlow"] is None
+        assert out["financials"]["ttm"]["freeCashFlow"] is None
+
+    def test_currency_mismatch_skips_per_share_models(self):
+        info = {**_raw()["info"], "financialCurrency": "TWD", "currency": "USD"}
+        out = ts._build_tear_sheet("TSM", _raw(info=info, edgar=self._edgar()))
+        assert out["currencyNote"] == {"financial": "TWD", "trading": "USD"}
+        by = {f["method"]: f["value"] for f in out["valuation"]["fairValues"]}
+        assert by["Historical P/E"] is None and by["PEG = 1"] is None and by["DCF (FCF)"] is None
+        assert out["valuation"]["historicalPE"] == [] and out["valuation"]["scenarios12m"] == []
+        assert out["valuation"]["verdict"]["label"] == "Not enough data to judge"
+
+    def test_matching_currency_is_not_flagged(self):
+        info = {**_raw()["info"], "financialCurrency": "USD", "currency": "USD"}
+        out = ts._build_tear_sheet("ACME", _raw(info=info))
+        assert out["currencyNote"] is None and out["bankNote"] is False
+
+    def test_suspicious_trailing_fcf_is_replaced_by_filing(self):
+        edgar = [_edgar_row("2025-12-31", 1000.0, 100.0, freeCashFlow=500.0)]
+        info = {**_raw()["info"], "freeCashflow": 100.0}     # 5x lower than the 10-K
+        out = ts._build_tear_sheet("ACME", _raw(info=info, edgar=edgar))
+        assert out["financials"]["ttm"]["freeCashFlow"] == 500.0
+
+
 class TestEndpoint:
     @pytest.fixture
     def client(self):

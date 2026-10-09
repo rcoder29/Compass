@@ -4,18 +4,18 @@ import { useState, useEffect } from 'react'
 
 const DASH = '—'
 
-export function fmtMoney(n, decimals = 2) {
+export function fmtMoney(n, decimals = 2, sym = '$') {
   if (n == null || isNaN(n)) return DASH
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+  return sym + n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
 }
 
-export function fmtBig(n) {
+export function fmtBig(n, sym = '$') {
   if (n == null || isNaN(n)) return DASH
   const a = Math.abs(n), sign = n < 0 ? '-' : ''
-  if (a >= 1e12) return `${sign}$${(a / 1e12).toFixed(2)}T`
-  if (a >= 1e9)  return `${sign}$${(a / 1e9).toFixed(2)}B`
-  if (a >= 1e6)  return `${sign}$${(a / 1e6).toFixed(1)}M`
-  return `${sign}$${a.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+  if (a >= 1e12) return `${sign}${sym}${(a / 1e12).toFixed(2)}T`
+  if (a >= 1e9)  return `${sign}${sym}${(a / 1e9).toFixed(2)}B`
+  if (a >= 1e6)  return `${sign}${sym}${(a / 1e6).toFixed(1)}M`
+  return `${sign}${sym}${a.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
 // Inputs are decimal fractions (0.153 = 15.3%)
@@ -78,7 +78,7 @@ function Table({ head, rows, align = 'right' }) {
         <thead>
           <tr className="text-gray-500 border-b border-gray-800">
             {head.map((h, i) => (
-              <th key={i} className={`py-1.5 px-2 font-medium ${i === 0 ? 'text-left' : `text-${align}`}`}>{h}</th>
+              <th key={i} className={`py-1.5 px-2 font-medium whitespace-nowrap ${i === 0 ? 'text-left' : `text-${align}`}`}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -88,7 +88,7 @@ function Table({ head, rows, align = 'right' }) {
               {r.map((cell, ci) => {
                 const c = cell != null && typeof cell === 'object' && 'v' in cell ? cell : { v: cell }
                 return (
-                  <td key={ci} className={`py-1.5 px-2 font-mono ${ci === 0 ? 'text-left text-gray-300 font-sans' : `text-${align} text-gray-200`} ${c.cls || ''}`}>
+                  <td key={ci} className={`py-1.5 px-2 font-mono whitespace-nowrap ${ci === 0 ? 'text-left text-gray-300 font-sans' : `text-${align} text-gray-200`} ${c.cls || ''}`}>
                     {c.v}
                   </td>
                 )
@@ -160,7 +160,7 @@ function Legend({ items }) {
 }
 
 // Grouped vertical bars: one group per fiscal year, one bar per series
-function GroupedBars({ groups, series, height = 150 }) {
+function GroupedBars({ groups, series, height = 150, sym = '$' }) {
   const W = 600, H = height
   const all = groups.flatMap(g => series.map(s => g[s.key])).filter(v => v != null)
   if (!all.length) return <Empty>No annual data.</Empty>
@@ -169,7 +169,8 @@ function GroupedBars({ groups, series, height = 150 }) {
   const y = v => 8 + ((max - v) / span) * (H - 30)
   const zero = y(0)
   const gw = W / groups.length
-  const bw = Math.min(36, (gw - 24) / series.length)
+  const bw = Math.min(36, (gw - 8) / series.length)
+  const showValues = bw >= 24 // ten years of three bars each is too tight for value labels; the table has them
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height }} role="img" aria-label="bar chart">
       <line x1={0} x2={W} y1={zero} y2={zero} stroke="#374151" />
@@ -184,8 +185,10 @@ function GroupedBars({ groups, series, height = 150 }) {
               return (
                 <g key={s.key}>
                   <rect x={left + si * bw} y={top} width={bw - 3} height={h} fill={s.color} rx="2" opacity="0.9" />
-                  <text x={left + si * bw + (bw - 3) / 2} y={v >= 0 ? top - 2 : top + h + 8} fontSize="8"
-                        fill="#9ca3af" textAnchor="middle">{fmtBig(v)}</text>
+                  {showValues && (
+                    <text x={left + si * bw + (bw - 3) / 2} y={v >= 0 ? top - 2 : top + h + 8} fontSize="8"
+                          fill="#9ca3af" textAnchor="middle">{fmtBig(v, sym)}</text>
+                  )}
                 </g>
               )
             })}
@@ -436,26 +439,43 @@ function FinancialsSection({ d }) {
   const f = d.financials
   const h = f.history
   const yr = r => 'FY' + r.fiscalYear.slice(0, 4)
+  const sym = d.currencyNote ? d.currencyNote.financial + ' ' : '$'
+  const money = n => fmtBig(n, sym)
+  const subtitle = h.length
+    ? `Last ${h.length} fiscal years, oldest to newest${h.length < 10 ? ' (all the annual history available for this ticker)' : ''} · source: SEC filings + Yahoo Finance`
+    : 'Last fiscal years, oldest to newest'
   return (
-    <Section id="ts-financials" title="Financial track record" subtitle="Last fiscal years, oldest to newest">
+    <Section id="ts-financials" title="Financial track record" subtitle={subtitle}>
+      {d.currencyNote && (
+        <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1 mb-3">
+          {d.symbol} reports in {d.currencyNote.financial} but trades in {d.currencyNote.trading}, so statement figures below are in {d.currencyNote.financial}
+          and the per-share valuation models (P/E, PEG, DCF) are skipped to avoid comparing unlike currencies.
+        </div>
+      )}
+      {d.bankNote && (
+        <div className="text-[11px] text-gray-400 bg-gray-800/60 border border-gray-700 rounded px-2 py-1 mb-3">
+          Free cash flow and gross profit aren't meaningful for banks (deposits, lending and trading run through operating cash flow), so they're left blank.
+        </div>
+      )}
       {h.length ? (
         <>
           <GroupedBars
             groups={h.map(r => ({ label: yr(r), revenue: r.revenue, netIncome: r.netIncome, fcf: r.freeCashFlow }))}
-            series={[{ key: 'revenue', color: '#3b82f6' }, { key: 'netIncome', color: '#10b981' }, { key: 'fcf', color: '#f59e0b' }]} />
+            series={[{ key: 'revenue', color: '#3b82f6' }, { key: 'netIncome', color: '#10b981' }, { key: 'fcf', color: '#f59e0b' }]}
+            sym={sym} />
           <Legend items={[{ label: 'Revenue', color: '#3b82f6' }, { label: 'Net income', color: '#10b981' }, { label: 'Free cash flow', color: '#f59e0b' }]} />
           <Table
             head={['', ...h.map(yr)]}
             rows={[
-              ['Revenue', ...h.map(r => fmtBig(r.revenue))],
+              ['Revenue', ...h.map(r => money(r.revenue))],
               ['  growth YoY', ...h.map(r => ({ v: fmtPct(r.revenueGrowth, 1, true), cls: posNeg(r.revenueGrowth) }))],
               ['Gross margin', ...h.map(r => fmtPct(r.grossMargin))],
               ['Operating margin', ...h.map(r => fmtPct(r.operatingMargin))],
-              ['Net income', ...h.map(r => fmtBig(r.netIncome))],
+              ['Net income', ...h.map(r => money(r.netIncome))],
               ['Net margin', ...h.map(r => fmtPct(r.netMargin))],
-              ['Diluted EPS', ...h.map(r => fmtMoney(r.eps))],
+              ['Diluted EPS', ...h.map(r => fmtMoney(r.eps, 2, sym))],
               ['  growth YoY', ...h.map(r => ({ v: fmtPct(r.epsGrowth, 1, true), cls: posNeg(r.epsGrowth) }))],
-              ['Free cash flow', ...h.map(r => fmtBig(r.freeCashFlow))],
+              ['Free cash flow', ...h.map(r => money(r.freeCashFlow))],
               ['FCF margin', ...h.map(r => fmtPct(r.fcfMargin))],
             ]}
           />
@@ -524,7 +544,7 @@ function ValuationSection({ d }) {
       )}
       <div className="mt-4">
         <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">
-          P/E at each fiscal year-end vs. today{v.historicalPEAvg != null && <> · average {fmtX(v.historicalPEAvg)}</>}
+          P/E at each fiscal year-end vs. today{v.historicalPEMedian != null && <> · median {fmtX(v.historicalPEMedian)}</>}
         </div>
         {pes.length ? (
           <div className="space-y-1">

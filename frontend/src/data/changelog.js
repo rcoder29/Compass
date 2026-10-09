@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-09 — Tear Sheet: 10-Year Financial Track Record', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'The Tear Sheet\'s financial track record now covers up to the last 10 fiscal years (was 4), pulled from SEC EDGAR 10-K filings with Yahoo Finance filling gaps and supplying balance-sheet items. Revenue/EPS CAGRs now span 9 years, and the historical P/E that anchors the valuation verdict now spans up to 10 fiscal year-ends.',
+    'Historical P/E fair value now uses the median rather than the mean, so one depressed-earnings year (e.g. Coca-Cola\'s 2017 tax-reform charge, a 158x P/E) no longer inflates it. Per-share history is adjusted for stock splits, and P/E uses split-adjusted (not dividend-adjusted) prices so old years aren\'t understated.',
+    'Fixes found while testing: banks no longer show meaningless free cash flow; foreign ADRs that report in a different currency than they trade in (e.g. TSM: TWD vs USD) are labelled and skip the per-share valuation models instead of showing a bogus "significantly undervalued"; Yahoo\'s trailing free cash flow is cross-checked against the latest 10-K and replaced when it is off by more than 2x.',
+  ]},
   { type: 'h3', text: '2026-10-09 — Company Tear Sheet', tabId: 'tearsheet' },
   { type: 'bullets', items: [
     'New Research → Tear Sheet: enter a ticker for a one-page investment snapshot — business overview, 5-year performance vs. the S&P 500, 4-year revenue/margin/EPS/free-cash-flow track record, balance-sheet quality, valuation multiples vs. the company\'s own P/E history, consensus estimates and revisions, earnings-beat record, analyst ratings and targets, ownership and insider activity.',

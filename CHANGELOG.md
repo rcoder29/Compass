@@ -4,6 +4,30 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-09 — Tear Sheet: 10-Year Financial Track Record
+
+Follow-up to the same day's Company Tear Sheet entry below, which showed only the 4 fiscal years yfinance serves.
+
+### Changed
+- **10 years of history from SEC EDGAR.** `routers/tear_sheet.py` now reads the XBRL `companyfacts` feed (via `edgar_utils._get_cik`/`_edgar_req`) for revenue, gross profit, operating income, net income, diluted EPS and shares, operating cash flow and capex (FCF = OCF − capex). `companyfacts` mixes quarterly and year-to-date durations under the same tag, so only ~1-year (350–380 day, covers 52/53-week years) 10-K/FY facts are kept, the most recently filed value wins when a year was restated, and tags that changed over the years (e.g. `SalesRevenueNet` → `Revenues` → `RevenueFromContract…`) are stitched in priority order. yfinance fills fields EDGAR didn't tag and supplies balance-sheet items; tickers with no US-GAAP facts (foreign 20-F filers, ETFs) fall back to yfinance's ~4 years. Parsed history cached 24 hr (`tearsheet_edgar:{sym}`).
+- **Split adjustment.** EDGAR reports per-share figures as originally filed (Apple's FY2016 EPS appears as $8.31, 4x today's basis), which made EPS CAGR and old P/Es nonsense. EPS is divided and share counts multiplied by the cumulative splits that occurred after the filing date.
+- **Price history is now 10 years, fetched unadjusted for dividends.** `Close` (split-adjusted only) drives fiscal-year-end P/E; `Adj Close` (dividends included) still drives the 5-year returns/charts/drawdown, which are sliced to the last 5 years. Using dividend-adjusted prices for P/E would have understated old multiples progressively for dividend payers.
+- **Historical P/E fair value uses the median**, labelled as such in the UI (`historicalPEAvg` → `historicalPEMedian` in the API). Coca-Cola's 2017 tax-reform charge (EPS $0.29, P/E 158x) had pulled the mean to 40x vs. a ~26x median.
+- UI: track-record subtitle states the actual year count (and when it's less than 10); table cells no longer wrap so 10 columns scroll cleanly; value labels on the bar chart are dropped when bars are too narrow (the table carries the numbers).
+
+### Fixed (bugs in the same-day Tear Sheet release, found while testing this)
+- **Foreign ADRs with a currency mismatch** (TSM: statements in TWD, shares in USD) produced a P/E of 0.4–0.9x and a "significantly undervalued" verdict. Per-share models, scenarios and historical P/E are now skipped, statement figures are labelled with their currency, and the verdict says "Not enough data to judge".
+- **Banks** showed free cash flow of −$148B (JPM) because operating cash flow includes trading and lending flows. FCF, operating cash flow and gross profit are now blank for banks, with a note.
+- **Yahoo's trailing free cash flow** occasionally disagrees wildly with filings (NVDA: $42B vs. $97B in the latest 10-K, which collapsed its DCF to $38/share). It's now replaced by the latest filed year when it differs by more than 2x either way.
+- yfinance's all-NaN oldest statement column (seen on TSM) no longer produces an empty row.
+
+### Tests
+- Backend 285/285 (+44): EDGAR duration/form/restatement filtering, tag stitching, split adjustment (incl. timezone-aware indexes), the EDGAR/yfinance merge rules (52-week date skew, gap filling, appending newer years, trim-after-growth), FCF cross-check, bank blanking, currency mismatch, median P/E. Frontend `TearSheet.test.jsx` 23/23 (+6).
+
+### Verified
+- Live: AAPL (10 years, EPS CAGR 15.3% after split adjustment, P/Es 17–37x), NVDA (several splits), KO, JPM (10 years, FCF blank), TSM (4 years, currency note), RIVN (7 years since 2019 IPO), SPY (no history). The real payloads for all seven rendered through the component with no `NaN`/`undefined`. `vite build` clean.
+- Not verified in a browser. NVDA's free cash flow stays blank for FY2016–2020 because EDGAR has no capex tag for those years.
+
 ## 2026-10-09 — Company Tear Sheet
 
 A single page with everything an investor weighs before buying a stock, ending in a cheap-or-expensive verdict. Previously this meant opening Fundamentals, DCF, Analyst Ratings, Earnings History and Price Projection separately.

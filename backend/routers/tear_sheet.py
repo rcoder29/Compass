@@ -1,19 +1,20 @@
 """Company Tear Sheet — Research → Tear Sheet.
 
 One-page investment snapshot for a single stock: business profile, price
-performance vs. the S&P 500, 4-year financial history, balance-sheet quality,
+performance vs. the S&P 500, 10-year financial history, balance-sheet quality,
 valuation multiples (vs. the company's own history), consensus estimates and
 revisions, earnings track record, analyst ratings/targets, ownership, and a
 rule-based valuation verdict (is it cheap or expensive?).
 
-Everything comes from yfinance (plus the 10-year Treasury yield from
-routers/treasury.py for the earnings-yield comparison). The independent
+Data comes from yfinance, the 10-year Treasury yield (routers/treasury.py) for
+the earnings-yield comparison, and SEC EDGAR XBRL filings for the 10-year financial
+history (yfinance only serves ~4 fiscal years; non-SEC filers fall back to it). The independent
 yfinance calls run in parallel threads — sequentially a cold tear sheet takes
 ~15s, in parallel ~4s.
 
 Valuation methodology (all inputs are returned alongside the result so
 nothing is a black box; see `methodologyNote`):
-  - Historical P/E:   avg fiscal-year-end P/E over the available history x
+  - Historical P/E:   median fiscal-year-end P/E over up to 10 years x
                       trailing EPS.
   - PEG = 1 (Lynch):  fair P/E = consensus growth %, capped, x forward EPS.
   - DCF:              10-year free-cash-flow DCF, growth fading to 3%, discount
@@ -101,45 +102,227 @@ def _stmt_value(df, label, col):
     return _safe_float(df.loc[label, col])
 
 
-def _financial_history(income, cashflow, balance) -> list[dict]:
-    """Up to 4 fiscal years, oldest first, with derived margins and YoY growth."""
+_HISTORY_FIELDS = ("revenue", "grossProfit", "operatingIncome", "netIncome", "eps", "shares",
+                   "operatingCashFlow", "freeCashFlow", "totalDebt", "cash", "equity")
+
+
+def _yf_history_rows(income, cashflow, balance) -> list[dict]:
+    """Raw per-fiscal-year rows (oldest first) from yfinance's annual statements,
+    which only reach back ~4 years."""
     if not _df_ok(income):
         return []
-    cols = sorted(income.columns)[-4:]
     rows = []
-    for c in cols:
-        rev = _stmt_value(income, "Total Revenue", c)
-        gp = _stmt_value(income, "Gross Profit", c)
-        op = _stmt_value(income, "Operating Income", c)
-        ni = _stmt_value(income, "Net Income", c)
-        ocf = _stmt_value(cashflow, "Operating Cash Flow", c)
-        fcf = _stmt_value(cashflow, "Free Cash Flow", c)
+    for c in sorted(income.columns):
+        if _stmt_value(income, "Total Revenue", c) is None and _stmt_value(income, "Net Income", c) is None:
+            continue  # yfinance sometimes returns an all-NaN oldest column
         rows.append({
             "fiscalYear": str(pd.Timestamp(c).date()),
-            "revenue": rev,
-            "grossProfit": gp,
-            "operatingIncome": op,
-            "netIncome": ni,
+            "revenue": _stmt_value(income, "Total Revenue", c),
+            "grossProfit": _stmt_value(income, "Gross Profit", c),
+            "operatingIncome": _stmt_value(income, "Operating Income", c),
+            "netIncome": _stmt_value(income, "Net Income", c),
             "eps": _stmt_value(income, "Diluted EPS", c),
             "shares": _stmt_value(income, "Diluted Average Shares", c),
-            "operatingCashFlow": ocf,
-            "freeCashFlow": fcf,
-            "grossMargin": gp / rev if gp is not None and rev else None,
-            "operatingMargin": op / rev if op is not None and rev else None,
-            "netMargin": ni / rev if ni is not None and rev else None,
-            "fcfMargin": fcf / rev if fcf is not None and rev else None,
+            "operatingCashFlow": _stmt_value(cashflow, "Operating Cash Flow", c),
+            "freeCashFlow": _stmt_value(cashflow, "Free Cash Flow", c),
             "totalDebt": _stmt_value(balance, "Total Debt", c),
             "cash": _stmt_value(balance, "Cash Cash Equivalents And Short Term Investments", c),
             "equity": _stmt_value(balance, "Stockholders Equity", c),
         })
-    for i, r in enumerate(rows):
-        prev = rows[i - 1] if i else None
-        for key, out in (("revenue", "revenueGrowth"), ("netIncome", "netIncomeGrowth"),
-                         ("eps", "epsGrowth"), ("freeCashFlow", "fcfGrowth")):
+    return rows
+
+
+def _finalize_history(rows: list[dict], limit: int) -> list[dict]:
+    """Add margins and YoY growth to raw rows, then keep the newest `limit`.
+    Growth is computed before trimming so the oldest kept year still has one."""
+    out = []
+    for raw in rows:
+        r = {k: raw.get(k) for k in ("fiscalYear", *_HISTORY_FIELDS)}
+        rev = r["revenue"]
+        for key, name in (("grossProfit", "grossMargin"), ("operatingIncome", "operatingMargin"),
+                          ("netIncome", "netMargin"), ("freeCashFlow", "fcfMargin")):
+            r[name] = r[key] / rev if r[key] is not None and rev else None
+        out.append(r)
+    for i, r in enumerate(out):
+        prev = out[i - 1] if i else None
+        for key, name in (("revenue", "revenueGrowth"), ("netIncome", "netIncomeGrowth"),
+                          ("eps", "epsGrowth"), ("freeCashFlow", "fcfGrowth")):
             p = prev.get(key) if prev else None
             cur = r.get(key)
-            r[out] = (cur - p) / abs(p) if prev and cur is not None and p not in (None, 0) else None
+            r[name] = (cur - p) / abs(p) if prev and cur is not None and p not in (None, 0) else None
+    return out[-limit:]
+
+
+def _financial_history(income, cashflow, balance, limit: int = 4) -> list[dict]:
+    """Fiscal years from yfinance only, oldest first, with derived margins and YoY growth."""
+    return _finalize_history(_yf_history_rows(income, cashflow, balance), limit)
+
+
+# ── SEC EDGAR long-run history ────────────────────────────────────────────────
+# yfinance serves ~4 fiscal years of statements. EDGAR's XBRL "companyfacts" feed has
+# every 10-K a filer ever tagged, so it supplies the 10-year track record for US filers.
+
+_HISTORY_YEARS = 10
+_EDGAR_TTL = timedelta(hours=24)
+# Per metric, tags in priority order; a company's tag often changes across years
+# (e.g. Apple: SalesRevenueNet -> Revenues -> RevenueFromContract...), so gaps are
+# filled from later tags in the list.
+_EDGAR_CONCEPTS = {
+    "revenue": ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax",
+                "RevenueFromContractWithCustomerIncludingAssessedTax", "SalesRevenueNet", "SalesRevenueGoodsNet"],
+    "grossProfit": ["GrossProfit"],
+    "operatingIncome": ["OperatingIncomeLoss"],
+    "netIncome": ["NetIncomeLoss", "ProfitLoss"],
+    "eps": ["EarningsPerShareDiluted"],
+    "shares": ["WeightedAverageNumberOfDilutedSharesOutstanding"],
+    "operatingCashFlow": ["NetCashProvidedByUsedInOperatingActivities"],
+    "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
+}
+
+
+def _annual_points(concept_facts: dict) -> dict[str, tuple[str, float]]:
+    """{period_end_date: (filed_date, value)} for full-fiscal-year 10-K facts only. companyfacts mixes
+    quarterly and year-to-date durations under the same tag, so keep ~1-year spans
+    (350-380 days covers 52/53-week years) and, when a year was restated in a later
+    filing, the most recently filed value."""
+    units = concept_facts.get("units", {})
+    unit = next((u for u in ("USD", "USD/shares", "shares") if u in units), None)
+    if unit is None:
+        return {}
+    best: dict[str, tuple[str, float]] = {}
+    for x in units[unit]:
+        if x.get("fp") != "FY" or not str(x.get("form", "")).startswith("10-K"):
+            continue
+        start, end = x.get("start"), x.get("end")
+        if not start or not end:
+            continue
+        try:
+            days = (pd.Timestamp(end) - pd.Timestamp(start)).days
+        except (ValueError, TypeError):
+            continue
+        if not 350 <= days <= 380:
+            continue
+        filed = x.get("filed", "")
+        if end not in best or filed > best[end][0]:
+            val = _safe_float(x.get("val"))
+            if val is not None:
+                best[end] = (filed, val)
+    return best
+
+
+def _split_factor_after(splits: pd.Series | None, filed: str) -> float:
+    """Cumulative split ratio for splits that happened after `filed`: a per-share figure
+    reported in a filing doesn't reflect later splits (Apple's pre-2020 10-Ks show EPS
+    4x today's), so EPS is divided and share counts multiplied by this."""
+    if splits is None or len(splits) == 0 or not filed:
+        return 1.0
+    idx = splits.index.tz_localize(None) if getattr(splits.index, "tz", None) is not None else splits.index
+    later = splits[idx > pd.Timestamp(filed)]
+    factor = 1.0
+    for ratio in later:
+        if ratio and ratio > 0:
+            factor *= float(ratio)
+    return factor
+
+
+def _edgar_rows_from_facts(us_gaap: dict, years: int, splits: pd.Series | None = None) -> list[dict]:
+    """Raw per-fiscal-year rows (oldest first) from a companyfacts us-gaap block."""
+    series: dict[str, dict[str, float]] = {}
+    for metric, concepts in _EDGAR_CONCEPTS.items():
+        merged: dict[str, tuple[str, float]] = {}
+        for concept in concepts:
+            if concept in us_gaap:
+                for end, point in _annual_points(us_gaap[concept]).items():
+                    merged.setdefault(end, point)
+        series[metric] = {}
+        for end, (filed, val) in merged.items():
+            if metric == "eps":
+                val = val / _split_factor_after(splits, filed)
+            elif metric == "shares":
+                val = val * _split_factor_after(splits, filed)
+            series[metric][end] = val
+    ends = sorted(set(series["revenue"]) | set(series["netIncome"]))[-years:]
+    rows = []
+    for end in ends:
+        ocf, capex = series["operatingCashFlow"].get(end), series["capex"].get(end)
+        rows.append({
+            "fiscalYear": end,
+            "revenue": series["revenue"].get(end),
+            "grossProfit": series["grossProfit"].get(end),
+            "operatingIncome": series["operatingIncome"].get(end),
+            "netIncome": series["netIncome"].get(end),
+            "eps": series["eps"].get(end),
+            "shares": series["shares"].get(end),
+            "operatingCashFlow": ocf,
+            "freeCashFlow": ocf - abs(capex) if ocf is not None and capex is not None else None,
+        })
     return rows
+
+
+def _edgar_annual_history(sym: str, splits: pd.Series | None = None, years: int = _HISTORY_YEARS + 1) -> list[dict]:
+    """Up to `years` fiscal years from SEC EDGAR; [] for non-SEC filers, funds, or on any failure."""
+    key = f"tearsheet_edgar:{sym}"
+    cached = cache_get(key, _EDGAR_TTL)
+    if cached is not None:
+        return cached
+    from edgar_utils import _get_cik, _edgar_req
+    cik = _get_cik(sym)
+    if not cik:
+        return []
+    facts = _edgar_req(f"https://data.sec.gov/api/xbrl/companyfacts/CIK{int(cik):010d}.json").json()
+    rows = _edgar_rows_from_facts(facts.get("facts", {}).get("us-gaap", {}), years, splits)
+    if rows:
+        cache_set(key, rows)
+    return rows
+
+
+def _merge_history(edgar_rows: list[dict], yf_rows: list[dict], limit: int = _HISTORY_YEARS) -> list[dict]:
+    """EDGAR is the backbone (long history, one consistent source); yfinance fills any field
+    EDGAR didn't tag for a year and supplies balance-sheet items. A year yfinance has that
+    EDGAR lacks (a 10-K filed but not yet tagged) is appended if it is newer than EDGAR's last."""
+    if not edgar_rows:
+        return _finalize_history(yf_rows, limit)
+
+    def match(row):
+        end = pd.Timestamp(row["fiscalYear"])
+        for y in yf_rows:
+            if abs((pd.Timestamp(y["fiscalYear"]) - end).days) <= 10:
+                return y
+        return None
+
+    merged = []
+    for e in edgar_rows:
+        y = match(e) or {}
+        merged.append({"fiscalYear": e["fiscalYear"],
+                       **{k: e.get(k) if e.get(k) is not None else y.get(k) for k in _HISTORY_FIELDS}})
+    last_end = pd.Timestamp(edgar_rows[-1]["fiscalYear"])
+    merged += [y for y in yf_rows if pd.Timestamp(y["fiscalYear"]) - last_end > pd.Timedelta(days=10)]
+    return _finalize_history(merged, limit)
+
+
+def _build_history(income, cashflow, balance, edgar_rows, limit: int = _HISTORY_YEARS) -> list[dict]:
+    return _merge_history(edgar_rows or [], _yf_history_rows(income, cashflow, balance), limit)
+
+
+def _blank_cash_flow_metrics(history: list[dict]) -> None:
+    """Free cash flow, operating cash flow and gross profit don't mean anything for a bank
+    (deposits, lending and trading run through operating cash flow), so show dashes."""
+    for r in history:
+        for k in ("freeCashFlow", "operatingCashFlow", "fcfMargin", "fcfGrowth", "grossProfit", "grossMargin"):
+            r[k] = None
+
+
+def _pick_fcf(ttm_fcf, latest_fy_fcf):
+    """Yahoo's trailing free cash flow is occasionally off by multiples (e.g. quoting $42B
+    for a company whose latest 10-K shows $97B). Trust it unless it disagrees with the
+    latest filed fiscal year by more than 2x either way, then fall back to the filing."""
+    if ttm_fcf is None:
+        return latest_fy_fcf
+    if latest_fy_fcf is not None and latest_fy_fcf > 0 and ttm_fcf > 0:
+        ratio = ttm_fcf / latest_fy_fcf
+        if ratio < 0.5 or ratio > 2.0:
+            return latest_fy_fcf
+    return ttm_fcf
 
 
 def _cagr(first, last, years):
@@ -150,10 +333,10 @@ def _cagr(first, last, years):
 
 # ── Price history ─────────────────────────────────────────────────────────────
 
-def _naive_close(hist) -> pd.Series | None:
+def _naive_close(hist, col: str = "Close") -> pd.Series | None:
     if hist is None or hist.empty or "Close" not in hist:
         return None
-    s = hist["Close"].dropna()
+    s = hist[col if col in hist else "Close"].dropna()
     if s.empty:
         return None
     if getattr(s.index, "tz", None) is not None:
@@ -194,6 +377,12 @@ def _annual_vol(s: pd.Series | None, days: int = 252):
         return None
     r = s.pct_change().dropna().tail(days)
     return float(r.std() * math.sqrt(252)) if len(r) > 20 else None
+
+
+def _last_years(s: pd.Series | None, years: int) -> pd.Series | None:
+    if s is None or s.empty:
+        return s
+    return s[s.index >= s.index[-1] - pd.DateOffset(years=years)]
 
 
 def _price_performance(stock: pd.Series | None, spy: pd.Series | None) -> dict:
@@ -404,9 +593,11 @@ def _fair_values(price, eps_ttm, eps_fwd, growth, hist_pes, fcf, shares, beta, c
 
     pes = [h["pe"] for h in hist_pes if h.get("pe")]
     if len(pes) >= 2 and eps_ttm and eps_ttm > 0:
-        avg_pe = statistics.mean(pes)
-        out.append({"method": "Historical P/E", "value": _round(avg_pe * eps_ttm),
-                    "basis": f"{avg_pe:.1f}x avg FY-end P/E × ${eps_ttm:.2f} trailing EPS"})
+        # Median, not mean: one depressed-EPS year (e.g. a tax-reform charge) can print a
+        # triple-digit P/E and would otherwise drag the whole average up.
+        median_pe = statistics.median(pes)
+        out.append({"method": "Historical P/E", "value": _round(median_pe * eps_ttm),
+                    "basis": f"{median_pe:.1f}x median FY-end P/E ({len(pes)} yrs) × ${eps_ttm:.2f} trailing EPS"})
     else:
         out.append({"method": "Historical P/E", "value": None, "basis": "Needs 2+ years of positive EPS"})
 
@@ -477,13 +668,13 @@ def _scenarios_12m(price, eps_cur, eps_next, dividend_yield) -> list[dict]:
     return out
 
 
-def _five_year_returns(price, eps_ttm, growth, pe_now, pe_hist_avg, dividend_yield) -> list[dict]:
+def _five_year_returns(price, eps_ttm, growth, pe_now, pe_hist_median, dividend_yield) -> list[dict]:
     """Annualised 5-year return if EPS compounds at `growth` and the stock exits at a
     de-rated / blended / unchanged P/E. Dividends approximated as a flat yield."""
     if not price or not eps_ttm or eps_ttm <= 0 or growth is None or not pe_now or pe_now <= 0:
         return []
     g = _clamp(growth, 0.0, 0.25)
-    anchor = _avg([pe_now, pe_hist_avg]) if pe_hist_avg else pe_now
+    anchor = _avg([pe_now, pe_hist_median]) if pe_hist_median else pe_now
     exits = [("P/E compresses", anchor * 0.7), ("Blend of now & history", anchor), ("P/E unchanged", pe_now)]
     out = []
     for name, pe in exits:
@@ -543,7 +734,7 @@ def _flags(m: dict) -> dict:
     add(prem is not None and prem <= -0.10, strengths, f"Trades {abs(prem) * 100:.0f}% below blended fair value" if prem else "")
     add(prem is not None and prem >= 0.25, risks, f"Trades {prem * 100:.0f}% above blended fair value" if prem else "")
     add(m.get("peVsHistory") is not None and m["peVsHistory"] > 0.4, risks,
-        f"P/E is {m['peVsHistory'] * 100:.0f}% above its own fiscal-year-end average" if m.get("peVsHistory") else "")
+        f"P/E is {m['peVsHistory'] * 100:.0f}% above its own median fiscal-year-end P/E" if m.get("peVsHistory") else "")
     up = m.get("upside")
     add(up is not None and up > 0.15, strengths, f"Analysts see {up * 100:.0f}% upside to the mean target" if up else "")
     add(up is not None and up < -0.05, risks, f"Trades above the mean analyst target ({up * 100:.0f}% implied)" if up else "")
@@ -589,7 +780,10 @@ def _fetch_raw(sym: str) -> dict:
         "updown": lambda: t.upgrades_downgrades,
         "insider": lambda: t.insider_purchases,
         "calendar": lambda: t.calendar,
-        "hist": lambda: t.history(period="5y", interval="1d", auto_adjust=True),
+        # Close = split-adjusted only (right for P/E); Adj Close adds dividends (right for returns)
+        "hist": lambda: t.history(period="10y", interval="1d", auto_adjust=False),
+        "splits": lambda: t.splits,
+        "edgar": lambda: _edgar_annual_history(sym, _safe(lambda: t.splits)),
         "spy": lambda: yf.Ticker("SPY", session=_session).history(period="5y", interval="1d", auto_adjust=True),
         "tnx": _ten_year_yield,
     }
@@ -600,7 +794,8 @@ def _fetch_raw(sym: str) -> dict:
 
 def _build_tear_sheet(sym: str, raw: dict) -> dict:
     info = raw.get("info") or {}
-    stock = _naive_close(raw.get("hist"))
+    stock = _naive_close(raw.get("hist"))                       # split-adjusted, for P/E
+    stock_total = _naive_close(raw.get("hist"), "Adj Close")    # dividend-adjusted, for returns
     spy = _naive_close(raw.get("spy"))
     price = _safe_float(info.get("currentPrice") or info.get("regularMarketPrice"))
     if price is None and stock is not None:
@@ -608,9 +803,19 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
     if price is None:
         return {"symbol": sym, "error": "No price data available for this symbol."}
 
-    history = _financial_history(raw.get("income"), raw.get("cashflow"), raw.get("balance"))
-    perf = _price_performance(stock, spy)
-    hist_pes = _historical_pes(stock, history)
+    history = _build_history(raw.get("income"), raw.get("cashflow"), raw.get("balance"), raw.get("edgar"))
+    is_bank = "bank" in (info.get("industry") or "").lower()
+    if is_bank:
+        _blank_cash_flow_metrics(history)
+    # A foreign ADR can report in one currency and trade in another (TSM: TWD statements,
+    # USD shares). Per-share models would then compare unlike currencies, so they are skipped.
+    fin_cur, trade_cur = info.get("financialCurrency"), info.get("currency")
+    mismatch = bool(fin_cur and trade_cur and str(fin_cur).upper() != str(trade_cur).upper())
+    # 10 years of prices let historical P/E span the whole track record; the
+    # performance section (returns, charts, drawdown, MAs) stays on the last 5.
+    stock5, spy5 = _last_years(stock_total, 5), _last_years(spy, 5)
+    perf = _price_performance(stock5, spy5)
+    hist_pes = [] if mismatch else _historical_pes(stock, history)
     earn_rows = _estimate_rows(raw.get("earn_est"))
     rev_rows = _estimate_rows(raw.get("rev_est"), is_revenue=True)
     by_period = {r["period"]: r for r in earn_rows}
@@ -631,6 +836,11 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
     fcf = _safe_float(info.get("freeCashflow"))
     if fcf is None and history:
         fcf = history[-1].get("freeCashFlow")
+    fcf = _pick_fcf(fcf, history[-1].get("freeCashFlow") if history else None)
+    if is_bank:
+        fcf = None  # a bank's operating cash flow is dominated by trading and lending flows
+    if mismatch:
+        eps_ttm = eps_cur = eps_fwd = fcf = None
     beta = _safe_float(info.get("beta"))
     div_yield = _dividend_yield_fraction(info)
     market_cap = _safe_float(info.get("marketCap"))
@@ -641,12 +851,12 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
     fair_values = _fair_values(price, eps_ttm, eps_fwd, growth, hist_pes, fcf, shares, beta, cash, debt,
                                analysts["targetMean"])
     verdict = _verdict(price, fair_values)
-    scenarios = _scenarios_12m(price, eps_cur or eps_ttm, next_fy, div_yield)
+    scenarios = _scenarios_12m(price, eps_cur or eps_ttm, None if mismatch else next_fy, div_yield)
 
     pe_now = _safe_float(info.get("trailingPE")) or (price / eps_ttm if eps_ttm and eps_ttm > 0 else None)
     pes = [h["pe"] for h in hist_pes]
-    pe_hist_avg = statistics.mean(pes) if len(pes) >= 2 else None
-    five_year = _five_year_returns(price, eps_ttm, growth, pe_now, pe_hist_avg, div_yield)
+    pe_hist_median = statistics.median(pes) if len(pes) >= 2 else None
+    five_year = _five_year_returns(price, eps_ttm, growth, pe_now, pe_hist_median, div_yield)
 
     earnings_yield_fwd = (eps_fwd / price) if eps_fwd and price else None
     fcf_yield = (fcf / market_cap) if fcf is not None and market_cap else None
@@ -678,7 +888,7 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
         "upside": analysts["upsideToMean"], "relative1y": rel_1y,
         "above200": (price > perf["ma200"]) if perf["ma200"] else None, "rangePosition": range_pos,
         "fcfPositive": (fcf > 0) if fcf is not None else None,
-        "peVsHistory": (pe_now / pe_hist_avg - 1) if pe_now and pe_hist_avg else None,
+        "peVsHistory": (pe_now / pe_hist_median - 1) if pe_now and pe_hist_median else None,
         "beat_rate": (track["beats"] / track["total"]) if track["total"] >= 4 else None,
         "shortPercentOfFloat": _safe_float(info.get("shortPercentOfFloat")), "beta": beta,
         "maxDrawdown5y": perf["maxDrawdown5y"],
@@ -689,6 +899,8 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
     return {
         "symbol": sym,
         "asOf": str(pd.Timestamp.now().date()),
+        "currencyNote": {"financial": str(fin_cur).upper(), "trading": str(trade_cur).upper()} if mismatch else None,
+        "bankNote": is_bank,
         "profile": {
             "name": info.get("longName") or info.get("shortName") or sym,
             "sector": info.get("sector"), "industry": info.get("industry"),
@@ -733,7 +945,7 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
                 "fcfYield": fcf_yield, "dividendYield": div_yield,
                 "earningsYieldForward": earnings_yield_fwd,
             },
-            "historicalPE": hist_pes, "historicalPEAvg": _round(pe_hist_avg, 1),
+            "historicalPE": hist_pes, "historicalPEMedian": _round(pe_hist_median, 1),
             "tenYearYield": ten_y,
             "earningsYieldVsBond": (earnings_yield_fwd - ten_y) if earnings_yield_fwd is not None and ten_y is not None else None,
             "fairValues": fair_values, "verdict": verdict,

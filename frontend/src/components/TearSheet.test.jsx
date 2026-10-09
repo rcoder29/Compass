@@ -29,7 +29,7 @@ const sheet = (over = {}) => ({
     multiples: { trailingPE: 30, forwardPE: 27, peg: 2.1, priceToSales: 8, priceToBook: 12, evToEbitda: 22, evToRevenue: 7,
                  fcfYield: 0.03, dividendYield: 0.005, earningsYieldForward: 0.037 },
     historicalPE: [{ fiscalYear: '2024-09-30', pe: 22, price: 60, eps: 2.7 }, { fiscalYear: '2025-09-30', pe: 28, price: 84, eps: 3 }],
-    historicalPEAvg: 25, tenYearYield: 0.045, earningsYieldVsBond: -0.008,
+    historicalPEMedian: 25, tenYearYield: 0.045, earningsYieldVsBond: -0.008,
     fairValues: [
       { method: 'Historical P/E', value: 90, basis: '25.0x avg FY-end P/E × $3.60 trailing EPS' },
       { method: 'PEG = 1', value: 70, basis: '14.0x × $5 forward EPS' },
@@ -81,6 +81,12 @@ describe('formatters', () => {
     expect(fmtPct(0.153, 1, true)).toBe('+15.3%')
     expect(fmtPct(-0.05, 1, true)).toBe('-5.0%')
     expect(fmtX(27.04)).toBe('27.0x')
+  })
+
+  it('accepts a currency symbol', () => {
+    expect(fmtBig(3.8e12, 'TWD ')).toBe('TWD 3.80T')
+    expect(fmtBig(-2e9, 'TWD ')).toBe('-TWD 2.00B')
+    expect(fmtMoney(331.25, 2, 'TWD ')).toBe('TWD 331.25')
   })
 
   it('renders a dash for missing values', () => {
@@ -169,6 +175,59 @@ describe('TearSheet', () => {
     expect(screen.getByText('Morgan Stanley')).toBeInTheDocument()
     expect(screen.getByText('$355 (was $360)')).toBeInTheDocument()
     expect(screen.getAllByText('Current FY').length).toBeGreaterThan(0)
+  })
+
+  it('shows a ten-year track record, one column per fiscal year', async () => {
+    const s = sheet()
+    s.financials.history = Array.from({ length: 10 }, (_, i) => ({
+      fiscalYear: `${2016 + i}-12-31`, revenue: (100 + i * 10) * 1e9, netIncome: 20e9, freeCashFlow: null, grossMargin: 0.4,
+      operatingMargin: 0.3, netMargin: 0.2, eps: 2 + i * 0.1, epsGrowth: 0.05, revenueGrowth: 0.1, fcfMargin: null,
+    }))
+    s.financials.revenueCagr = 0.0743
+    mockFetch(s)
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    expect(screen.getByText(/Last 10 fiscal years, oldest to newest/)).toBeInTheDocument()
+    expect(screen.queryByText(/all the annual history available/)).not.toBeInTheDocument()
+    for (const y of ['FY2016', 'FY2025']) expect(screen.getAllByText(y).length).toBeGreaterThan(0)
+    expect(screen.getByText('Revenue CAGR (9y)')).toBeInTheDocument()
+    expect(screen.getByText('+7.4%')).toBeInTheDocument()
+  })
+
+  it('says so when fewer than ten years exist', async () => {
+    mockFetch(sheet())
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    expect(screen.getByText(/Last 2 fiscal years.*all the annual history available for this ticker/)).toBeInTheDocument()
+  })
+
+  it('labels statement figures in the reporting currency when it differs from the trading currency', async () => {
+    mockFetch(sheet({ currencyNote: { financial: 'TWD', trading: 'USD' } }))
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    expect(screen.getByText(/reports in TWD but trades in USD/)).toBeInTheDocument()
+    expect(screen.getAllByText('TWD 100.00B').length).toBeGreaterThan(0)
+    expect(screen.queryByText('$100.00B')).not.toBeInTheDocument()
+  })
+
+  it('explains blank cash-flow rows for banks', async () => {
+    mockFetch(sheet({ bankNote: true }))
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    expect(screen.getByText(/aren't meaningful for banks/)).toBeInTheDocument()
+  })
+
+  it('shows neither note for an ordinary company', async () => {
+    mockFetch(sheet())
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    expect(screen.queryByText(/aren't meaningful for banks/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/but trades in/)).not.toBeInTheDocument()
   })
 
   it('shows the 10-year-yield comparison in plain language', async () => {
