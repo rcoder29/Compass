@@ -24,6 +24,7 @@ const FinancialAdvisor = lazy(() => import('./components/FinancialAdvisor'))
 const Screener = lazy(() => import('./components/Screener'))
 const RangeScreener = lazy(() => import('./components/RangeScreener'))
 const PriceProjection = lazy(() => import('./components/PriceProjection'))
+const TearSheet = lazy(() => import('./components/TearSheet'))
 const TradeJournal = lazy(() => import('./components/TradeJournal'))
 const MacroCalendar = lazy(() => import('./components/MacroCalendar'))
 const SectorDashboard = lazy(() => import('./components/SectorDashboard'))
@@ -195,6 +196,7 @@ const NAV_GROUPS = [
     label: 'Research',
     icon: Icons.research,
     items: [
+      { id: 'tearsheet',    label: 'Tear Sheet' },
       { id: 'screener',     label: 'Screener' },
       { id: 'rangescreener', label: 'Range Screener' },
       { id: 'priceprojection', label: 'Price Projection' },
@@ -1038,6 +1040,7 @@ export default function App() {
           {activeTab === 'screener'        && <Screener />}
           {activeTab === 'rangescreener'   && <RangeScreener />}
           {activeTab === 'priceprojection' && <PriceProjection />}
+          {activeTab === 'tearsheet' && <TearSheet />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
           {activeTab === 'sectors'         && <SectorDashboard />}

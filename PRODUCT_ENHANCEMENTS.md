@@ -13,7 +13,7 @@ The app has grown from 7 tabs to 90+ views across 11 sidebar groups, plus an in-
 |-------|-------|
 | **Home** | Aggregated dashboard (P&L, market pulse, movers, earnings, alerts, recents) + ⌘K command palette |
 | **Markets** | Overview, Sentiment, Reddit Trending, Index Heatmap, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators |
-| **Research** | Screener (preset + custom), Range Screener (30/60/90-day support/resistance scan), Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Activist Tracker (13D/13G), Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options Activity |
+| **Research** | Screener (preset + custom), Range Screener (30/60/90-day support/resistance scan), Tear Sheet (one-page company snapshot + valuation verdict), Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Activist Tracker (13D/13G), Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options Activity |
 | **Watchlist** | Watchlist, Heatmap, Correlation Matrix, Price Targets, Earnings+, News Sentiment, Smart Alerts |
 | **News** | Custom multi-ticker news feed |
 | **Trading** | Trade Ideas, Position Sizer, Wheel Tracker, Day Trader (plan calculator, scanner, playbooks) |

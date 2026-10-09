@@ -208,6 +208,7 @@ Watchlist
 Research
 ├── Screener.jsx                Technical/fundamental/NLP screener
 ├── RangeScreener.jsx           30/60/90-day support/resistance scan
+├── TearSheet.jsx               One-page company snapshot + valuation verdict
 ├── TechnicalSignals.jsx        Multi-timeframe signals dashboard
 ├── Backtester.jsx              MA crossover / RSI / Bollinger backtest
 └── DcfCalculator.jsx           DCF intrinsic value calculator
@@ -276,6 +277,7 @@ flowchart LR
 | `rich_earn:` | 2 hr (`routers/rich_earnings_calendar.py`) | Expected move, beat-rate history, pre-earnings drift |
 | `div:` | 6 hr (`routers/dividend_tracker.py`) | Dividend history/yield |
 | `range_screen:universe` | 30 min (`routers/range_screener.py`) | Precomputed range-screen metrics for the default ~290-symbol universe |
+| `tearsheet:{sym}` | 1 hr (`routers/tear_sheet.py`) | Assembled company tear sheet (errors are not cached) |
 | `home:summary` | 2 min (`routers/portfolio.py`) | Home dashboard aggregate (portfolio P&L + market pulse) |
 
 ## Key Backend Patterns

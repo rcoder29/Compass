@@ -4,6 +4,24 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-09 — Company Tear Sheet
+
+A single page with everything an investor weighs before buying a stock, ending in a cheap-or-expensive verdict. Previously this meant opening Fundamentals, DCF, Analyst Ratings, Earnings History and Price Projection separately.
+
+### New
+- `backend/routers/tear_sheet.py` — `GET /api/tear-sheet/{symbol}`. Assembles profile, 5-year price performance vs. SPY (returns, weekly series with 50/200-day MAs, max drawdown, volatility), 4 fiscal years of income/cash-flow/balance data with margins, growth and CAGRs, balance-sheet quality ratios, valuation multiples, P/E at each fiscal year-end, consensus EPS/revenue estimates and 30/90-day revisions, earnings-beat record, analyst ratings/targets/changes, ownership and 6-month insider activity. The ~15 independent yfinance calls run in parallel threads. Cached 1 hour under `tearsheet:{sym}`; error payloads are never cached.
+- **Valuation verdict** — median of four fair-value models: historical P/E (average fiscal-year-end P/E × trailing EPS), PEG = 1 (growth-capped, × forward EPS), a 10-year free-cash-flow DCF (growth fading to 3%, beta-based 7–12% discount rate), and the mean analyst target discounted one year. Requires at least two models; otherwise returns "Not enough data to judge" (e.g. loss-making companies, ETFs) rather than a verdict resting on the analyst target alone. Growth input is the average of current- and next-fiscal-year consensus growth, since either year alone swings the PEG/DCF models.
+- **Projected returns** — 12-month bear/base/bull prices (next-FY consensus low/avg/high EPS × current forward P/E, de-rated 20% / unchanged / 10% richer) and 5-year annualised returns under P/E compression / blend / unchanged. Forward earnings yield is compared against the live 10-year Treasury yield.
+- Six-pillar 0–100 scorecard (growth, profitability, financial health, valuation, analyst sentiment, momentum) and rule-based strengths/risks list.
+- `frontend/src/components/TearSheet.jsx` — Research → Tear Sheet. Plain-SVG charts (relative performance, price with MAs, grouped revenue/net income/FCF bars, valuation football field, analyst target range), print stylesheet and "Print / save as PDF". ETFs/funds get a notice and empty-state messages instead of broken sections. Lazy-loaded as its own ~30 kB chunk.
+
+### Tests
+- `tests/test_tear_sheet.py` (87 tests): DCF math, fair-value/verdict thresholds, scenarios, 5-year returns, scorecard/flags, statement and price-history shaping, analyst/estimate parsing, end-to-end builds with mocked fetches (equity, fund, no-price), endpoint caching behaviour. `TearSheet.test.jsx` (17 tests) covers formatters, every section, the "too few models" and fund states, errors, and the print button. Backend suite 241/241.
+
+### Verified
+- Live endpoint checked against AAPL (full data), RIVN (loss-making → no verdict), SPY (ETF) and JPM (bank: DCF correctly unavailable), and an invalid ticker (error, not cached). The real payloads for the four valid symbols were rendered through the component with no `NaN`/`undefined` in the output. `vite build` clean; main bundle unchanged at ~451 kB.
+- Not verified in a browser (no visual check of layout or print output).
+
 ## 2026-09-27 — Changelog Jump Links: multi-feature bundles
 
 Follow-up to the same day's "What's New Widget & Changelog Jump Links" entry below, which only linked the ~30 most recent single-feature entries. Backfilled the rest.

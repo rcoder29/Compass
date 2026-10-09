@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-09 — Company Tear Sheet', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'New Research → Tear Sheet: enter a ticker for a one-page investment snapshot — business overview, 5-year performance vs. the S&P 500, 4-year revenue/margin/EPS/free-cash-flow track record, balance-sheet quality, valuation multiples vs. the company\'s own P/E history, consensus estimates and revisions, earnings-beat record, analyst ratings and targets, ownership and insider activity.',
+    'Ends in a cheap-or-expensive verdict: the median of four fair-value models (historical P/E, PEG = 1, 10-year FCF DCF, discounted analyst target) shown against the current price, with every model\'s basis listed. Needs at least two models to give a verdict, so loss-making companies and funds get an explanation instead of a guess.',
+    'Projected returns: 12-month bear/base/bull prices from next-year consensus EPS, and 5-year annualised returns under P/E compression, blend and unchanged scenarios; plus forward earnings yield vs. the 10-year Treasury. A six-pillar 0–100 scorecard and auto-generated strengths/risks summarise it. Print / save as PDF supported.',
+  ]},
   { type: 'p', text: 'A chronological log of features added to Stock Monitor, from initial build through ongoing development.' },
   { type: 'h3', text: '2026-09-27 — What\'s New Widget & Changelog Jump Links', tabId: 'home' },
   { type: 'bullets', items: [

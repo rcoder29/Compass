@@ -48,7 +48,7 @@ from routers import (
     ai_portfolio_review, economic_dashboard, ai_stock_analyzer,
     dividend_tracker, watchlist_heatmap, earnings_surprise_tracker,
     earnings_strategy_analyzer, market_correlation, digest, range_screener,
-    price_projection,
+    price_projection, tear_sheet,
 )
 import digest_service
 
@@ -164,6 +164,7 @@ app.include_router(market_correlation.router)
 app.include_router(digest.router)
 app.include_router(range_screener.router)
 app.include_router(price_projection.router)
+app.include_router(tear_sheet.router)
 
 # Initialise DB tables on startup
 init_db()

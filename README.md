@@ -55,6 +55,7 @@ Stock Monitor started as a simple watchlist with live prices and has grown into 
 | **Chart Compare** | Normalised return chart for up to 5 stocks over 1M/3M/6M/1Y. Fundamentals side-by-side table. |
 | **Fundamentals** | Side-by-side 21-metric comparison for up to 5 stocks. Best-in-class (green) / worst-in-class (red) highlighting. |
 | **Backtester** | Test MA Crossover, RSI Reversal, or Bollinger Bands strategies on historical data. Returns total return, alpha, max drawdown, Sharpe, win rate, and full trade log. |
+| **Tear Sheet** | One-page company snapshot for deciding whether to invest: business overview, 5-year performance vs. the S&P 500, 4-year revenue/margin/EPS/FCF track record, balance-sheet quality, valuation multiples vs. the company's own history, consensus estimates and revisions, earnings-beat record, analyst ratings/targets, ownership and insider activity. Ends in a cheap-or-expensive verdict (median of historical-P/E, PEG, 10-year DCF and discounted analyst-target models), 12-month bear/base/bull and 5-year annualised return scenarios, a six-pillar scorecard, and auto-generated strengths/risks. Print-friendly. |
 | **DCF Valuation** | Intrinsic value calculator: EPS, growth rate, WACC, terminal growth, margin of safety. Live 10-year projection table. Undervalued / Overvalued / Fairly Valued verdict. |
 | **Unusual Options** | Scans options chains for abnormally high volume vs open interest across watchlist symbols (nearest 3 expiries). Vol/OI ≥ 10× highlighted in amber. |
 
@@ -196,6 +197,7 @@ Bypass for a specific commit with `git commit --no-verify` if you hit a false po
 | `POST /api/screener/nlp` | NLP query → Claude → filter results |
 | `GET /api/signals?symbols=AAPL,MSFT` | Multi-timeframe technical signals |
 | `GET /api/fundamentals?symbols=AAPL,MSFT` | 21-metric fundamental comparison |
+| `GET /api/tear-sheet/{symbol}` | Full company tear sheet (profile, performance, financials, valuation verdict, estimates, analysts, ownership) |
 | `GET /api/dcf/{symbol}` | Pre-fill DCF inputs from yfinance |
 | `GET /api/options/{symbol}` | Options chain (nearest expiry) |
 | `GET /api/unusual-options` | Unusual options activity scan |
@@ -342,6 +344,7 @@ stockmonitor/
 │   │   ├── fed_watch.py                 Markets → Fed Watch (FOMC cut/hold/hike odds)
 │   │   ├── ai_morning_briefing.py       AI Tools → Morning Briefing
 │   │   ├── range_screener.py            Research → Range Screener (30/60/90d support/resistance scan)
+│   │   ├── tear_sheet.py                Research → Tear Sheet (one-page company snapshot + valuation verdict)
 │   │   ├── digest.py                    AI Tools → Digests (settings, preview, send, history)
 │   │   ├── crypto_dashboard.py          Markets → Crypto
 │   │   ├── ai_portfolio_review.py       AI Tools → Portfolio Review — _fetch_quote deferred
@@ -356,7 +359,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (134 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (241 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real stockmonitor.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -406,6 +409,7 @@ stockmonitor/
 │           ├── UserGuide.jsx           In-app documentation
 │           ├── DigestCenter.jsx        Digests — delivery setup, schedule, preview/send, history
 │           ├── RangeScreener.jsx       Range Screener — 30/60/90d support/resistance scan
+│           ├── TearSheet.jsx           Tear Sheet — company snapshot, valuation verdict, projected returns
 │           └── InvestorEducation.jsx   Investor education — onion-map landing view +
 │                                        layered concept graph (data/investorEducationTopics.js),
 │                                        with live data snapshots on 12 topics and deep
