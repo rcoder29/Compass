@@ -1,8 +1,9 @@
 # Stock Monitor — Architecture
 
-> Reflects the modularized backend (main.py reduced from ~12,300 lines to its permanent
-> core, everything else in `backend/routers/`) plus the daily/weekly digest scheduler and
-> range screener added after that effort. See `CHANGELOG.md` for the full build history.
+> Reflects the current code: the modularized backend (`main.py` reduced from ~12,300 lines to its permanent
+> core, everything else in `backend/routers/`), the daily/weekly digest scheduler, and the research features
+> built on SEC filings (Tear Sheet, Holdings Performance). See `CHANGELOG.md` for the build history,
+> `README.md` for setup and the feature list, and `http://localhost:8000/docs` for the live API reference.
 
 ## System Overview
 
@@ -11,8 +12,8 @@ flowchart TD
     Browser["Browser (React 18 + Vite)"]
 
     subgraph Frontend["Frontend — localhost:5173"]
-        App["App.jsx\n(sidebar nav, routing, WS, polling)"]
-        Components["100+ Components\n(one per feature — Watchlist, Portfolio,\nResearch, Trading, AI Tools, Retirement, …)"]
+        App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
+        Components["~110 component files\n(88 sidebar views in 10 groups + Home + Help:\nMarkets, Research, Watchlist, Trading, Merger Arb,\nSPACs, Portfolio, AI Tools, Retirement, …)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -22,40 +23,48 @@ flowchart TD
 
     subgraph Backend["Backend — localhost:8000 (FastAPI + Uvicorn)"]
         Core["main.py — permanent core (~550 lines)\n_fetch_quote / _fetch_fundamentals / _fetch_perf_one /\n_fetch_screener_quotes / _fetch_feed + their TTLs,\nhealth check, SPA catchall, FastAPI lifespan"]
-        Routers["backend/routers/ — ~90 files\none APIRouter per feature, registered in main.py"]
+        Routers["backend/routers/ — 92 files\none APIRouter per feature, registered in main.py"]
+        Helpers["Helper modules (backend root)\ndatabase · edgar_utils · digest_* ·\ntear_sheet_pdf · income_flow ·\nholdings_perf · sec_revenue_streams"]
         Scheduler["Digest scheduler thread\n(started by main.py's lifespan)"]
         WS["WebSocket\n/ws/quotes"]
-        SSE["SSE endpoints\n/api/chat, /api/advisor,\n/api/trade-ideas, /api/ai/morning-briefing, …"]
+        SSE["SSE endpoints\n/api/ai-chat, /api/financial-plan,\n/api/trade-ideas, /api/ai/morning-briefing, …"]
         Cache["SQLite cache\ncache_get / cache_set"]
         DB["SQLite DB\nstockmonitor.db"]
         Core --> Routers
         Core -->|starts on startup| Scheduler
         Routers -->|function-scoped deferred import\nof Core's helpers, avoids import cycles| Core
+        Routers --> Helpers
         Routers --> WS
         Routers --> SSE
         Routers --> Cache
+        Helpers --> Cache
         Scheduler --> Cache
         Cache --> DB
     end
 
     subgraph ExternalAPIs["External Data Sources"]
-        YFinance["yfinance 1.3\n(curl_cffi, impersonate=chrome)\nQuotes, history, fundamentals,\noptions, fund holdings"]
+        YFinance["yfinance 1.2\n(curl_cffi, impersonate=chrome)\nQuotes, history, statements, estimates,\noptions, fund top holdings"]
         YahooSearch["Yahoo Finance\nsearch API\n/v1/finance/search"]
-        SEC["SEC EDGAR\n/submissions API\nFilings, N-PORT, S-1/S-11"]
+        SEC["SEC EDGAR\nsubmissions, XBRL company facts,\n10-Q/10-K XBRL instances, N-PORT,\nfull-text search"]
+        Treasury["Treasury.gov\nyield-curve CSVs"]
+        Lists["Index membership\nWikipedia (S&P 500)\nNasdaq API (Nasdaq-100)"]
         Anthropic["Anthropic API\nclaude-sonnet-4-6 for most AI features;\nclaude-haiku-4-5 for the digest's\nshort AI summary"]
-        Telegram["Telegram Bot API\n(digest delivery — optional,\nrequires TELEGRAM_BOT_TOKEN/CHAT_ID)"]
+        Optional["Optional: Gemini (AI Chat),\nFRED (economic series),\nTelegram Bot API (digest delivery)"]
     end
 
     Browser -->|HTTP + WebSocket| Frontend
     Frontend -->|REST /api/*| Backend
     Frontend -->|WebSocket /ws/quotes| Backend
-    Frontend -->|SSE /api/chat etc.| Backend
+    Frontend -->|SSE /api/ai-chat etc.| Backend
     Routers --> YFinance
     Routers --> YahooSearch
     Routers --> SEC
+    Routers --> Treasury
+    Routers --> Lists
     Routers --> Anthropic
+    Routers --> Optional
     Scheduler --> Anthropic
-    Scheduler --> Telegram
+    Scheduler --> Optional
 ```
 
 **Why the core is small:** `main.py` was a 12,269-line monolith as of mid-2026 and was extracted, section by section, into `backend/routers/` until only what's genuinely shared by nearly every router — the five `_fetch_*` helper functions and their TTLs, the health check, and the SPA catchall — remained. Extracting that core further would just move the "everything imports from here" problem to a different file, not remove it, so it's the intended floor for this architecture.
@@ -99,7 +108,7 @@ sequenceDiagram
         alt due
             Sched->>Log: claim (kind, period_key) — INSERT, unique constraint\nmakes a duplicate tick lose the race
             Log-->>Sched: claimed (or skip if already sent/in flight)
-            Sched->>Build: build_digest(kind, now) — market, portfolio, watchlist,\nevents, alerts, targets (each section isolated;\na failing source drops only that section)
+            Sched->>Build: build_digest(kind, now) — market, portfolio, watchlist,\nevents, alerts, targets (each section isolated —\na failing source drops only that section)
             Build-->>Sched: structured digest
             opt AI summary enabled
                 Sched->>AI: short opener from the same numbers
@@ -166,7 +175,71 @@ sequenceDiagram
     UI->>UI: render tiles sized by actualWeight, coloured by 1D return
 ```
 
-## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing)
+## Data Flow — Company Tear Sheet
+
+```mermaid
+sequenceDiagram
+    participant UI as TearSheet.jsx
+    participant API as GET /api/tear-sheet/{symbol}
+    participant Cache as SQLite Cache
+    participant Pool as ThreadPoolExecutor
+    participant YF as yfinance
+    participant SEC as SEC EDGAR
+    participant Calc as tear_sheet.py / income_flow.py (pure functions)
+
+    UI->>API: symbol
+    API->>Cache: cache_get("tearsheet:AAPL", 1 hr)
+    alt miss
+        API->>Pool: ~20 independent fetches in parallel (each wrapped: a failure becomes None)
+        Pool->>YF: info, annual + quarterly statements, estimates, ratings, targets,\n10y + SPY history, splits, dividends
+        Pool->>SEC: companyfacts (10 years of 10-K facts) +\n10-Q/10-K XBRL instances for revenue by stream
+        Pool-->>API: raw results
+        API->>Calc: history merge, split adjustment, fair values, verdict,\nscenarios, scorecard, quarterly income flow
+        Calc-->>API: one JSON-able dict
+        API->>Cache: cache_set (errors are never cached)
+    end
+    API-->>UI: sheet
+    UI->>API: GET /api/tear-sheet/{symbol}/pdf
+    API->>API: tear_sheet_pdf.build_pdf(the same cached dict) → application/pdf
+```
+
+**Design notes**
+
+- *One endpoint, many sources, tolerant of any of them failing.* `_fetch_raw` runs every independent fetch in a thread pool and wraps each in `_safe`, so a missing statement or a failed SEC call blanks one section instead of the whole sheet. The assembly in `_build_tear_sheet` is pure (no I/O), which is how it is unit-tested with hand-built frames.
+- *10-year history from SEC filings.* Yahoo serves ~4 fiscal years; EDGAR's XBRL `companyfacts` goes back much further. Only full-year 10-K facts are used (the feed mixes quarterly and year-to-date durations under one tag), the latest-filed value wins when a year was restated, and tags that changed over the years are stitched in priority order. EPS and share counts are split-adjusted using the splits after each filing date. Yahoo fills any field EDGAR didn't tag and supplies balance-sheet items; non-SEC filers fall back to Yahoo alone.
+- *Valuation verdict.* The median of up to four independent models (historical P/E, PEG = 1, a 10-year FCF DCF, the discounted analyst target), requiring at least two. Foreign ADRs whose statements are in a different currency than the share price skip the per-share models, and banks blank free cash flow, rather than produce a confident wrong answer.
+- *Quarterly income flow.* `sec_revenue_streams.py` reads the 10-Q/10-K XBRL for revenue by product / segment / region and keeps only a set of members that adds up to reported revenue (members overlap, so summing all would double count); Q4 is derived as the fiscal year minus nine months. `income_flow.py` builds the revenue → profit → dividends graph with every node conserving what flows in and out, and **lays it out in the backend** (node rectangles, Bézier link paths) so the web page and the PDF draw identical diagrams from one source of truth.
+
+## Data Flow — Holdings Performance
+
+```mermaid
+sequenceDiagram
+    participant UI as HoldingsPerformance.jsx
+    participant API as GET /api/holdings-performance
+    participant Res as resolve_universe
+    participant Cache as SQLite Cache
+    participant YF as yfinance (download lock)
+
+    UI->>API: universe=SPY (or SP500, XLK, ARKK, …)
+    API->>Res: alias / index / sector SPDR / any ETF
+    Res->>Cache: holdperf_u:SP500 (24 hr) — Wikipedia / Nasdaq list, else in-app fallback
+    Res-->>API: members, benchmark, partial flag
+    API->>Cache: cache_get("holdperf:SPY", 15 min)
+    alt miss
+        API->>YF: download_daily — one batched call, ~400 days
+        API->>Cache: holdperf_anchors:{date} — shared per-symbol long-ago prices
+        opt symbols not yet anchored
+            API->>YF: weekly "max" history in chunks of 100 → keep only 3Y/5Y/10Y/LTD anchors
+        end
+        API->>API: compute_returns per symbol (1D … 10Y, YTD, LTD, annualised),\nbenchmark, summary stats — sort by YTD
+        API->>Cache: cache_set (not when no prices came back)
+    end
+    API-->>UI: holdings, benchmark, summary, notes
+```
+
+Why it is shaped this way: 3Y–LTD returns need decades of history for ~500 stocks, so those come from weekly bars in small chunks (a single 500-stock request holds ~150 MB) from which only a few anchor prices per symbol are kept; anchors live in **one shared per-symbol store** so the S&P 500, SPY and a sector ETF reuse each other's downloads. `yfinance.download` is not thread-safe, so every call goes through one lock, and a partial anchor result (rate limiting, a failed chunk) is used for the request but not cached.
+
+## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing / Advisor)
 
 ```mermaid
 sequenceDiagram
@@ -174,7 +247,7 @@ sequenceDiagram
     participant API as FastAPI SSE
     participant Claude as Anthropic API
 
-    UI->>API: POST /api/chat {messages:[...]}
+    UI->>API: POST /api/ai-chat {messages:[...]}
     API->>Claude: client.messages.stream(...)
     loop tokens
         Claude-->>API: token chunk
@@ -187,65 +260,73 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-The sidebar has grown to 100+ components across 11 groups; this lists representative components per group rather than every file — see `frontend/src/App.jsx` for the authoritative nav structure.
+88 sidebar views in 10 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
 
 ```
 Home
-└── HomeDashboard.jsx          Aggregated P&L, market pulse, movers, earnings, alerts, ⌘K palette
+├── HomeDashboard.jsx          Aggregated P&L, market pulse, movers, earnings, alerts, "What's New"
+└── CommandPalette.jsx         ⌘K fuzzy search across every view
 
-Markets
+Markets  (17 views)
 ├── MarketSummary.jsx          Overview: indices, sectors, Mag7, movers, news
 ├── IndexHeatmap.jsx           Constituent heatmap with dynamic ETF search
 ├── HoldingsPerformance.jsx    Per-holding returns over 1D…10Y/LTD, ranked by YTD
 ├── SectorDashboard.jsx        Sector rotation table + heatmap
-├── YieldCurve.jsx             Treasury curve + DXY
-└── FedWatch.jsx                FOMC cut/hold/hike odds
+├── YieldCurve.jsx, FedWatch.jsx, MacroCalendar.jsx, EconomicDashboard.jsx
+└── RedditTrending, ShortSqueeze, IpoCalendar, InsiderFeed, CryptoDashboard, MarketSentimentDashboard …
 
-Watchlist
+Watchlist  (7)
 ├── StockTable.jsx             Live watchlist with flash animations
 ├── RichEarningsCalendar.jsx   Earnings+ (expected move, beat rate, drift)
-└── SmartAlerts.jsx            Condition scanner (volume, RSI, crossovers)
+├── SmartAlerts.jsx            Condition scanner (volume, RSI, crossovers)
+└── WatchlistHeatmap, CorrelationMatrix, PriceTargets, NewsSentiment …
 
-Research
-├── Screener.jsx                Technical/fundamental/NLP screener
-├── RangeScreener.jsx           30/60/90-day support/resistance scan
-├── TearSheet.jsx               One-page company snapshot + valuation verdict
-├── TechnicalSignals.jsx        Multi-timeframe signals dashboard
-├── Backtester.jsx              MA crossover / RSI / Bollinger backtest
-└── DcfCalculator.jsx           DCF intrinsic value calculator
+News  (1)         CustomNews.jsx — multi-ticker news feed
 
-Trading
-├── DayTrader.jsx               Trading plan + playbooks + intraday scanner
-└── PositionSizer.jsx           Fixed fractional / ATR / Half-Kelly sizer
+Research  (21)
+├── TearSheet.jsx              Company snapshot, valuation verdict, quarterly income flow (Sankey), PDF
+├── PriceProjection.jsx        1-year price cone from options, rates, VIX and credit
+├── Screener.jsx, RangeScreener.jsx, TechnicalSignals.jsx
+├── Backtester.jsx, DcfCalculator.jsx, FundamentalComparison.jsx, StockComparison.jsx
+└── Bonds (corporate / convertible / treasury), FundHoldingsExplorer, EtfOverlapAnalyzer,
+    ActivistTracker, RelativeStrengthRanker, SeasonalPatterns, earnings & analyst trackers …
 
-Merger Arb / SPACs
-└── (7 views each: overview, dashboard/tracker, scanner/discovery,
-     deal analyzer, portfolio, risk matrix, alerts)
+Trading  (4)
+├── DayTrader.jsx              Trading plan + playbooks + intraday scanner
+├── TradeIdeas.jsx, PositionSizer.jsx
+└── WheelTracker.jsx           Cash-secured put / covered call cycle
 
-Portfolio
-├── PortfolioTracker.jsx        11 views: heatmap, risk, optimizer, correlation
-├── OptionsTracker.jsx          Options P&L with live Greeks
-└── TradeJournal.jsx            Trade log with P&L matching + win rate
+Merger Arb  (7)   MergerArbOverview, MergerDealDashboard, MergerOpportunityScanner,
+                  MergerDealAnalyzer, MergerArbPortfolio, MergerRiskMatrix, MergerAlerts
+SPACs       (7)   SpacOverview, SpacTracker, SpacDiscovery, SpacDealAnalyzer,
+                  SpacPortfolio, SpacRiskMatrix, SpacAlerts
+                  (cross-tab drill-in: App.jsx lifts mergerFocusDealId / spacFocusId)
 
-AI Tools
-├── AiBot.jsx                   Streaming Claude chat (SSE)
-├── MorningBriefing.jsx         AI-generated pre-market briefing (SSE)
-├── DigestCenter.jsx            Daily/weekly digest settings, preview, send, history
-└── FinancialAdvisor.jsx        AI portfolio strategy (SSE)
+Portfolio  (9)
+├── PortfolioTracker.jsx       11 internal views: heatmap, table, equity curve, risk, optimizer, X-ray, …
+├── OptionsTracker.jsx, TradeJournal.jsx, DividendTracker.jsx, TaxLotManager.jsx
+└── PortfolioStressTest, PortfolioAttribution, CppiAllocator, NetExposure
 
-Retirement
-└── (8 calculators: FIRE, Coast FIRE, Monte Carlo, Social Security,
-     Roth conversion, Medicare, Estate & RMD, …)
+AI Tools  (7)
+├── AiBot.jsx                  Streaming chat (SSE)
+├── MorningBriefing.jsx        AI pre-market briefing (SSE)
+├── DigestCenter.jsx           Daily/weekly digest settings, preview, send, history
+└── FinancialAdvisor, StockAnalyzer, PortfolioReview, TaxAdvisor
+
+Retirement  (8)   FireCalculator, CoastFire, MonteCarlo, SocialSecurity,
+                  EarlyRetirementHealth, RothConversionPlanner, MedicareEstimator, EstateRmdProjector
 
 Help
-├── UserGuide.jsx                In-app documentation
-└── InvestorEducation.jsx        5-layer onion map of investing concepts, with
-                                  live data snapshots and deep links to matching tools
+├── UserGuide.jsx                In-app documentation (+ changelog); tests check that every sidebar
+│                                view is described and every changelog link targets a real tab
+└── InvestorEducation.jsx        Layered map of investing concepts, with live data snapshots
+                                  and deep links to matching tools
 
 Shared
-└── ChartModal.jsx               11-tab overlay (chart, fundamentals, news,
-                                  earnings, options, strategies, insider,
-                                  analyst, institutional, sentiment, SEC filings)
+├── ChartModal.jsx               11-tab overlay (chart, fundamentals, news, earnings, options,
+│                                strategies, insider, analyst, institutional, sentiment, SEC filings)
+├── data/changelog.js            Changelog entries — single source for the guide and Home "What's New"
+└── utils/format.js              Shared formatters
 ```
 
 ## Caching Architecture
@@ -265,26 +346,59 @@ flowchart LR
     cs -.->|write, upsert| SQLite
 ```
 
-`cache_get(key, ttl)` and `cache_set(key, data)` in `database.py` are the only way any router touches the cache — a plain key/value table with the freshness window passed in by the caller at read time, not stored per row. A representative sample of prefixes and TTLs actually in use (not exhaustive — see the router named in parentheses):
+`cache_get(key, ttl)` and `cache_set(key, data)` in `database.py` are the only way any router touches the cache — a plain key/value table with the freshness window passed in by the caller at read time, not stored per row.
 
-| Cache key prefix | TTL | Data |
+Every key and TTL below was extracted from the code (`grep cache_get`), so it is complete as of this writing. Many routers build the key in a variable first; the patterns are shown as written.
+
+| Cache key | TTL | Module → data |
 |---|---|---|
-| `quote:` | 15 min (`_MARKET_TTL`, main.py) | Live quote (price, change, day range, fundamentals) |
-| `fund:` | 5 min (`_FUND_TTL`, main.py) | Fundamentals (P/E, EPS, beta, …) |
-| `chart:{symbol}:{period}` | 1 min–24 hr, scaled to the period (`routers/chart.py`) | OHLCV bars |
-| `news:` | 5 min (`routers/news.py`) | Headlines |
-| `holdperf:{id}` | 15 min (`holdings_perf.py`) | Assembled holdings-performance table for one index/ETF |
-| `holdperf_anchors:{date}` | 26 hr (`holdings_perf.py`) | Shared per-symbol long-ago prices (3Y/5Y/10Y/LTD) from weekly history, reused by every universe |
-| `holdperf_u:{id}` | 24 hr (`holdings_perf.py`) | Index membership (S&P 500 from Wikipedia, Nasdaq-100 from Nasdaq) |
-| `index:constituents:{index}` | 15 min (`routers/index_constituents.py`) | Index/ETF constituent weights + returns |
-| `earnings:` | 4 hr (`routers/earnings_calendar.py`) | Upcoming earnings dates + EPS estimates |
-| `rich_earn:` | 2 hr (`routers/rich_earnings_calendar.py`) | Expected move, beat-rate history, pre-earnings drift |
-| `div:` | 6 hr (`routers/dividend_tracker.py`) | Dividend history/yield |
-| `range_screen:universe` | 30 min (`routers/range_screener.py`) | Precomputed range-screen metrics for the default ~290-symbol universe |
-| `sec_rev_rows:{cik}:{accession}` / `sec_rev_labels:{cik}:{accession}` | 30 days (`sec_revenue_streams.py`) | Parsed revenue-by-dimension facts and member labels for one SEC filing (filings never change) |
-| `tearsheet_edgar:{sym}` | 24 hr (`routers/tear_sheet.py`) | Parsed 10-year annual history from SEC EDGAR XBRL companyfacts |
-| `tearsheet:{sym}` | 1 hr (`routers/tear_sheet.py`) | Assembled company tear sheet (errors are not cached) |
-| `home:summary` | 2 min (`routers/portfolio.py`) | Home dashboard aggregate (portfolio P&L + market pulse) |
+| `quote:{sym}` | 15 min | `main.py` → live quote (price, change, day range, fundamentals). Also read by `custom_screener` (10 min) and `range_screener` (6 hr) |
+| `fund:{sym}` | 5 min | `main.py` → fundamentals (P/E, EPS, beta, …) |
+| `perf:main`, `market:summary` | 15 min | `main.py` → market performance; Overview page |
+| `chart:{symbol}:{period}` | 1 min (1d) · 5 min (5d) · 30 min (1mo, 3mo) · 1 hr (6mo) · 4 hr (1y, 2y) · 24 hr (5y) | `routers/chart.py` → OHLCV bars |
+| `news:{symbol}` | 5 min | `routers/news.py` → headlines |
+| `market:rates` | 30 min | `routers/yield_curve.py` → Treasury yields + DXY |
+| `treasury_current`, `treasury_history:…`, `treasury_yield_curve` | 6 hr | `routers/treasury.py` → Treasury.gov par yields; `treasury_csv:{year}` is 6 hr for the current year, 30 days for past years |
+| `market:breadth`, `sectors:momentum`, `market:economic`, `market:fed-watch`, `mkt_sentiment_v1`, `market:short-squeeze`, `reddit_trending_{source}_{limit}` | 30 min | one per Markets view of the same name |
+| `market:sectors`, `sector:{sym}` | 15 min | `routers/sector_rotation.py` |
+| `index:constituents:{index}`, `etf:holdings:{etf}` | 15 min | `routers/index_constituents.py` |
+| `holdperf:{id}` | 15 min | `holdings_perf.py` → assembled holdings-performance table for one index/ETF |
+| `holdperf_anchors:{date}` | 26 hr | `holdings_perf.py` → shared per-symbol long-ago prices (3Y/5Y/10Y/LTD), reused by every universe |
+| `holdperf_u:{id}` | 24 hr | `holdings_perf.py` → index membership (Wikipedia / Nasdaq, or the in-app fallback) |
+| `market:crypto`, `market:premarket`, `day_trader:scanners`, `day_trader:news`, `wlheat:{sym}` | 5 min | crypto, pre-market movers, Day Trader, Watchlist heatmap |
+| `market:ipo-calendar:v2`, `market:ipo-pipeline` | 1 hr | `routers/ipo_lockup_calendar.py` → live from EDGAR |
+| `market:insider-feed:{days}` | 4 hr | `routers/insider_trading_feed.py` |
+| `earnings:{sym}` | 4 hr | `routers/earnings_calendar.py` → upcoming dates + EPS estimates |
+| `rich_earn:{symbol}` | 2 hr | `routers/rich_earnings_calendar.py` → expected move, beat rate, pre-earnings drift |
+| `earnings:history:{symbol}` | 6 hr | `routers/earnings_history.py` → 8 quarters EPS/revenue |
+| `earnings:play:{sym}`, `earnstrat:{sym}`, `earnsurp:{sym}` | 4 hr · 6 hr · 12 hr | earnings play calculator, strategy analyzer, surprise tracker |
+| `analyst:{sym}`, `analyst_tracker:{sym}` | 6 hr | `routers/analyst_ratings.py`, `analyst_rating_tracker.py` (separate keys on purpose — they once collided) |
+| `analyst_hist:{symbol}` | 10 min | `routers/analyst_history.py` |
+| `insider:{sym}`, `institutional:{symbol}`, `filings:{symbol}` | 4 hr · 4 hr · 12 hr | Chart-modal Insider, Institutional and SEC Filings tabs |
+| `div:{sym}`, `dividends:{…}` | 6 hr · 4 hr | `routers/dividend_tracker.py`, `routers/dividends.py` |
+| `options:exps:{sym}`, `options:chain:{sym}:{expiry}` | 15 min | `routers/options_chain.py` |
+| `uoa:{sym}`, `uoa:{symbols}` | 10 min · 30 min | `routers/unusual_options.py` |
+| `strategies:{symbol}:{view}`, `sentiment:{symbol}`, `snapshot:{symbol}` | 1 hr · 1 hr · 15 min | AI options strategies, per-symbol AI sentiment, Stock Analyzer snapshot |
+| `news_sentiment:{symbols}` | 2 hr | `routers/news_sentiment_engine.py` |
+| `ai:analyst`, `ai:stocks` | 15 min | `routers/ai_analyst_actions.py`, `ai_stocks.py` |
+| `transcript:{sym}` | 24 hr | `routers/earnings_call_summarizer.py` |
+| `fundc:{symbol}`, `dcf_prefill:{sym}` | 2 hr | fundamentals comparison, DCF pre-fill |
+| `priceproj:{sym}` | 2 hr | `routers/price_projection.py` |
+| `screener:tech:{scan}`, `screener:fund:{screen}` | 20 min | `routers/screener.py` |
+| `signals:{symbol}`, `rs:{symbols}`, `seasonal:{sym}:{years}`, `etfhold:{sym}`, `etfoverlap:{…}` | 30 min · 30 min · 24 hr · 24 hr · 24 hr | signals, relative strength, seasonality, ETF overlap |
+| `range_screen:universe` | 30 min | `routers/range_screener.py` → ~290-symbol universe |
+| `corr:{symbols}:{period}` | 30 min (portfolio) · 1 hr (market) | `correlation_matrix.py`, `market_correlation.py` |
+| `portfolio:risk`, `portfolio:frontier` | 30 min | risk dashboard, efficient frontier |
+| `portfolio:xray` | 1 hr | `routers/portfolio_xray.py` |
+| `portfolio:net-exposure`, `home:summary` | 2 min | net exposure, Home dashboard |
+| `merger_edgar_scan`, `merger_opportunities_scan`, `spac_discovery_scan` | 4 hr | Merger Arb / SPAC EDGAR scans |
+| `activist_tracker_{days}` | 4 hr | `routers/activist_tracker.py` |
+| `edgar_search:{q}`, `edgar_holdings2:{cik}:{n}` | 12 hr · 6 hr | `routers/fund_holdings.py` |
+| `mf_ticker_map`, `bond_fund:{t}`, `bond_search:{q}`, `bond_ratings_mentions:{t}`, `convert_xbrl:{cik}`, `convert_search:{q}` | 7 days · 24 hr · 6 hr · 24 hr · 24 hr · 6 hr | bond and convertible-bond research |
+| `sec_ticker_name_map` | 24 hr | `edgar_utils.py` → SEC name → ticker map |
+| `tearsheet:{sym}` | 1 hr | `routers/tear_sheet.py` → assembled tear sheet (errors are not cached) |
+| `tearsheet_edgar:{sym}` | 24 hr | `routers/tear_sheet.py` → parsed 10-year annual history from SEC `companyfacts` |
+| `sec_rev_rows:{cik}:{accession}`, `sec_rev_labels:{cik}:{accession}` | 30 days | `sec_revenue_streams.py` → parsed revenue-by-dimension facts and member labels for one filing (filings never change) |
 
 ## Key Backend Patterns
 
@@ -334,3 +448,29 @@ A daemon thread started by `main.py`'s FastAPI `lifespan` ticks every 60 seconds
 
 **Test database isolation**
 `backend/tests/conftest.py`'s autouse `isolated_db` fixture points `database.SessionLocal` at a throwaway SQLite database for the duration of each test, so the test suite never reads or writes `backend/stockmonitor.db`. This works for every router with no per-router change, because `db_session()`/`cache_get()`/`cache_set()` in `database.py` resolve `SessionLocal` by module-level name at call time rather than capturing it at import time.
+
+**Serialise `yfinance.download`**
+`yfinance.download` stores its working state in module-level dictionaries, so two downloads in flight at once — even from different threads — corrupt each other and hang. `holdings_perf.py` wraps every call in one `threading.Lock`; per-symbol `Ticker(...).history()` calls from a thread pool are independent and safe. Any new batched download should take the same lock.
+
+**Degrade, don't fail (best-effort enrichment)**
+Optional data is layered on a reliable core and blanked quietly when it can't be trusted. The Tear Sheet runs ~20 fetches in parallel with each wrapped in `_safe` (failure → `None`); SEC revenue-by-stream data is kept only when its members reconcile to reported revenue (tolerance 0.3% — looser let double-counting partitions through); foreign ADRs reporting in another currency skip per-share models; banks blank free cash flow; a partial long-history download is used for the request but never cached. The UI shows an explanatory note instead of a wrong number.
+
+**Pure core, injected I/O**
+Features with real logic are split into a pure computation module and a thin router — `holdings_perf.py`, `income_flow.py`, `sec_revenue_streams.py`, `tear_sheet.py`'s `_build_tear_sheet`. Network calls (`yf.download`, SEC requests, Wikipedia) sit behind small functions that tests replace, so the maths is verified against hand-computed numbers and the failure modes (a failed chunk, a restated year, an unreconcilable segment set) are reproduced deterministically.
+
+**Compute layout once, draw twice**
+The quarterly income Sankey is laid out in the backend (`income_flow.layout_sankey` returns node rectangles and Bézier link paths in a fixed 1000×420 space). `TearSheet.jsx` renders it as SVG and `tear_sheet_pdf.py` as reportlab vector graphics, so the page and the PDF cannot drift apart, and the layout (bounds, overlap, label spacing, proportionality) is unit-tested in Python.
+
+## Testing
+
+| Suite | Size | Notes |
+|---|---|---|
+| Backend (pytest) | 571 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 208 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
+
+Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.
+
+## Deployment
+
+One process serves everything: `uvicorn main:app` serves the API, the WebSocket and — via the SPA catch-all registered last — the built frontend from `frontend/dist`. `render.yaml` describes a Render web service (build: `npm install && npm run build` in `frontend/`, then `pip install -r requirements.txt`; start: `uvicorn main:app`). SQLite lives beside the code, the digest scheduler is a thread in the same process (so run a single worker), and there is no authentication — the app is built for one user on a trusted machine, not for the open internet.

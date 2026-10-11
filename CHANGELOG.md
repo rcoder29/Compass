@@ -4,6 +4,25 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Documentation Refresh & User Guide Crash Fix
+
+A full audit of every document against the code. It found stale claims in all of them and one real bug in the in-app User Guide.
+
+### Fixed
+- **The in-app User Guide crashed on render.** `UserGuide.jsx`'s `Section` passed `onNavigate` to its blocks but never received it (and `UserGuide` never passed it to `Section`), so any render threw `ReferenceError: onNavigate is not defined`. Introduced by the changelog "Open feature" jump links (commit `0806f28`, 2026-09-27) and visible as 15 failing `UserGuide.test.jsx` tests that were mistakenly written off as stale — they were reporting a production bug. `Section` now receives and forwards `onNavigate`.
+- `holdings_perf.py` imports `beautifulsoup4` directly but `requirements.txt` only got it transitively through yfinance; it is now declared.
+- The Daily/Weekly Digest sequence diagram in `ARCHITECTURE.md` never parsed (a `;` inside a message ends a statement in Mermaid) and had presumably never rendered; fixed, and the new Holdings Performance diagram had the same slip.
+
+### Tests
+- `UserGuide.test.jsx` 15 → 22 tests (frontend suite now fully green, 208): regression tests that the guide renders with a navigation handler and that "Open feature" buttons (single and multi-feature entries) call it with the right tab; and two **documentation-integrity tests** — every sidebar view in `App.jsx` must appear in the guide, and every changelog link must target a route `App.jsx` can render (they derive the lists from `App.jsx`, so they keep working as views are added).
+
+### Documentation
+- **README** — added the feature sections that were missing entirely (Merger Arb, SPACs, Retirement, Home/Learning/Help) plus Price Projection, Wheel Tracker, Tax Lots, Stress Test, Attribution, CPPI and Net Exposure; corrected the tech stack (Python 3.12, yfinance 1.2, Claude Sonnet 4.6/Haiku 4.5, Gemini option, SEC/Treasury.gov/Wikipedia/Nasdaq sources, reportlab, Vitest); a table of every environment variable; build, deploy and test instructions; **13 documented endpoints did not exist** (leftovers from before the router extraction renamed them) and are replaced by a curated list checked route by route, with a pointer to the live `/docs` reference (~175 endpoints); the project tree now includes `database.py`, the 12 routers and ~66 components that were missing; a stale "pending extraction" note removed; the cache table replaced with verified durations (news was documented as 30 min but is 5, the options chain 5 but is 15, fundamentals 2 hr but 5 min, the earnings calendar 12 hr but 4); notes on the `yfinance.download` thread-safety lock, best-effort enrichment, index/ETF coverage limits, the absence of authentication and hand-maintained data.
+- **ARCHITECTURE** — rewrote the system diagram (real endpoint names, SEC XBRL / Treasury.gov / Wikipedia / Nasdaq sources, helper modules); added data-flow diagrams and design notes for the Tear Sheet (parallel fetch, 10-year SEC history merge and split adjustment, valuation verdict, income flow) and Holdings Performance (universe resolution, shared long-history anchors, download lock); a complete component map for all 88 views; a complete cache-key table extracted from the code; new patterns (serialise `yfinance.download`, degrade-don't-fail, pure core with injected I/O, compute layout once and draw twice); Testing and Deployment sections. All nine Mermaid diagrams were checked with the Mermaid parser.
+- **PRODUCT_ENHANCEMENTS** — the views table is generated from the sidebar definition (88 views, 10 groups); every gap re-verified against the code. Corrected: CSV import *does* exist (generic columns, no broker formats or ticker validation); the Trade Journal *does* report win rate and P&L by strategy (expectancy, average win/loss and holding-period breakdowns are what's missing); PDF export is partly built (header Export PDF + the Tear Sheet's PDF). Added gaps found in this period: full holdings for arbitrary ETFs, peer-relative valuation on the Tear Sheet, revenue-breakdown coverage, hand-maintained macro-calendar dates, backtester realism, a second data provider, Investor Education depth.
+- **User Guide** — new Merger Arb and SPACs sections, a complete navigation table (10 groups, was "9"), real cache durations, a ⌘K shortcut entry, and an updated "Evaluating a New Stock" workflow plus a new one for finding leaders in an index or sector.
+- **PROJECT.md** now opens with a banner saying it is the historical April–May 2026 build journal, not current documentation. **`backend/.env.example`** added (and `.gitignore` taught to allow it).
+
 ## 2026-10-11 — Holdings Performance
 
 New Markets → Holdings Performance page: every holding of an index or ETF with its return over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD. The existing Index Heatmap stops at 1Y, covers only the S&P top 100, and gets ETF holdings from Yahoo's top 10.

@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Documentation Refresh & User Guide Fix' },
+  { type: 'bullets', items: [
+    'Fixed a crash in this User Guide: since the changelog "Open feature" links were added, opening the guide threw an error because the navigation handler never reached the section renderer. The guide now renders again and the links work.',
+    'New User Guide sections for Merger Arb (7 views) and SPACs (7 views), which previously appeared only in the navigation table. The navigation table now lists every view, the caching table shows the real durations (several were wrong), and the "Evaluating a New Stock" workflow starts at the Tear Sheet.',
+    'README, ARCHITECTURE and the roadmap were audited against the code and corrected: the feature list now covers all 10 sidebar groups, the API section lists only endpoints that exist (13 documented ones did not), the tech stack and cache tables match the code, and diagrams were added for the Tear Sheet and Holdings Performance. A new backend/.env.example lists every setting.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Holdings Performance', tabId: 'holdingsperf' },
   { type: 'bullets', items: [
     'New Markets → Holdings Performance: pick an index (S&P 500, Nasdaq-100, Dow 30), a sector SPDR (XLK, XLF…) or any ETF ticker and see every holding\'s total return over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD with a benchmark row and Average / Median / % up / % beating-benchmark stats.',

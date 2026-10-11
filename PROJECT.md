@@ -1,5 +1,11 @@
 # Stock Monitor — Project Journal
 
+> **Historical document.** This is the session-by-session journal from the app's first build (April–May 2026,
+> when it was a watchlist with a handful of tabs) and is deliberately **not** kept current — its "Current State"
+> section describes that early version. For the app as it is now, see `README.md` (features, setup, API),
+> `ARCHITECTURE.md` (design and data flows), `CHANGELOG.md` (what was built and when) and
+> `PRODUCT_ENHANCEMENTS.md` (what is still missing). The "Learnings & Notes" at the bottom are still worth reading.
+
 ## Goal
 Build a web application to monitor a personal watchlist of securities. The app should:
 - Display live price movements and key financial metrics

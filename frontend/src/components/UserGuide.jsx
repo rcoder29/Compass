@@ -18,15 +18,16 @@ const GUIDE = [
         'Allow browser notifications when prompted — alerts fire even when you switch tabs.',
       ]},
       { type: 'h3', text: 'Navigation' },
-      { type: 'p', text: 'The left sidebar organises all features into 9 groups. All groups start collapsed — click a group header to expand it. Only the group containing your current view opens automatically. Click any item to load that view. Home is pinned above the groups and the User Guide button is pinned below them. On mobile, tap ☰ to open the sidebar drawer.' },
+      { type: 'p', text: 'The left sidebar organises all features into 10 groups. All groups start collapsed — click a group header to expand it. Only the group containing your current view opens automatically. Click any item to load that view. Home is pinned above the groups and the User Guide button is pinned below them. On mobile, tap ☰ to open the sidebar drawer.' },
       { type: 'p', text: 'Hover any item inside a group to reveal a ☆ button on its right — click it to pin that item. Pinned items collect in a "Pinned" section above the groups (with a filled ★ to unpin), so your most-used views are always one click away without expanding anything. Pins are saved locally and start empty.' },
       { type: 'table', headers: ['Group', 'What\'s Inside'], rows: [
-        ['Markets', 'Overview, Sentiment, Index Heatmap, Holdings Performance, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators'],
+        ['Markets', 'Overview, Sentiment, Reddit Trending, Index Heatmap, Holdings Performance, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators'],
         ['Research', 'Tear Sheet, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options'],
         ['Watchlist', 'Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts'],
         ['News', 'My News Feed'],
         ['Trading', 'Trade Ideas, Position Sizer, Wheel Tracker, Day Trader'],
-        ['Merger Arb', 'Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix'],
+        ['Merger Arb', 'Overview, Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix, Alerts'],
+        ['SPACs', 'Overview, Tracker, Discovery, Deal Analyzer, Portfolio, Alerts, Risk Matrix'],
         ['Portfolio', 'Portfolio, Options P&L, Tax Lots, Dividend Tracker, Stress Test, Attribution, Trade Journal, CPPI Allocator, Net Exposure'],
         ['AI Tools', 'Morning Briefing, Digests, Stock Analyzer, Portfolio Review, Financial Advisor, Tax Advisor, AI Chat'],
         ['Retirement', 'FIRE Calculator, Coast FIRE & Roth, Monte Carlo, Social Security, Early Retirement Health, Roth Conversion Planner, Medicare Estimator, Estate & RMD'],
@@ -1089,6 +1090,46 @@ const GUIDE = [
     ],
   },
   {
+    id: 'merger-arb',
+    title: 'Merger Arb',
+    icon: '⇄',
+    blocks: [
+      { type: 'p', text: 'Merger arbitrage is buying a takeover target for less than the deal will pay, and earning the spread if the deal closes. The group has seven views that share one list of tracked deals. Prices are live; deal terms, status and dates are entered by you (or added from the scanner).' },
+      { type: 'table', headers: ['View', 'What it does'], rows: [
+        ['Overview', 'The hub. Lists every tracked deal by soonest expected close, plus the newest filings you aren\'t tracking yet (with quick-add). Click a deal to open it in the Deal Analyzer, or "Dashboard" to jump to its row.'],
+        ['Deal Dashboard', 'Your tracked deals with live spread, annualised return to expected close, days to close and a risk level. Add a deal with the target ticker, acquirer, deal type (cash, stock or mixed), offer price, dates, status (pending regulatory, shareholder vote, financing, closing, terminated, closed), deal value and regulator. A panel below lists recent tender-offer filings from SEC EDGAR.'],
+        ['Opportunity Scanner', 'Scans EDGAR over the last 60 days for merger-related filings (tender offers, going-private transactions, merger proxies, S-4s and 425 communications), pulls the ticker, adds the live price and 5-day / 1-month change, marks deals you already track, and lets you add one with a click. Filter by form type, search, or hide tracked deals.'],
+        ['Deal Analyzer', 'Risk / reward for one deal, tracked or ad hoc: an estimated walk-away price (from pre-announcement trading, or a 15% discount if unavailable), upside and downside, the market-implied probability the deal closes, a point breakdown of the risk factors, and an expected-value table across close probabilities from 50% to 95%.'],
+        ['Arb Portfolio', 'Your positions against tracked deals: cost basis, market value, unrealised P&L, value if the deal closes, and concentration by deal type and by regulator.'],
+        ['Risk Matrix', 'A bubble chart of tracked deals (days to close against annualised return; bubble size is deal value, colour is risk level) and a regulator-by-deal-type grid shaded by average risk.'],
+        ['Alerts', 'Rules tied to a specific deal: days to close below a threshold (fires when overdue too), spread above or below a level, or the deal reaching a status such as Closing or Terminated. Click Scan to check them; there is no background polling.'],
+      ]},
+      { type: 'bullets', items: [
+        'The risk score adds up five factors: deal structure, spread size, regulatory scrutiny, deal size and time horizon. The Deal Dashboard and Deal Analyzer use the same breakdown.',
+        'Net Exposure (Portfolio) counts arb capital as a separate event-driven sleeve rather than market beta, because its risk is the deal failing, not the market falling.',
+      ]},
+      { type: 'tip', text: 'Disclaimer: the implied close probability and risk scores are mechanical estimates from the inputs you provide. Deal terms change, and a failed deal can cost far more than the spread offered.' },
+    ],
+  },
+  {
+    id: 'spacs',
+    title: 'SPACs',
+    icon: '◎',
+    blocks: [
+      { type: 'p', text: 'A SPAC (blank-check company) holds investors\' money in a trust and has a deadline to merge with a target. Its shares can usually be redeemed for the trust value plus interest, which puts a floor under the price. When a SPAC trades below trust value, buying it and redeeming earns the discount with limited downside; its warrants add leveraged upside if a deal works. This is a different trade from merger arbitrage, so it has its own group.' },
+      { type: 'table', headers: ['View', 'What it does'], rows: [
+        ['Overview', 'The hub: tracked SPACs by soonest redemption deadline (click one to open it in the Deal Analyzer or the Tracker) and the newest untracked filings from Discovery with quick-add.'],
+        ['Tracker', 'Your SPACs with live discount or premium to trust value, annualised yield to the deadline, days to the redemption deadline and warrant price, sorted by yield so the best opportunities come first.'],
+        ['Discovery', 'Scans EDGAR over 60 days for new SPAC IPOs (S-1 blank-check filings) and for de-SPAC merger announcements (425, DEFM14A and S-4 filings mentioning a trust account). Common and warrant tickers are parsed from the filing, and a SPAC can be added to the Tracker in one click.'],
+        ['Deal Analyzer', 'The floor case (return if you buy now and redeem at trust by the deadline), warrant intrinsic value, time value and breakeven, and a redeem-versus-hold table from a weak aftermarket up to +200% over trust for both the common stock and the warrants.'],
+        ['Portfolio', 'Common stock and warrant positions, tracked separately with their own live prices. The summary shows cost, market value, unrealised P&L and a Trust-Protected figure: the redemption value of your common shares, recoverable whatever happens to the deal. Warrants are excluded from it, since they carry no redemption right and can go to zero.'],
+        ['Alerts', 'Rules per SPAC: deadline within N days (fires when overdue too), discount or premium to trust above or below a level, or a deal being announced. Click Scan to check them.'],
+        ['Risk Matrix', 'A scatter of annualised yield against days to deadline, with bubble size for the discount and colour for the deal stage, plus a stage-by-urgency grid and quick lists of the nearest deadlines and the best yields. There is no synthetic risk score here: it simply maps entry attractiveness against catalyst timing.'],
+      ]},
+      { type: 'tip', text: 'Disclaimer: trust values, deadlines and warrant terms are entered by you, so the yields are only as good as those inputs. Redemption rights, extensions and sponsor terms vary by SPAC; read its filings.' },
+    ],
+  },
+  {
     id: 'ai-tools',
     title: 'AI Tools',
     icon: '✦',
@@ -1471,24 +1512,26 @@ const GUIDE = [
       { type: 'table', headers: ['Key', 'Action'], rows: [
         ['Escape', 'Close any open modal (chart, alert).'],
         ['Enter', 'Submit forms (add ticker, add alert, run screener, send chat message).'],
+        ['⌘K / Ctrl+K', 'Open the command palette to jump to any tool by name.'],
       ]},
       { type: 'h3', text: 'Data Caching' },
       { type: 'p', text: 'The app caches API responses in SQLite to avoid rate limits and reduce latency. Cache durations:' },
       { type: 'table', headers: ['Data', 'Cache Duration'], rows: [
-        ['Live quotes', 'No cache — real-time via WebSocket or REST polling.'],
-        ['Chart data', '5 minutes (intraday), 1 hour (daily periods).'],
-        ['Fundamentals', '2 hours.'],
-        ['News / headlines', '30 minutes.'],
-        ['Market Breadth', '30 minutes.'],
-        ['Treasury yields & DXY', '30 minutes.'],
-        ['Earnings calendar', '12 hours.'],
-        ['Options chain', '5 minutes.'],
-        ['Unusual Options Activity', '30 minutes.'],
+        ['Live quotes', 'No cache — real-time via WebSocket (refreshed every few seconds) or REST polling.'],
+        ['Chart data', 'Scales with the period: 1 minute (1D), 5 minutes (5D), 30 minutes (1M, 3M), 1 hour (6M), 4 hours (1Y, 2Y), 24 hours (5Y).'],
+        ['Fundamentals', '5 minutes (quote panels); 2 hours (side-by-side comparison, DCF pre-fill).'],
+        ['Market overview and performance', '15 minutes.'],
+        ['News / headlines', '5 minutes.'],
+        ['Market Breadth, Sector Momentum, Economic Indicators, Fed Watch', '30 minutes.'],
+        ['Sector Rotation, Index Heatmap, Options chain', '15 minutes.'],
+        ['Treasury yields and DXY', '30 minutes (live rates); 6 hours (Treasury.gov curve data).'],
+        ['Earnings calendar', '4 hours (upcoming dates); 2 hours (Earnings+).'],
+        ['Unusual Options Activity', '10 minutes per symbol; 30 minutes for the watchlist scan.'],
         ['SEC filings', '12 hours.'],
         ['Earnings call summary', '24 hours.'],
-        ['DCF pre-fill data', '2 hours.'],
-        ['Sector momentum', '30 minutes.'],
-        ['News sentiment', '2 hours.'],
+        ['News sentiment', '2 hours (watchlist batch); 1 hour (per-symbol AI).'],
+        ['Tear Sheet', '1 hour; its 10-year SEC history 24 hours; SEC revenue-by-stream data 30 days (filings never change).'],
+        ['Holdings Performance', '15 minutes for the table; 26 hours for the long-history prices that 3Y to life-to-date returns need.'],
       ]},
       { type: 'h3', text: 'Common Workflows' },
       { type: 'h3', text: 'Morning Market Check (5 minutes)' },
@@ -1501,12 +1544,20 @@ const GUIDE = [
       ]},
       { type: 'h3', text: 'Evaluating a New Stock (10 minutes)' },
       { type: 'steps', items: [
+        'Research → Tear Sheet: read the one-page snapshot first — business, 10-year track record, valuation verdict, analyst ratings and where the revenue goes. Download the PDF if you want to keep it.',
         'Add to watchlist → click the row to open the chart modal.',
         'Chart tab: check SMA50/200 trend, RSI level, and volume pattern.',
         'Earnings tab: read the AI earnings call summary for the last quarter.',
         'Analyst tab: check consensus rating and price target distribution.',
-        'Research → DCF Valuation: run a quick intrinsic value estimate.',
-        'Research → Fundamental Comparison: compare vs 2–3 sector peers.',
+        'Research → DCF Valuation: run your own intrinsic value estimate with assumptions you choose.',
+        'Research → Fundamentals: compare vs 2–3 sector peers.',
+      ]},
+      { type: 'h3', text: 'Finding the Leaders in an Index or Sector' },
+      { type: 'steps', items: [
+        'Markets → Holdings Performance: open the S&P 500 (or a sector ETF such as XLK) — it is ranked by year-to-date return.',
+        'Click the 1M or 3M header to see what has momentum now, or switch on "Annualise 3Y+" to compare long-run winners fairly.',
+        'Look at the "% beating SPY" row to see how broad the strength is.',
+        'Click a symbol for its chart, then open Research → Tear Sheet to check whether the move is backed by earnings.',
       ]},
       { type: 'h3', text: 'Pre-Earnings Positioning' },
       { type: 'steps', items: [
@@ -1613,7 +1664,7 @@ function Block({ block, onNavigate }) {
   }
 }
 
-function Section({ section, query }) {
+function Section({ section, query, onNavigate }) {
   const matchesQuery = !query ||
     section.title.toLowerCase().includes(query) ||
     section.blocks.some(b =>
@@ -1721,7 +1772,7 @@ export default function UserGuide({ onNavigate, initialSection } = {}) {
         {visibleIds.length === 0 ? (
           <div className="py-16 text-center text-gray-600 text-sm">No results for "{query}"</div>
         ) : (
-          GUIDE.map(s => <Section key={s.id} section={s} query={q} />)
+          GUIDE.map(s => <Section key={s.id} section={s} query={q} onNavigate={onNavigate} />)
         )}
 
         <div className="text-gray-700 text-xs pb-8">

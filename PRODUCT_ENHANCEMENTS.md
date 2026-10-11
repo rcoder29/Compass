@@ -1,53 +1,64 @@
 # StockMonitor — Product Enhancement Roadmap
 
 > Audience: retail investor who day-trades, invests long-term, monitors markets, and tracks portfolio risk/P&L.
-> Last reviewed: 2026-09-27
+> Last reviewed: 2026-10-11 — every claim below was re-checked against the code in that review (several older
+> "gaps" turned out to be partly built; they are reworded rather than removed).
 
 ---
 
 ## What exists today
 
-The app has grown from 7 tabs to 90+ views across 11 sidebar groups, plus an in-app Investor Education module (5-layer onion map of investing concepts, unrelated to the tab count below). Nearly everything proposed in the original (2026-05-27) version of this roadmap has since shipped. Current state by group:
+The app has grown from 7 tabs to **88 views across 10 sidebar groups**, plus a Home dashboard, an in-app User Guide and an Investor Education module (a layered map of investing concepts, separate from the view count). Nearly everything proposed in the original (2026-05-27) version of this roadmap has since shipped. The groups below are generated from the sidebar definition in `App.jsx`:
 
 | Group | Views |
 |-------|-------|
-| **Home** | Aggregated dashboard (P&L, market pulse, movers, earnings, alerts, recents) + ⌘K command palette |
-| **Markets** | Overview, Sentiment, Reddit Trending, Index Heatmap, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators |
-| **Research** | Screener (preset + custom), Range Screener (30/60/90-day support/resistance scan), Tear Sheet (one-page company snapshot + valuation verdict), Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Activist Tracker (13D/13G), Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options Activity |
-| **Watchlist** | Watchlist, Heatmap, Correlation Matrix, Price Targets, Earnings+, News Sentiment, Smart Alerts |
-| **News** | Custom multi-ticker news feed |
-| **Trading** | Trade Ideas, Position Sizer, Wheel Tracker, Day Trader (plan calculator, scanner, playbooks) |
+| **Home** | Aggregated dashboard (P&L, market pulse, movers, earnings, alerts, recents, "What's New") + ⌘K command palette |
+| **Markets** | Overview, Sentiment, Reddit Trending, Index Heatmap, Holdings Performance, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators |
+| **Research** | Tear Sheet, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options |
+| **Watchlist** | Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts |
+| **News** | My News Feed |
+| **Trading** | Trade Ideas, Position Sizer, Wheel Tracker, Day Trader |
 | **Merger Arb** | Overview, Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix, Alerts |
 | **SPACs** | Overview, Tracker, Discovery, Deal Analyzer, Portfolio, Alerts, Risk Matrix |
-| **Portfolio** | Portfolio (heatmap/table), Options P&L, Tax Lots, Dividend Tracker, Stress Test, Attribution, Trade Journal, CPPI Allocator, Net Market Exposure |
-| **AI Tools** | Morning Briefing, Digests (scheduled daily/weekly recap, delivered to Telegram), Stock Analyzer, Portfolio Review, Financial Advisor, Tax Advisor, AI Chat |
+| **Portfolio** | Portfolio, Options P&L, Tax Lots, Dividend Tracker, Stress Test, Attribution, Trade Journal, CPPI Allocator, Net Exposure |
+| **AI Tools** | Morning Briefing, Digests, Stock Analyzer, Portfolio Review, Financial Advisor, Tax Advisor, AI Chat |
 | **Retirement** | FIRE Calculator, Coast FIRE & Roth, Monte Carlo, Social Security, Early Retirement Health, Roth Conversion Planner, Medicare Estimator, Estate & RMD |
+| **Help** | User Guide (with changelog), Investor Education |
 
-Chart modal (used across Watchlist/Portfolio/Research) includes SMA 20/50/200, Bollinger Bands, RSI(14), MACD sub-panes, a Volume Profile overlay (20-period avg volume line + >2x-average surge highlighting), and S/R + trend-line drawing tools persisted per symbol. Data sources: yfinance + Yahoo Finance, SEC EDGAR (13D/13G, N-PORT, S-1/S-11 for IPOs), FRED-style macro series, Reddit. Alerts (price/volume/earnings) persist to SQLite but are still only *evaluated* client-side (see Remaining gaps). Portfolio snapshots persist nightly for drawdown/benchmark tracking. WebSocket push exists for live watchlist prices. CSV export exists for portfolio/trade data. The backend itself was fully modularized in September 2026 (main.py: ~12,300 lines → ~550-line core + ~90 router files) — see `ARCHITECTURE.md`.
+**Recently added (Oct 2026):** *Tear Sheet* — a one-page company snapshot with a cheap-or-expensive verdict (four valuation models), a 10-year financial track record built from SEC filings, projected 12-month and 5-year returns, analyst ratings, a quarterly **income-flow Sankey** (revenue by product/segment → costs → net income → dividends and buybacks, with the breakdown read from SEC XBRL), and a server-generated PDF. *Holdings Performance* — every holding of the S&P 500, Nasdaq-100, Dow 30, their ETFs or a sector SPDR over 1D to life-to-date, ranked by YTD with a benchmark row and summary stats. *Price Projection* — a 1-year price cone from options, rates, VIX and credit.
+
+Chart modal (used across Watchlist/Portfolio/Research) includes SMA 20/50/200, Bollinger Bands, RSI(14), MACD sub-panes, a Volume Profile overlay (20-period avg volume line + >2x-average surge highlighting), and S/R + trend-line drawing tools persisted per symbol. Data sources: yfinance + Yahoo Finance APIs (market data), SEC EDGAR (filings, XBRL company facts, N-PORT), Treasury.gov (yield curve), Wikipedia and Nasdaq (index membership); AI features use Anthropic Claude.
 
 ---
 
 ## Remaining gaps
 
-Everything below was in the original roadmap (or a natural extension of it) and is still genuinely unbuilt, based on a code audit last updated 2026-09-27 (re-confirmed accurate; no gaps closed since the 09-23 review — the Range Screener work in between was a refinement of an already-listed feature, not a new one).
+Everything below is genuinely unbuilt or only partly built, based on the code audit of 2026-10-11. Items marked *(partly built)* have a foundation worth building on.
 
 ### P1
-- **Backend-evaluated price/condition alerts** — alerts (price, % change, 52-week break, volume spike, Smart Alert rules) persist to SQLite but are only ever *checked* by the browser (`PATCH /api/alerts/{id}/trigger` is called from the frontend), so nothing fires unless a tab is open. The daily/weekly Digest (shipped 2026-09-19) works around this once a day by checking alerts server-side when it builds, but a real-time backend scheduler that evaluates rules continuously and pushes through the same Telegram channel is still unbuilt. Explicitly proposed and deferred by the user on 2026-09-22 ("skip alerts for now") — worth revisiting.
+- **Backend-evaluated price/condition alerts** — alerts (price, % change, 52-week break, volume spike, Smart Alert rules) persist to SQLite but are only ever *checked* by the browser (`PATCH /api/alerts/{id}/trigger` is called from the frontend), so nothing fires unless a tab is open. The daily/weekly Digest checks price alerts independently ("near target" lines) but does not evaluate or trigger them. A scheduled backend evaluation that pushes through the existing Telegram channel would close the gap and make four existing alert features useful when the app is closed. Previously deferred at the user's request.
 
 ### P2
-- **Extended-hours prices surfaced in Watchlist/Portfolio rows** — the backend already fetches pre/post-market prices (`_fetch_premarket`, used by the standalone Pre-Market Movers view), but Watchlist and Portfolio row data don't show pre/post-market price or change inline.
-- **Mobile / responsive layout** — the app is desktop-first (wide tables, dense panels); only sparse responsive breakpoints exist. No card-view fallback for small screens.
-- **Portfolio-aware digest/research sections** — analyst rating changes, insider selling, and new SEC filings for the user's actual holdings, plus distance from 52-week high/low, surfaced in the Digest or as a dedicated view. The underlying routers (analyst ratings, insider trading feed, SEC filings) already exist per-symbol; nothing currently rolls them up across a whole portfolio.
-- **Broker/CSV import** — `csv_export_import.py` exports; there's no import path (Schwab/Fidelity/IBKR position exports) to get an existing portfolio in without manual entry. With ~190 hand-entered positions in the live portfolio, this would also likely catch bad/delisted tickers at import time instead of silently carrying them at cost.
+- **Complete holdings for arbitrary ETFs** — Holdings Performance shows every holding for the S&P 500, Nasdaq-100, Dow 30, their index ETFs and the 11 sector SPDRs, but only Yahoo's top 10 for any other fund (ARKK, VTI, IWM, thematic and bond ETFs). The Fund Holdings explorer already reads full SEC N-PORT filings, but it maps holding *names* to tickers by fuzzy matching, which isn't reliable enough to drive a returns table; a ticker → series → N-PORT lookup with exact identifiers (CUSIP/ISIN → ticker) would fix it. *(partly built)*
+- **Extended-hours prices surfaced in Watchlist/Portfolio rows** — the backend already fetches pre/post-market prices (`_fetch_premarket`, used by the Day Trader's Pre-Market Movers panel), but Watchlist and Portfolio row data don't show pre/post-market price or change inline.
+- **Mobile / responsive layout** *(partly built)* — the sidebar collapses to a ☰ drawer and components use responsive utility classes, but the app is desktop-first: wide tables and dense panels have no card-view fallback on small screens.
+- **Portfolio-aware digest/research sections** — analyst rating changes, insider selling, and new SEC filings for the user's actual holdings, plus distance from 52-week high/low, surfaced in the Digest or as a dedicated view. The underlying routers (analyst ratings, insider trading feed, SEC filings) already exist; they just aren't composed per-holding.
+- **Broker-format import and ticker validation** *(partly built)* — Portfolio has a generic CSV import (`POST /api/portfolio/import`: columns Symbol, Shares, Avg Cost, with a few alias names), but nothing parses Schwab/Fidelity/IBKR exports directly, and imported tickers aren't validated. With ~190 hand-entered positions in the live portfolio, validating tickers at import time would also catch bad or delisted symbols.
+- **Peer-relative valuation on the Tear Sheet** — the verdict compares a stock to its own history and to simple growth/DCF models; it has no sector or peer medians (P/E, EV/EBITDA, margins vs. the industry), which is the most common second question after "is it expensive?".
+- **Revenue breakdown coverage** — the Tear Sheet's income-stream breakdown depends on companies tagging revenue by product/segment in a way that reconciles to reported revenue; it resolves for most large non-financials (Apple, Microsoft, Amazon, Alphabet, Disney, Visa, …) but not for banks or for filers such as JPM, XOM and NFLX, which fall back to a single revenue node. Segment *profit* (operating income by segment) isn't shown at all.
+- **Macro Calendar dates are hand-maintained** — `routers/economic_calendar.py` holds a hard-coded schedule that currently runs through December 2026 and has to be refreshed by hand; sourcing it from the BLS/Fed calendars would remove the upkeep.
+- **Backtester realism** — three strategies (MA crossover, RSI reversal, Bollinger Bands) with no commissions, slippage or position sizing, and no walk-forward or out-of-sample testing.
 
 ### P3
 - **Fibonacci retracement drawing tool** — the chart modal already has S/R and trend-line drawing (persisted per-symbol to localStorage); Fibonacci levels are the one drawing type from the original roadmap still missing.
-- **PDF export** — CSV export exists (portfolio, trade journal) but there's no PDF export for the Financial Advisor plan or AI Advisor output.
-- **Trade Journal analytics** — win rate, expectancy, and P&L by strategy/holding-period exist as raw log data (`trade_journal` table) but aren't summarized anywhere.
+- **Trade Journal analytics beyond win rate** *(partly built)* — the journal reports win rate and P&L by strategy with FIFO-matched realised P&L; it doesn't yet compute expectancy, average win/loss, holding-period or time-of-day breakdowns, or drawdown from the trade log.
+- **PDF export for the other pages** *(partly built)* — the header's Export PDF saves any page through the browser's print dialog, and the Tear Sheet has its own server-generated PDF with vector charts; the Financial Advisor plan, screeners and portfolio views have no purpose-built PDF.
+- **Investor Education depth** — no quizzes or progress tracking, no glossary, and no portfolio/behavioural-finance layer yet.
+- **A second market-data provider** — everything market-related rests on yfinance/Yahoo's unofficial endpoints, which can rate-limit, change shape or go down; a secondary source for quotes and history would remove that single point of failure.
 - **Level 2 / order flow** — would require a brokerage API (Alpaca, IBKR, TD Ameritrade); out of scope for the yfinance-based stack. Noted for future consideration only.
 
 ---
 
 ## Suggested next build
 
-Two candidates, depending on priority: **backend-evaluated alerts** (P1, previously deferred — the highest-value remaining gap since four existing alert features depend on it) or **extended-hours row data** (still the smallest remaining item — the backend plumbing (`_fetch_premarket`) already exists, it just needs to be surfaced in the Watchlist and Portfolio row UI).
+Two candidates, depending on priority: **backend-evaluated alerts** (P1, previously deferred — the highest-value remaining gap since four existing alert features depend on it) or **peer-relative valuation on the Tear Sheet** (the natural completion of the newest feature: the SEC filings pipeline and the index universes from Holdings Performance already supply the peer sets and the financials needed to compute sector medians). The smallest self-contained item is **extended-hours row data**, since the backend plumbing already exists.
