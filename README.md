@@ -240,7 +240,7 @@ cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 907 t
 cd frontend && npm test                # 284 tests (Vitest + Testing Library)
 ```
 
-The backend suite never touches `backend/stockmonitor.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
+The backend suite never touches `backend/compass.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
 
 ### Lint gate (one-time setup)
 
@@ -532,13 +532,13 @@ stockmonitor/
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
 │   ├── tests/               pytest suite (907 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
-│   │                        real stockmonitor.db — every router reaches the DB only through
+│   │                        real compass.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
 │   │                        by name at call time, so patching it redirects the whole app.
 │   │                        test_digest.py defines its own same-named fixture (also clears
 │   │                        delivery-channel env vars); pytest uses the module's own fixture
 │   │                        in place of conftest's for that file, so the two never both run.
-│   └── stockmonitor.db      SQLite database (auto-created on first run)
+│   └── compass.db           SQLite database (auto-created on first run; a pre-rename stockmonitor.db is renamed automatically)
 ├── frontend/
 │   ├── index.html
 │   ├── vite.config.js       /api + /ws proxy → localhost:8000
@@ -671,6 +671,6 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 - **WebSocket:** Run uvicorn without `--reload` in production to avoid zombie worker processes on Windows.
 - **No authentication:** the API is open and CORS allows any origin — it is built for a single user on a trusted machine. Don't expose it to the internet as-is, and don't add endpoints that send messages or spend money without guardrails.
 - **Digest scheduler:** A background thread in the backend process sends the scheduled digests (set `DIGEST_SCHEDULER=0` to disable it). It only runs while the backend is up; a digest missed while the machine was off is sent on startup if within 6 hours (daily) or the same day (weekly). Each period is sent at most once, and nothing is sent or logged until a delivery channel is configured. Uses a single process — don't run it under multiple uvicorn workers.
-- **SQLite DB:** Created automatically at `backend/stockmonitor.db` on first run. Contains watchlists, alerts, portfolio positions, trade journal, merger-arb and SPAC deals, price snapshots and the API cache.
+- **SQLite DB:** Created automatically at `backend/compass.db` on first run. Upgrading from the pre-Compass version: the first start renames `backend/stockmonitor.db` (and its `-wal`/`-shm`/`-journal` files) to `compass.db`, keeping every row; if both files exist `compass.db` is used and the old one is left alone; if the rename fails the old file keeps being used. Set `COMPASS_DB_PATH` to use a different file. Browser-side, saved watchlist/portfolio imports, theme, pinned and recent tabs move from the old `stockmonitor-*` / `sm-*` keys to `compass-*` automatically on first load. Contains watchlists, alerts, portfolio positions, trade journal, merger-arb and SPAC deals, price snapshots and the API cache.
 - **Hand-maintained data:** the Macro Calendar's event dates (`routers/economic_calendar.py`) are entered by hand and need refreshing; the current schedule runs through December 2026.
 - **Documentation upkeep:** `CHANGELOG.md` and `frontend/src/data/changelog.js` record what was built and when (past entries are never rewritten); `ARCHITECTURE.md` and this file describe the code as it is now; `PRODUCT_ENHANCEMENTS.md` tracks what is still missing; `PROJECT.md` is the original build journal from April–May 2026 and is deliberately not kept current.

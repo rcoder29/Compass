@@ -1,7 +1,7 @@
 """Shared test fixtures.
 
 isolated_db: every test in this suite runs against a throwaway SQLite
-database instead of the real backend/stockmonitor.db, so running pytest can
+database instead of the real backend/compass.db, so running pytest can
 never leave fixture data (mocked tickers, prices, watchlist/portfolio/alert
 rows written by CRUD tests, etc.) in the database the running app actually
 reads. Before this existed, test_main.py wrote directly into the real DB —
@@ -19,9 +19,16 @@ which also clears delivery-channel env vars) defines its own fixture named
 `isolated_db`; pytest resolves a module-level fixture in place of this one
 for that module, so the two never both run.
 """
+import os
+import tempfile
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+# database.py builds its engine (and may rename a pre-Compass database file) when it is first imported. Point it at a
+# throwaway file *before* that import so collecting the tests can never touch, move or create the real database.
+os.environ["COMPASS_DB_PATH"] = os.path.join(tempfile.mkdtemp(prefix="compass-test-"), "import.db")
 
 import database
 from database import Base

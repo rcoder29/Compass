@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -6,7 +7,38 @@ from datetime import datetime, timedelta
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "stockmonitor.db")
+logger = logging.getLogger(__name__)
+
+DB_NAME = "compass.db"
+LEGACY_DB_NAME = "stockmonitor.db"              # the app's name before it was renamed to Compass
+_SIDECARS = ("-wal", "-shm", "-journal")        # SQLite files that travel with the database
+
+
+def resolve_db_path(directory: str) -> str:
+    """Path of the SQLite file to use, renaming a pre-Compass database into place first.
+
+    If `compass.db` doesn't exist but `stockmonitor.db` does, the old file (and any -wal/-shm/-journal files beside it) is
+    renamed, an atomic move that keeps every row. If both exist, `compass.db` wins and the old file is left alone. If the
+    rename fails for any reason, the old file keeps being used rather than silently starting an empty database next to it.
+    `COMPASS_DB_PATH` overrides everything (used by the test suite so it can never touch the real database)."""
+    override = os.environ.get("COMPASS_DB_PATH")
+    if override:
+        return override
+    new, old = os.path.join(directory, DB_NAME), os.path.join(directory, LEGACY_DB_NAME)
+    if os.path.exists(new) or not os.path.exists(old):
+        return new
+    try:
+        for suffix in ("",) + _SIDECARS:
+            if os.path.exists(old + suffix):
+                os.replace(old + suffix, new + suffix)
+        logger.info("Renamed database %s -> %s", LEGACY_DB_NAME, DB_NAME)
+        return new
+    except OSError as exc:
+        logger.warning("Couldn't rename %s to %s (%s); continuing with the old file", LEGACY_DB_NAME, DB_NAME, exc)
+        return old
+
+
+DB_PATH = resolve_db_path(os.path.dirname(__file__))
 engine = create_engine(
     f"sqlite:///{DB_PATH}",
     connect_args={"check_same_thread": False},

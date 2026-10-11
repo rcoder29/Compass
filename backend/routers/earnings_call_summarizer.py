@@ -49,7 +49,7 @@ async def get_transcript_summary(symbol: str):
         raise HTTPException(404, "Ticker not found in EDGAR")
 
     cik_int = int(cik)
-    headers = {"User-Agent": "StockMonitor raghuravuri@gmail.com"}
+    headers = {"User-Agent": "Compass raghuravuri@gmail.com"}
 
     # Fetch recent filings to find the most recent 8-K (earnings announcement)
     loop = asyncio.get_event_loop()

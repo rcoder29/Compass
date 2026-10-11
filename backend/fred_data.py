@@ -29,7 +29,7 @@ from database import cache_get, cache_set
 logger = logging.getLogger(__name__)
 
 _FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
-_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; StockMonitor/1.0)"}
+_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; Compass/1.0)"}
 _TTL = timedelta(hours=6)
 _MAX_WORKERS = 8
 

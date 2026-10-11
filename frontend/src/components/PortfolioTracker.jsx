@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { fmt } from '../utils/format'
+import { KEYS } from '../storageKeys'
 import ChartModal from './ChartModal'
 import PortfolioRisk from './PortfolioRisk'
 import EfficientFrontier from './EfficientFrontier'
@@ -1262,7 +1263,7 @@ export default function PortfolioTracker() {
       .then(async (rows) => {
         if (rows.length === 0) {
           try {
-            const saved = localStorage.getItem('stockmonitor-portfolio')
+            const saved = localStorage.getItem(KEYS.portfolio)
             if (saved) {
               const legacy = JSON.parse(saved)
               const migrated = await Promise.all(
@@ -1274,7 +1275,7 @@ export default function PortfolioTracker() {
                   }).then(r => r.json())
                 )
               )
-              localStorage.removeItem('stockmonitor-portfolio')
+              localStorage.removeItem(KEYS.portfolio)
               setPositions(migrated)
               return
             }

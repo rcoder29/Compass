@@ -4,7 +4,7 @@ Telegram delivery, at-most-once claiming, and the API.
 Run: python -m pytest tests/test_digest.py -v
 
 Unlike test_main.py these run against a throwaway SQLite database, so they
-never touch (or depend on the contents of) the real stockmonitor.db.
+never touch (or depend on the contents of) the real compass.db.
 """
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch

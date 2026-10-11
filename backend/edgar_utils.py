@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Corporate proxy uses a self-signed cert — reuse one session with SSL disabled
 _session = curl_requests.Session(verify=False, impersonate="chrome")
 
-_EDGAR_UA = {'User-Agent': 'StockMonitor/1.0 raghuravuri@gmail.com'}
+_EDGAR_UA = {'User-Agent': 'Compass/1.0 raghuravuri@gmail.com'}
 _EDGAR_TICKERMAP_TTL = timedelta(hours=24)
 
 _EDGAR_ASSET_CATS = {
@@ -343,7 +343,7 @@ def _get_cik(ticker: str) -> str | None:
         try:
             r = _session.get(
                 "https://www.sec.gov/files/company_tickers.json",
-                headers={"User-Agent": "StockMonitor raghuravuri@gmail.com"},
+                headers={"User-Agent": "Compass raghuravuri@gmail.com"},
             )
             data = r.json()
             _TICKER_CIK_MAP = {

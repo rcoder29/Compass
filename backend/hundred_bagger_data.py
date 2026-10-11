@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 _METRICS_TTL = timedelta(hours=24)
 _UNIVERSE_TTL = timedelta(hours=24)
-_WIKI_UA = {"User-Agent": "StockMonitor/1.0 raghuravuri@gmail.com"}
+_WIKI_UA = {"User-Agent": "Compass/1.0 raghuravuri@gmail.com"}
 _WORKERS = 4
 _RETRY_COOLDOWN = 300            # seconds before a scan retries the symbols that failed (e.g. Yahoo rate limiting)
 MAX_CUSTOM = 400

@@ -35,7 +35,7 @@ def get_filings(symbol: str):
 
     try:
         url = f"https://data.sec.gov/submissions/CIK{cik}.json"
-        r = _session.get(url, headers={"User-Agent": "StockMonitor raghuravuri@gmail.com"})
+        r = _session.get(url, headers={"User-Agent": "Compass raghuravuri@gmail.com"})
         data = r.json()
 
         recent   = data.get("filings", {}).get("recent", {})

@@ -13,6 +13,7 @@ export const CHANGELOG_BLOCKS = [
   { type: 'h3', text: '2026-10-11 — Renamed to Compass' },
   { type: 'bullets', items: [
     'Stock Monitor is now Compass: new name in the header, browser tab, User Guide and the Tear Sheet PDF. Your saved watchlist, portfolio, pins and settings are unaffected.',
+    'Behind the scenes the database file and browser storage keys were renamed too. Both are migrated automatically the first time you open the new version, so your watchlist, portfolio, pins, recent tabs and theme carry over.',
   ]},
   { type: 'h3', text: '2026-10-11 — Themes: Dollar Regime Shift', tabId: 'themedollar' },
   { type: 'bullets', items: [

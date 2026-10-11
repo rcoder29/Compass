@@ -29,7 +29,7 @@ flowchart TD
         WS["WebSocket\n/ws/quotes"]
         SSE["SSE endpoints\n/api/ai-chat, /api/financial-plan,\n/api/trade-ideas, /api/ai/morning-briefing, …"]
         Cache["SQLite cache\ncache_get / cache_set"]
-        DB["SQLite DB\nstockmonitor.db"]
+        DB["SQLite DB\ncompass.db"]
         Core --> Routers
         Core -->|starts on startup| Scheduler
         Routers -->|function-scoped deferred import\nof Core's helpers, avoids import cycles| Core
@@ -408,7 +408,7 @@ flowchart LR
     fetch --> cs["cache_set(key, data)"]
     cs --> resp2["Return fresh JSON"]
 
-    subgraph SQLite["stockmonitor.db — cache_entries table"]
+    subgraph SQLite["compass.db — cache_entries table"]
         rows["key (str, PK) | data (JSON text) | fetched_at (datetime)"]
     end
     cg -.->|read, filtered by ttl| SQLite
@@ -525,7 +525,7 @@ return StreamingResponse(generate(), media_type="text/event-stream")
 A daemon thread started by `main.py`'s FastAPI `lifespan` ticks every 60 seconds, checking whether a daily or weekly digest is due (and still within a catch-up window, for a machine that was asleep at the scheduled time). Before doing any work it claims `(kind, period_key)` — e.g. `("daily", "2026-09-23")` or `("weekly", "2026-W39")` — as a row in `digest_log`, whose unique constraint makes a duplicate tick (or a second process) lose the race and skip. A failed delivery retries up to 3 times, 10 minutes apart.
 
 **Test database isolation**
-`backend/tests/conftest.py`'s autouse `isolated_db` fixture points `database.SessionLocal` at a throwaway SQLite database for the duration of each test, so the test suite never reads or writes `backend/stockmonitor.db`. This works for every router with no per-router change, because `db_session()`/`cache_get()`/`cache_set()` in `database.py` resolve `SessionLocal` by module-level name at call time rather than capturing it at import time.
+`backend/tests/conftest.py`'s autouse `isolated_db` fixture points `database.SessionLocal` at a throwaway SQLite database for the duration of each test, so the test suite never reads or writes `backend/compass.db`. The suite also sets `COMPASS_DB_PATH` to a temp file before `database.py` is first imported, so even collecting the tests can't create, rename or touch the real database (importing `database` is what runs the one-time rename described below). This works for every router with no per-router change, because `db_session()`/`cache_get()`/`cache_set()` in `database.py` resolve `SessionLocal` by module-level name at call time rather than capturing it at import time.
 
 **Serialise `yfinance.download`**
 `yfinance.download` stores its working state in module-level dictionaries, so two downloads in flight at once — even from different threads — corrupt each other and hang. `holdings_perf.py` wraps every call in one `threading.Lock`; per-symbol `Ticker(...).history()` calls from a thread pool are independent and safe. Any new batched download should take the same lock.

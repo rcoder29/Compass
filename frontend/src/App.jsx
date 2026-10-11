@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import Header from './components/Header'
+import { KEYS } from './storageKeys'
 import StockTable from './components/StockTable'
 import ChartModal from './components/ChartModal'
 import HomeDashboard from './components/HomeDashboard'
@@ -686,7 +687,7 @@ export default function App() {
   // ── Navigation (command palette + recently-visited tracking) ─────────────
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [recentTabs, setRecentTabs] = useState(() => {
-    try { return cleanTabList(JSON.parse(localStorage.getItem('sm-recent-tabs') || '[]')) } catch { return [] }
+    try { return cleanTabList(JSON.parse(localStorage.getItem(KEYS.recentTabs) || '[]')) } catch { return [] }
   })
   const navigate = useCallback((rawId) => {
     const id = resolveTab(rawId)
@@ -694,20 +695,20 @@ export default function App() {
     if (id !== 'home' && id !== 'guide') {
       setRecentTabs(prev => {
         const next = [id, ...prev.filter(x => x !== id)].slice(0, 8)
-        localStorage.setItem('sm-recent-tabs', JSON.stringify(next))
+        localStorage.setItem(KEYS.recentTabs, JSON.stringify(next))
         return next
       })
     }
   }, [])
 
   const [pinnedTabs, setPinnedTabs] = useState(() => {
-    try { return cleanTabList(JSON.parse(localStorage.getItem('sm-pinned-tabs') || '[]')) } catch { return [] }
+    try { return cleanTabList(JSON.parse(localStorage.getItem(KEYS.pinnedTabs) || '[]')) } catch { return [] }
   })
   const openHoldings = useCallback((symbol) => { setHoldingsUniverse(symbol); navigate('holdingsperf') }, [navigate])
   const togglePin = useCallback((id) => {
     setPinnedTabs(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-      localStorage.setItem('sm-pinned-tabs', JSON.stringify(next))
+      localStorage.setItem(KEYS.pinnedTabs, JSON.stringify(next))
       return next
     })
   }, [])
@@ -724,12 +725,12 @@ export default function App() {
   }, [])
 
   // ── Theme ──────────────────────────────────────────────────────────────
-  const [theme, setTheme] = useState(() => localStorage.getItem('sm-theme') || 'dark')
+  const [theme, setTheme] = useState(() => localStorage.getItem(KEYS.theme) || 'dark')
   useEffect(() => {
     const root = document.documentElement
     root.classList.remove('dark', 'light')
     root.classList.add(theme)
-    localStorage.setItem('sm-theme', theme)
+    localStorage.setItem(KEYS.theme, theme)
   }, [theme])
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
   const [earnings,          setEarnings]          = useState([])
@@ -756,7 +757,7 @@ export default function App() {
         if (syms.length === 0 && activeList === 'default') {
           let seed = DEFAULT_WATCHLIST
           try {
-            const saved = localStorage.getItem('stockmonitor-watchlist')
+            const saved = localStorage.getItem(KEYS.watchlist)
             if (saved) seed = JSON.parse(saved)
           } catch { /* ignore */ }
           await Promise.all(seed.map(sym =>
@@ -766,7 +767,7 @@ export default function App() {
               body: JSON.stringify({ symbol: sym, list: 'default' }),
             })
           ))
-          localStorage.removeItem('stockmonitor-watchlist')
+          localStorage.removeItem(KEYS.watchlist)
           setWatchlist(seed)
         } else {
           setWatchlist(syms)

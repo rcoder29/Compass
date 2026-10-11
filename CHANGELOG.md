@@ -7,7 +7,12 @@ A running log of features built and changes made, in reverse-chronological order
 ## 2026-10-11 — Renamed to Compass
 
 - The app and its GitHub repository (`rcoder29/Compass`) are now **Compass** (previously Stock Monitor). Changed: the header, browser tab title, User Guide, README and architecture titles, the API title, the Tear Sheet PDF footer and author, and the digest test message.
-- Deliberately unchanged so nothing is lost or broken: the SQLite filename (`backend/stockmonitor.db`), the browser storage keys (`stockmonitor-watchlist`, `stockmonitor-portfolio`, pins and recents), the deploy service name in `render.yaml`, the local folder name, and the HTTP User-Agent strings. Earlier changelog entries and `PROJECT.md` keep the old name because they are dated records.
+- **Follow-up, same day:** the internal names were renamed too, with migrations so no saved data is lost.
+  - **Database:** `backend/stockmonitor.db` is now `backend/compass.db`. On first start `database.resolve_db_path()` renames the old file and its `-wal`/`-shm`/`-journal` companions (an atomic move; every row kept). If both files exist, `compass.db` wins and the old one is left alone; if the rename fails, the old file keeps being used rather than starting an empty database beside it. `COMPASS_DB_PATH` overrides the location, and the test suite sets it before importing `database` so collecting tests can never touch the real file.
+  - **Browser storage:** `sm-theme`, `sm-pinned-tabs`, `sm-recent-tabs`, `stockmonitor-watchlist` and `stockmonitor-portfolio` became `compass-theme`, `compass-pinned-tabs`, `compass-recent-tabs`, `compass-watchlist` and `compass-portfolio`. `migrateStorage()` runs before the app renders: it copies each old value across once, a value already under the new key wins, and the old key is removed. Unbranded keys (tax lots, wheel positions, chart drawings and so on) are untouched.
+  - HTTP User-Agent strings (SEC, Wikipedia, FRED) now say `Compass/1.0`, and the frontend package is `compass-frontend`.
+  - Still unchanged: the deploy service name in `render.yaml` (renaming it changes the service's URL) and the local folder name. Earlier changelog entries and `PROJECT.md` keep the old name because they are dated records.
+- Tests: backend +8 (rename, sidecar files, idempotence, both-files case, fresh install, failure fallback, override), frontend +8 (migration, idempotence, new-key-wins, unrelated keys, empty values, blocked storage).
 
 ---
 

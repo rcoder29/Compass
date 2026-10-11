@@ -40,7 +40,7 @@ _DAILY_LOOKBACK_DAYS = 400
 _WEEKLY_CHUNK = 100
 _MIN_ANCHOR_COVERAGE = 0.8
 
-_WIKI_UA = {"User-Agent": "StockMonitor/1.0 raghuravuri@gmail.com"}
+_WIKI_UA = {"User-Agent": "Compass/1.0 raghuravuri@gmail.com"}
 _NASDAQ_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36",
                    "Accept": "application/json, text/plain, */*"}
 _SP500_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
