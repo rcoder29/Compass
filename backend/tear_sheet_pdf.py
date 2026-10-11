@@ -379,7 +379,8 @@ def _header(d):
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
                               ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
     m = d["valuation"]["multiples"]
-    stats = _stat_row([("Market cap", big(snap.get("marketCap"))), ("Enterprise value", big(snap.get("enterpriseValue"))),
+    stats = _stat_row([("Market cap", big(snap.get("marketCap"))), ("Shares outstanding", big(snap.get("sharesOutstanding"), "")),
+                       ("Enterprise value", big(snap.get("enterpriseValue"))),
                        ("P/E (trailing)", mult(m.get("trailingPE"))), ("P/E (forward)", mult(m.get("forwardPE"))),
                        ("Beta", num(snap.get("beta"))), ("Dividend yield", pct(m.get("dividendYield"))),
                        ("52w range", f"{money(snap.get('week52Low'), 0)} - {money(snap.get('week52High'), 0)}"),
@@ -778,7 +779,7 @@ def _footer(canvas, doc, symbol, as_of):
     canvas.line(MARGIN, 0.5 * inch, PAGE_W - MARGIN, 0.5 * inch)
     canvas.setFont("Helvetica", 6.5)
     canvas.setFillColor(MUTED)
-    canvas.drawString(MARGIN, 0.36 * inch, _txt(f"StockMonitor Tear Sheet - {symbol} - data as of {as_of} - not investment advice - Yahoo Finance & SEC EDGAR data may be delayed"))
+    canvas.drawString(MARGIN, 0.36 * inch, _txt(f"Compass Tear Sheet - {symbol} - data as of {as_of} - not investment advice - Yahoo Finance & SEC EDGAR data may be delayed"))
     canvas.drawRightString(PAGE_W - MARGIN, 0.36 * inch, f"Page {doc.page}")
     canvas.restoreState()
 
@@ -790,7 +791,7 @@ def build_pdf(sheet: dict, compress: bool = True) -> bytes:
     buf = io.BytesIO()
     symbol, as_of = sheet["symbol"], sheet.get("asOf") or str(date.today())
     doc = BaseDocTemplate(buf, pagesize=letter, pageCompression=1 if compress else 0, title=_txt(f"{symbol} Tear Sheet"),
-                          author="StockMonitor", subject=_txt(sheet["profile"].get("name", symbol)))
+                          author="Compass", subject=_txt(sheet["profile"].get("name", symbol)))
     # Zero-padding frame: reportlab's default 6pt padding would indent paragraphs relative to
     # full-width tables and charts.
     frame = Frame(MARGIN, 0.7 * inch, W, PAGE_H - 0.55 * inch - 0.7 * inch, leftPadding=0, rightPadding=0, topPadding=0,

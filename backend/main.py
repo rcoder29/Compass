@@ -66,7 +66,7 @@ async def lifespan(_app):
     digest_service.stop_scheduler()
 
 
-app = FastAPI(title="Stock Monitor API", lifespan=lifespan)
+app = FastAPI(title="Compass API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -101,7 +101,7 @@ def send_test():
     names = configured_channels()
     if not names:
         raise HTTPException(400, "No delivery channel configured — set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in backend/.env")
-    text = "Stock Monitor: test message — your digest delivery is working."
+    text = "Compass: test message — your digest delivery is working."
     results = {n: CHANNELS[n].send(text, text) for n in names}
     return {"ok": any(r["ok"] for r in results.values()), "channels": results}
 

@@ -10,6 +10,20 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Renamed to Compass' },
+  { type: 'bullets', items: [
+    'Stock Monitor is now Compass: new name in the header, browser tab, User Guide and the Tear Sheet PDF. Your saved watchlist, portfolio, pins and settings are unaffected.',
+  ]},
+  { type: 'h3', text: '2026-10-11 — Themes: Dollar Regime Shift', tabId: 'themedollar' },
+  { type: 'bullets', items: [
+    'New Themes → Dollar Regime Shift: what a gradual move away from the dollar as the world\'s reserve currency could mean for US and global markets, which markets and assets would benefit (gold and miners, non-US markets, commodity producers, US multinationals), what is most exposed (long Treasuries, the dollar), and how to stay positioned across three outcomes.',
+    'Tabs cover US markets, global markets, which markets benefit, a reality check on why the dollar\'s role is sticky, how to position, scenarios and signposts to watch. Most members are funds, which show live returns but no company score.',
+    'The commentary is a hand-written, dated framework, not a forecast or an allocation.',
+  ]},
+  { type: 'h3', text: '2026-10-11 — Tear Sheet: Shares Outstanding', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'The Tear Sheet header (and its PDF) now shows shares outstanding next to market cap, as a plain share count.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Themes: AI Abundance', tabId: 'themeabundance' },
   { type: 'bullets', items: [
     'New Themes → AI Abundance: what if AI and robots make intelligence, labor and energy cheap and plentiful? A "What it could mean" section covers jobs (most exposed, more resilient, what could be created), markets (how costs, scarce inputs, concentration, rates and demand could shift), who is best set up, and three scenarios.',

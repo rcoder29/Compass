@@ -1,5 +1,5 @@
 """
-Backend test suite for Stock Monitor API.
+Backend test suite for the Compass API.
 Run: python -m pytest tests/ -v
 """
 import pytest

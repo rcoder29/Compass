@@ -7,7 +7,7 @@ const sheet = (over = {}) => ({
   asOf: '2026-10-09',
   profile: { name: 'Acme Corp', sector: 'Technology', industry: 'Software', exchange: 'NasdaqGS', country: 'United States',
              employees: 12000, description: 'Acme builds widgets.', quoteType: 'EQUITY' },
-  snapshot: { price: 100, changePct: 1.25, marketCap: 2.5e12, enterpriseValue: 2.4e12, week52High: 120, week52Low: 80,
+  snapshot: { price: 100, changePct: 1.25, marketCap: 2.5e12, sharesOutstanding: 15.2e9, enterpriseValue: 2.4e12, week52High: 120, week52Low: 80,
               rangePosition: 0.5, beta: 1.1, nextEarnings: '2026-11-02' },
   performance: {
     returns: [{ period: '1Y', stock: 0.33, spy: 0.17, relative: 0.16 }, { period: '5Y', stock: null, spy: null, relative: null }],
@@ -125,6 +125,16 @@ describe('TearSheet', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/tear-sheet/ACME')
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     expect(screen.getAllByText('$100.00').length).toBeGreaterThan(0)
+  })
+
+  it('shows shares outstanding beside market cap, without a currency symbol', async () => {
+    mockFetch(sheet())
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    const card = screen.getByText('Shares outstanding').parentElement
+    expect(card).toHaveTextContent('15.20B')
+    expect(card).not.toHaveTextContent('$')
   })
 
   it('renders every major section', async () => {

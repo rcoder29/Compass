@@ -7,7 +7,7 @@ import { CHANGELOG_BLOCKS } from '../data/changelog'
 describe('UserGuide', () => {
   it('renders the main heading', () => {
     render(<UserGuide />)
-    expect(screen.getByText('Stock Monitor — User Guide')).toBeInTheDocument()
+    expect(screen.getByText('Compass — User Guide')).toBeInTheDocument()
   })
 
   it('renders all 6 top-level nav group names in TOC', () => {
@@ -107,7 +107,7 @@ describe('UserGuide', () => {
 describe('UserGuide navigation links', () => {
   it('renders with an onNavigate handler (this used to throw ReferenceError)', () => {
     expect(() => render(<UserGuide onNavigate={() => {}} />)).not.toThrow()
-    expect(screen.getByText('Stock Monitor — User Guide')).toBeInTheDocument()
+    expect(screen.getByText('Compass — User Guide')).toBeInTheDocument()
   })
 
   it('offers an "Open feature" button on changelog entries and navigates to that tab', () => {

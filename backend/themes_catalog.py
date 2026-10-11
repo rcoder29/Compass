@@ -26,8 +26,13 @@ ROLES = {
 EDITORIAL_DATE = "October 2026"
 
 
-def S(symbol, name, layer, role, exposure, why):
-    return {"symbol": symbol, "name": name, "layer": layer, "role": role, "exposure": exposure, "why": why}
+def S(symbol, name, layer, role, exposure, why, kind="stock"):
+    """kind "fund" marks an ETF or commodity fund: live returns, but no company fundamentals or setup score."""
+    return {"symbol": symbol, "name": name, "layer": layer, "role": role, "exposure": exposure, "why": why, "kind": kind}
+
+
+def F(symbol, name, layer, role, exposure, why):
+    return S(symbol, name, layer, role, exposure, why, kind="fund")
 
 
 THEMES = [
@@ -316,34 +321,165 @@ THEMES = [
         "watch": "Treat this as a scenario map, not a forecast. The infrastructure owners are the most direct bet, but they are also the most crowded. The disrupted names are shown for contrast, not as short ideas: many will adapt, and prices may already reflect the threat.",
         "impact": {
             "intro": "What follows is a way of thinking about the scenario, written by hand and dated. None of it is a prediction; the timing and the distribution of gains are the two things nobody knows.",
-            "jobs": {
-                "summary": "Past technology waves removed some jobs, created others and raised output, but each transition was uneven and slow for the people in the middle. AI is different in that it targets thinking tasks, not only physical ones, and it may move faster. The likeliest pattern in any version of the future is that tasks change before whole jobs vanish.",
-                "exposed": ["Routine, screen-based work: data entry, basic customer support, first-draft writing, simple coding, back-office processing",
-                            "Work sold by the hour with a standard output: outsourcing, entry-level analysis, translation, basic legal and accounting prep"],
-                "resilient": ["Hands-on skilled trades and care work in unpredictable physical settings",
-                              "Roles built on trust, accountability or presence: clinicians, teachers, managers, regulated professions",
-                              "People who direct, check and combine AI tools, and those who own the scarce inputs"],
-                "emerging": ["Roles to build, run, secure and audit AI systems and the power and data-center infrastructure under them",
-                             "New products and services made affordable by cheap intelligence, which today's job titles don't capture"],
-            },
-            "markets": [
-                {"title": "Costs fall faster than prices", "text": "Where AI cuts the cost of producing a service, profit margins can widen at first, until competition passes the savings on to customers. Early winners are the companies that pocket the gap."},
-                {"title": "Scarce inputs reprice", "text": "When intelligence is cheap, what stays scarce becomes valuable: compute, electricity, certain materials, land near power and fiber, proprietary data, distribution and trusted brands."},
-                {"title": "Winner-take-most tendencies", "text": "Scale in compute, data and distribution compounds. Markets may concentrate further, which helps leaders and raises regulatory and political risk."},
-                {"title": "Prices and rates are unclear", "text": "Cheaper goods and services could push inflation down. A surge in investment, or in government spending to cushion workers, could push the other way. The path of interest rates would shape every valuation."},
-                {"title": "Demand is the loop", "text": "Abundant output only pays off if people still have income to buy it. Whether gains are broadly shared, taxed or redistributed decides whether the abundance is a boom, a slump, or something new."},
+            "sections": [
+                {"id": "jobs", "label": "Jobs", "type": "lists",
+                 "summary": "Past technology waves removed some jobs, created others and raised output, but each transition was uneven and slow for the people in the middle. AI is different in that it targets thinking tasks, not only physical ones, and it may move faster. The likeliest pattern in any version of the future is that tasks change before whole jobs vanish.",
+                 "columns": [
+                     {"title": "Most exposed", "tone": "bad", "items": ["Routine, screen-based work: data entry, basic customer support, first-draft writing, simple coding, back-office processing",
+                                                                        "Work sold by the hour with a standard output: outsourcing, entry-level analysis, translation, basic legal and accounting prep"]},
+                     {"title": "More resilient", "tone": "good", "items": ["Hands-on skilled trades and care work in unpredictable physical settings",
+                                                                            "Roles built on trust, accountability or presence: clinicians, teachers, managers, regulated professions",
+                                                                            "People who direct, check and combine AI tools, and those who own the scarce inputs"]},
+                     {"title": "What could be created", "tone": "new", "items": ["Roles to build, run, secure and audit AI systems and the power and data-center infrastructure under them",
+                                                                                   "New products and services made affordable by cheap intelligence, which today's job titles don't capture"]},
+                 ]},
+                {"id": "markets", "label": "Markets", "type": "cards", "items": [
+                    {"title": "Costs fall faster than prices", "text": "Where AI cuts the cost of producing a service, profit margins can widen at first, until competition passes the savings on to customers. Early winners are the companies that pocket the gap."},
+                    {"title": "Scarce inputs reprice", "text": "When intelligence is cheap, what stays scarce becomes valuable: compute, electricity, certain materials, land near power and fiber, proprietary data, distribution and trusted brands."},
+                    {"title": "Winner-take-most tendencies", "text": "Scale in compute, data and distribution compounds. Markets may concentrate further, which helps leaders and raises regulatory and political risk."},
+                    {"title": "Prices and rates are unclear", "text": "Cheaper goods and services could push inflation down. A surge in investment, or in government spending to cushion workers, could push the other way. The path of interest rates would shape every valuation."},
+                    {"title": "Demand is the loop", "text": "Abundant output only pays off if people still have income to buy it. Whether gains are broadly shared, taxed or redistributed decides whether the abundance is a boom, a slump, or something new."},
+                ]},
+                {"id": "winners", "label": "Who is best set up", "type": "ranked", "items": [
+                    {"who": "Owners of the scarce inputs", "why": "Compute and chips, power generation and grid equipment, and the minerals and real estate they depend on sell into demand that grows whoever wins downstream. Most direct, and most crowded."},
+                    {"who": "Distribution and trust", "why": "Networks, payments, marketplaces and trusted brands keep pricing power while their costs fall, and AI strengthens rather than replaces them."},
+                    {"who": "Science and health", "why": "If AI speeds discovery and cuts the cost of care, the winners are the companies with real products, data and regulatory approval, though this is a slower and riskier path."},
+                    {"who": "Labor-saving machines", "why": "Robotics and automation benefit as labor stays expensive relative to machines, with the long-term upside still unproven for general-purpose robots."},
+                    {"who": "Adaptable incumbents", "why": "Large companies that use AI to cut costs and keep their customers can gain from the shift, so even 'at risk' sectors contain survivors."},
+                ]},
+                {"id": "scenarios", "label": "Scenarios", "type": "scenarios", "items": [
+                    {"name": "Broad abundance", "text": "AI and automation lift productivity widely, goods and services get cheaper, and new demand and jobs appear. Output and living standards rise.", "favours": "Infrastructure, energy, science and health, consumer-facing leaders, the whole market", "hurts": "Pure headcount-based services"},
+                    {"name": "Concentrated gains", "text": "Productivity rises but the benefits go mostly to the owners of compute, data and distribution while many workers lose out. Demand weakens and politics responds.", "favours": "A handful of platform and infrastructure owners, until regulation or taxes bite", "hurts": "Labor-intensive sectors, consumer discretionary, anything dependent on mid-income spending"},
+                    {"name": "Slower than hoped", "text": "Reliability, cost, power or regulation limit how fast AI is adopted; the build-out overshoots and expectations reset.", "favours": "Cash-rich incumbents, defensive businesses", "hurts": "Heavily valued infrastructure and speculative names that financed growth with debt or new shares"},
+                ]},
             ],
-            "winners": [
-                {"who": "Owners of the scarce inputs", "why": "Compute and chips, power generation and grid equipment, and the minerals and real estate they depend on sell into demand that grows whoever wins downstream. Most direct, and most crowded."},
-                {"who": "Distribution and trust", "why": "Networks, payments, marketplaces and trusted brands keep pricing power while their costs fall, and AI strengthens rather than replaces them."},
-                {"who": "Science and health", "why": "If AI speeds discovery and cuts the cost of care, the winners are the companies with real products, data and regulatory approval, though this is a slower and riskier path."},
-                {"who": "Labor-saving machines", "why": "Robotics and automation benefit as labor stays expensive relative to machines, with the long-term upside still unproven for general-purpose robots."},
-                {"who": "Adaptable incumbents", "why": "Large companies that use AI to cut costs and keep their customers can gain from the shift, so even 'at risk' sectors contain survivors."},
-            ],
-            "scenarios": [
-                {"name": "Broad abundance", "text": "AI and automation lift productivity widely, goods and services get cheaper, and new demand and jobs appear. Output and living standards rise.", "favours": "Infrastructure, energy, science and health, consumer-facing leaders, the whole market", "hurts": "Pure headcount-based services"},
-                {"name": "Concentrated gains", "text": "Productivity rises but the benefits go mostly to the owners of compute, data and distribution while many workers lose out. Demand weakens and politics responds.", "favours": "A handful of platform and infrastructure owners, until regulation or taxes bite", "hurts": "Labor-intensive sectors, consumer discretionary, anything dependent on mid-income spending"},
-                {"name": "Slower than hoped", "text": "Reliability, cost, power or regulation limit how fast AI is adopted; the build-out overshoots and expectations reset.", "favours": "Cash-rich incumbents, defensive businesses", "hurts": "Heavily valued infrastructure and speculative names that financed growth with debt or new shares"},
+        },
+    },
+    {
+        "id": "dollar", "name": "Dollar Regime Shift", "short": "Dollar", "color": "#fbbf24", "navId": "themedollar",
+        "tagline": "A world less dependent on the US dollar: what it means for US and global markets, which markets gain, and how to stay positioned whichever way it goes.",
+        "roleLabels": {
+            "core": ["Hard-asset hedges", "Gold, silver and the miners: assets that sit outside any government's balance sheet"],
+            "enabler": ["Markets & resources that gain", "Non-US markets and commodity producers that benefit from a weaker dollar or a more multipolar system"],
+            "adjacent": ["US multinationals", "American companies that earn much of their profit abroad and gain when foreign currencies strengthen"],
+            "emerging": ["Speculative alternatives", "Newer or thinner stores of value: higher potential, much higher risk"],
+            "atrisk": ["Most exposed to the shift", "Assets that lose if foreign demand for dollars and US government debt fades"],
+        },
+        "thesis": "Since the Second World War the dollar has been the world's main reserve, trade and borrowing currency, which gives the US unusually cheap funding and gives US assets a steady foreign bid. The argument for a regime shift is that sanctions, large US deficits and a more multipolar economy are pushing countries to hold more gold, settle more trade in other currencies and diversify away. The counter-argument is just as strong: no other currency has markets as deep, open and trusted, so any shift is likely to be gradual, and the dollar has outlasted many predictions of its decline. The investing question is not whether to bet on one outcome, but how to stay robust across several.",
+        "whyNow": "Central banks have been buying gold at a historically high pace, sanctions have shown that dollar assets can be frozen, US interest costs are rising, and trade blocs are experimenting with local-currency settlement.",
+        "layers": [
+            {"id": "hard", "name": "Gold & hard assets", "blurb": "Stores of value outside any government's liabilities"},
+            {"id": "developed", "name": "Developed markets outside the US", "blurb": "Europe and Asia's rich economies"},
+            {"id": "growth", "name": "Emerging growth markets", "blurb": "Large economies that gain from a multipolar system"},
+            {"id": "resource", "name": "Resource exporters", "blurb": "Producers of energy, metals and food, often priced in dollars"},
+            {"id": "multinational", "name": "US multinationals", "blurb": "American companies with large foreign earnings"},
+            {"id": "dollar", "name": "Dollar-dependent assets", "blurb": "Long Treasuries and the dollar itself"},
+        ],
+        "stocks": [
+            F("GLD", "SPDR Gold Shares", "hard", "core", 3, "The largest gold fund; the clearest way to own the asset central banks keep adding."),
+            F("SLV", "iShares Silver Trust", "hard", "core", 3, "Silver: part monetary metal, part industrial input, and more volatile than gold."),
+            F("GDX", "VanEck Gold Miners ETF", "hard", "core", 3, "Gold miners: leveraged to the gold price, but also to costs and management."),
+            S("NEM", "Newmont", "hard", "core", 3, "World's largest gold miner."),
+            S("AEM", "Agnico Eagle Mines", "hard", "core", 3, "Gold producer concentrated in stable mining jurisdictions."),
+            F("VGK", "Vanguard FTSE Europe ETF", "developed", "enabler", 2, "Europe: cheaper than the US on most measures, with earnings that gain when the euro strengthens."),
+            F("EWJ", "iShares MSCI Japan ETF", "developed", "enabler", 2, "Japan: governance reform and a cheap currency, but the yen cuts both ways."),
+            F("EWT", "iShares MSCI Taiwan ETF", "developed", "enabler", 2, "Taiwan: the center of advanced chip making, with real geopolitical risk."),
+            F("EWY", "iShares MSCI South Korea ETF", "developed", "enabler", 2, "South Korea: exporters and chipmakers that benefit from a weaker dollar."),
+            F("INDA", "iShares MSCI India ETF", "growth", "enabler", 2, "India: large domestic economy, favourable demographics, less dependent on dollar trade."),
+            F("EWZ", "iShares MSCI Brazil ETF", "growth", "enabler", 2, "Brazil: commodity exporter that has historically gained when the dollar weakens."),
+            F("EWW", "iShares MSCI Mexico ETF", "growth", "enabler", 2, "Mexico: tied to US manufacturing and reshoring, so partly a US-cycle play."),
+            F("EZA", "iShares MSCI South Africa ETF", "growth", "enabler", 2, "South Africa: gold and platinum producer with high currency risk."),
+            F("KSA", "iShares MSCI Saudi Arabia ETF", "resource", "enabler", 2, "Saudi Arabia: oil exporter with a currency pegged to the dollar and a push to diversify."),
+            F("MCHI", "iShares MSCI China ETF", "growth", "enabler", 2, "China: the main challenger to the dollar system, but with capital controls and policy risk."),
+            F("EEM", "iShares MSCI Emerging Markets ETF", "growth", "enabler", 1, "Broad emerging markets; usually does well when the dollar weakens."),
+            S("RIO", "Rio Tinto", "resource", "enabler", 2, "Diversified metals and mining, priced in dollars and sold worldwide."),
+            S("BHP", "BHP Group", "resource", "enabler", 2, "Copper, iron ore and potash producer."),
+            S("FCX", "Freeport-McMoRan", "resource", "enabler", 2, "Copper, which electrification and grid build-outs need."),
+            S("VALE", "Vale", "resource", "enabler", 2, "Brazilian iron ore and nickel miner."),
+            S("KO", "Coca-Cola", "multinational", "adjacent", 1, "Earns most of its profit outside the US; a weaker dollar lifts reported results."),
+            S("PM", "Philip Morris International", "multinational", "adjacent", 2, "Almost all profit is earned outside the US."),
+            S("MCD", "McDonald's", "multinational", "adjacent", 1, "Large international franchise income."),
+            S("CAT", "Caterpillar", "multinational", "adjacent", 1, "Global machinery maker that benefits from commodity-led investment abroad."),
+            F("IBIT", "iShares Bitcoin Trust ETF", "hard", "emerging", 2, "Bitcoin as a scarce, non-sovereign store of value: unproven, and extremely volatile."),
+            F("URA", "Global X Uranium ETF", "resource", "emerging", 1, "A resource and energy-security bet that overlaps with the shift but depends on its own cycle."),
+            F("COPX", "Global X Copper Miners ETF", "resource", "emerging", 1, "Copper miners, tied to global industrial demand as much as to the dollar."),
+            F("TLT", "iShares 20+ Year Treasury Bond ETF", "dollar", "atrisk", 3, "Long US Treasuries lose most if foreign buyers step back and the government has to pay more to borrow."),
+            F("IEF", "iShares 7-10 Year Treasury Bond ETF", "dollar", "atrisk", 2, "Intermediate Treasuries: less rate-sensitive than long bonds, but still dollar-dependent."),
+            F("UUP", "Invesco DB US Dollar Index Bullish Fund", "dollar", "atrisk", 3, "A direct bet on the dollar rising; the opposite side of this theme."),
+        ],
+        "etfs": [("DBC", "Invesco DB Commodity Index Tracking Fund"), ("EFA", "iShares MSCI EAFE ETF"), ("IGOV", "iShares International Treasury Bond ETF")],
+        "shortTerm": {
+            "catalysts": ["Central-bank gold purchases and any new reports of reserve diversification",
+                          "US fiscal and Treasury-auction news: weak demand or rising interest costs",
+                          "A weaker dollar trend lifting non-US stocks, commodities and gold at the same time"],
+            "risks": ["The dollar strengthening on safe-haven demand or higher US rates, hurting every non-dollar position at once",
+                      "Gold and commodity prices already reflecting much of the story, leaving less upside",
+                      "Local risks in emerging markets (politics, currencies, capital controls) overwhelming the benefit"],
+        },
+        "longTerm": {
+            "drivers": ["Gradual diversification of reserves, trade settlement and borrowing away from a single currency",
+                        "A rising weight of Asia and the emerging world in global output and markets",
+                        "Hard assets and real earnings regaining a premium over claims on any one government"],
+            "risks": ["The dollar's depth, rule of law and network effects keep it dominant far longer than expected",
+                      "No alternative reserve currency has the depth, so a disorderly shift could hurt everyone, including holders of gold-linked assets in a crisis",
+                      "Capital controls, sanctions and conflict can make non-US positions hard to exit"],
+        },
+        "watch": "This basket mixes very different assets on purpose, so treat the basket line as a rough regime gauge rather than a portfolio. Most of the members are funds: they show live returns but have no company score. A shift of this kind, if it comes, is likely to be slow and uneven, and the dollar can strengthen sharply in the meantime.",
+        "impact": {
+            "intro": "This is a framework for thinking about positioning across outcomes, written by hand and dated. It is not a forecast, an allocation or advice, and no one knows how, or whether, the dollar's role changes.",
+            "sections": [
+                {"id": "us", "label": "US markets", "type": "cards", "items": [
+                    {"title": "Funding gets more expensive", "text": "Foreign buyers have long absorbed a large share of US government debt. If they buy less, the government has to offer higher yields to attract other buyers, which raises borrowing costs across the economy and pressures stock valuations."},
+                    {"title": "Weaker dollar, stronger multinational earnings", "text": "Companies that earn a large share of profit abroad report higher results when foreign currencies buy more dollars. Domestic-focused companies gain less, and import-heavy ones face higher costs."},
+                    {"title": "The valuation premium is at stake", "text": "US stocks have been priced above the rest of the world partly because capital kept flowing in. If that bid fades, the premium could compress even without bad news from the companies themselves."},
+                    {"title": "Bonds lose their safe-haven status first", "text": "Long Treasuries are the asset most tied to continued foreign demand. A shift would show up there before it shows up in equities."},
+                    {"title": "Inflation and rates are the channel", "text": "A weaker currency raises import prices and can keep inflation and rates higher for longer, which weighs on long-duration growth stocks."},
+                ]},
+                {"id": "global", "label": "Global markets", "type": "cards", "items": [
+                    {"title": "Non-US earnings translate better", "text": "When the dollar weakens, foreign profits are worth more in dollar terms, and foreign stocks have historically outperformed during those cycles."},
+                    {"title": "Emerging markets get relief", "text": "Countries and companies that borrowed in dollars find the debt easier to carry as the dollar falls, and capital tends to flow toward them."},
+                    {"title": "Commodities are priced in dollars", "text": "A weaker dollar usually lifts commodity prices in dollar terms, helping producers, though demand and supply still matter more than currency."},
+                    {"title": "Trade patterns reroute", "text": "More trade in local currencies and bilateral deals can favour countries that sit between blocs, but it also adds friction, so it is not automatically good for everyone."},
+                    {"title": "Currency risk becomes a decision", "text": "Owning non-US assets means owning their currencies. Whether to hedge is a choice that can matter as much as which market you pick."},
+                ]},
+                {"id": "winners", "label": "Which markets benefit", "type": "ranked", "items": [
+                    {"who": "Gold and hard assets", "why": "The most direct beneficiary of diversification away from dollar claims: central banks are already buyers, and the asset needs no one else's promise to pay."},
+                    {"who": "Commodity exporters", "why": "Producers of energy, metals and food gain from a weaker dollar and from governments wanting real assets, as long as demand holds."},
+                    {"who": "Developed markets outside the US", "why": "Europe and parts of Asia offer lower valuations and earnings that rise in dollar terms when their currencies strengthen, with the governance and market depth that capital looks for."},
+                    {"who": "Large, domestically driven emerging economies", "why": "India and some Southeast Asian and Latin American markets have big home markets and can benefit from capital looking beyond the US, but carry currency and political risk."},
+                    {"who": "US multinationals", "why": "American companies with global earnings gain from a weaker dollar without leaving the deepest, best-governed market."},
+                    {"who": "China, with caution", "why": "The main challenger to the dollar system, but capital controls, state influence over markets and geopolitics limit how much foreign money can or will go there."},
+                ]},
+                {"id": "reality", "label": "Reality check", "type": "cards", "items": [
+                    {"title": "There is no ready substitute", "text": "The euro is backed by many governments, the yuan is tightly controlled, and gold cannot settle the volume of global trade. Reserve status depends on deep, open, trusted markets, and only the US has them at that scale."},
+                    {"title": "Network effects are sticky", "text": "Trade invoicing, bank lending, commodity pricing and reserves all lean on the dollar, and each use reinforces the others. Changes tend to be gradual, over decades."},
+                    {"title": "A weaker role is not a collapse", "text": "Most plausible outcomes are a slow loss of share, not a replacement. The dollar can lose share of reserves and still be the strongest currency in a crisis."},
+                    {"title": "Bets on a quick break have a poor record", "text": "The dollar's decline has been predicted many times. Positions that need the shift to arrive on a schedule can be costly to hold."},
+                ]},
+                {"id": "positioning", "label": "How to position", "type": "ranked", "items": [
+                    {"who": "Start from resilience, not a prediction", "why": "Build a portfolio that is acceptable in all three scenarios below, rather than one that only works if you are right about the dollar."},
+                    {"who": "Keep a core of high-quality home-market assets", "why": "The US still has the deepest markets and best companies. Many of its largest businesses earn money worldwide, so they already hold some of this exposure."},
+                    {"who": "Add genuine non-US diversification", "why": "A meaningful allocation to developed and emerging markets outside the US spreads the bet across currencies, valuations and economic cycles. Decide deliberately whether to hedge currency."},
+                    {"who": "Hold a hard-asset sleeve", "why": "Gold and, more selectively, other real assets act as ballast if confidence in government claims weakens, and have historically held up when other assets fall in a currency crisis."},
+                    {"who": "Mind bond duration", "why": "Long Treasuries are the most exposed asset. Shorter maturities and inflation-linked bonds reduce that risk while keeping some safety and liquidity."},
+                    {"who": "Keep liquidity and avoid concentrated, leveraged macro bets", "why": "Currency regimes can move sharply and unpredictably. Cash and diversification let you act on changes instead of being forced to sell into them."},
+                ]},
+                {"id": "scenarios", "label": "Scenarios", "type": "scenarios", "items": [
+                    {"name": "Dollar stays dominant", "text": "The US keeps its depth and trust advantage, foreign demand for its assets persists, and the dollar's cycles are driven by rates and growth, not regime change.", "favours": "US assets, the dollar, high-quality US bonds", "hurts": "Gold and non-US positions that were bought for a regime shift",
+                     "positioning": "A US core with modest hedges loses little; heavy shift bets cost you."},
+                    {"name": "Gradual multipolar drift", "text": "Reserve diversification and local-currency trade grow slowly over years. The dollar weakens in cycles, non-US assets outperform for long stretches, and gold keeps being bought.", "favours": "Gold, non-US stocks, commodities, US multinationals", "hurts": "Long Treasuries, a US-only portfolio at a high valuation",
+                     "positioning": "A balanced mix of home core, non-US equities and a hard-asset sleeve captures most of it."},
+                    {"name": "Disorderly shift", "text": "A loss of confidence, a crisis in Treasury markets or a geopolitical rupture forces rapid selling of dollar assets, with sharp volatility in currencies, bonds and stocks everywhere.", "favours": "Gold and hard assets, short-term and inflation-linked bonds, cash", "hurts": "Long bonds, richly valued US stocks, leveraged positions and thinly traded markets",
+                     "positioning": "Liquidity, short duration and real assets matter most; correlations rise and diversification across risky assets helps less than expected."},
+                ]},
+                {"id": "signposts", "label": "What to watch", "type": "cards", "items": [
+                    {"title": "Central-bank gold buying", "text": "A sustained pace of official gold purchases is the clearest sign of reserve diversification in progress."},
+                    {"title": "Reserve and trade shares", "text": "The dollar's share of official reserves and of trade invoicing, reported periodically by the IMF and SWIFT, show how quickly anything is changing."},
+                    {"title": "Treasury auction demand and term premium", "text": "Weak bidding at auctions or a rising extra yield on long bonds would signal that borrowing is getting harder."},
+                    {"title": "The dollar index versus real yields", "text": "Watch whether the dollar weakens even when US yields are high; that breaks the usual relationship and would be a notable warning."},
+                    {"title": "Sanctions and capital controls", "text": "New uses of financial sanctions, or new payment systems built to avoid them, push countries to diversify."},
+                    {"title": "US fiscal path", "text": "Large deficits and a rising interest bill make reliance on foreign buyers harder to sustain."},
+                ]},
             ],
         },
     },
@@ -364,11 +500,11 @@ def all_symbols() -> list[str]:
 
 
 def stock_symbols() -> list[str]:
-    """Companies only (ETFs have no fundamentals to fetch)."""
+    """Companies only: ETFs and commodity funds have no company fundamentals to fetch."""
     seen, out = set(), []
     for t in THEMES:
         for x in t["stocks"]:
-            if x["symbol"] not in seen:
+            if x.get("kind", "stock") == "stock" and x["symbol"] not in seen:
                 seen.add(x["symbol"])
                 out.append(x["symbol"])
     return out

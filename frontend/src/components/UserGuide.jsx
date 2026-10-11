@@ -9,7 +9,7 @@ const GUIDE = [
     title: 'Getting Started',
     icon: '◆',
     blocks: [
-      { type: 'p', text: 'Stock Monitor is a real-time market intelligence platform for retail investors and active traders. It combines live price data, technical analysis, portfolio tracking, and AI-powered research into a single dark-themed dashboard.' },
+      { type: 'p', text: 'Compass is a real-time market intelligence platform for retail investors and active traders. It combines live price data, technical analysis, portfolio tracking, and AI-powered research into a single dark-themed dashboard.' },
       { type: 'h3', text: 'First-Time Setup' },
       { type: 'steps', items: [
         'Add tickers to your watchlist using the TICKER input in the top header bar, then click "+ Add" (or press Enter).',
@@ -24,7 +24,7 @@ const GUIDE = [
         ['Markets', 'Overview, Sentiment, Reddit Trending, Index Heatmap, Holdings Performance, Breadth, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto'],
         ['Economy', 'Regime Dashboard, Indicators, Indicator Studies, Fed Watch, Yield Curve, Macro Calendar'],
         ['Sectors', 'Scoreboard, Rotation Map, Sector Screener, Cycle Fit, Sector Backtest'],
-        ['Themes', 'Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance'],
+        ['Themes', 'Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance, Dollar Regime Shift'],
         ['Research', 'Tear Sheet, 100-Bagger Finder, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options'],
         ['Watchlist', 'Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts'],
         ['News', 'My News Feed'],
@@ -625,7 +625,7 @@ const GUIDE = [
     title: 'Themes',
     icon: '✦',
     blocks: [
-      { type: 'p', text: 'Thematic investing groups companies by a long-term force reshaping the economy rather than by sector. This group has an overview and one page for each theme: Artificial Intelligence, Robotics, Quantum Computing, Space Exploration and AI Abundance. Every theme page has the same layout, so once you know one you know them all.' },
+      { type: 'p', text: 'Thematic investing groups companies by a long-term force reshaping the economy rather than by sector. This group has an overview and one page for each theme: Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance and Dollar Regime Shift. Every theme page has the same layout, so once you know one you know them all.' },
       { type: 'h3', text: 'Themes Overview' },
       { type: 'p', text: 'One card per theme with its basket\'s 3-month, 1-year and 3-year performance against SPY, the median analyst upside and the strongest setups, then a side-by-side table (1M to 5Y), where the leaders and laggards are, and how many core, supplier, other and speculative names each theme holds. Click a card or row to open the theme.' },
       { type: 'h3', text: 'Artificial Intelligence, Robotics, Quantum Computing and Space Exploration' },
@@ -643,6 +643,13 @@ const GUIDE = [
       { type: 'bullets', items: [
         'This page also has an "At risk of disruption" group (outsourcing, staffing, call centers, homework help). Those companies are shown for contrast with live prices but are left out of the basket, the analyst outlook, the setup ranking and the candidates, and are never presented as recommendations.',
         'The commentary is a hand-written, dated scenario map. Nobody knows how fast this unfolds or who captures the gains; the page lays out the possibilities rather than predicting one.',
+      ]},
+      { type: 'h3', text: 'Dollar Regime Shift' },
+      { type: 'p', text: 'What if the world gradually relies less on the US dollar as the main reserve, trade and borrowing currency? This page is about markets and assets more than single stocks: gold and miners, country funds for Europe, Japan, India, Brazil, Saudi Arabia, China and others, commodity producers, US multinationals that earn abroad, and, on the other side, long Treasuries and the dollar itself. Groups are renamed for this theme (Hard-asset hedges, Markets & resources that gain, US multinationals, Speculative alternatives, Most exposed to the shift).' },
+      { type: 'bullets', items: [
+        '"What it could mean" has six tabs: US markets (funding costs, multinational earnings, valuation premium), Global markets (earnings translation, emerging-market relief, commodities, currency risk), Which markets benefit (ranked), Reality check (why the dollar\'s role is sticky and a quick break has a poor record), How to position (a resilience-first framework: home-market core, non-US diversification, a hard-asset sleeve, bond duration, liquidity) and Scenarios, with what each favours and hurts and how to be positioned. A final tab lists signposts to watch.',
+        'Most members here are funds. They show live returns and an Open chart button but no company score, analyst targets or setup ranking; only the individual companies (miners, multinationals) are scored and can appear under Candidates.',
+        'This is a way to think about staying robust across outcomes, not an allocation or a prediction. A shift, if it comes, is likely to be slow and uneven, and the dollar can strengthen sharply in the meantime.',
       ]},
       { type: 'h3', text: 'The setup score' },
       { type: 'p', text: 'A transparent 0-100 score that compares names within a theme: theme exposure 20, momentum versus SPY 20, analyst upside 20, growth 20, financial strength 10, valuation versus growth 10. Very-high-risk names (small, unprofitable or cash-burning) are marked down 15% and high-risk names 7%, and a very-high-risk name or one that has fallen 40%+ in a year can never be better than "Mixed". Labels: Stronger setup (68+), Mixed (52+), Weaker setup.' },
@@ -1841,7 +1848,7 @@ export default function UserGuide({ onNavigate, initialSection } = {}) {
         {/* Header */}
         <div>
           <div className="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Documentation</div>
-          <h1 className="text-white font-bold text-xl mb-1">Stock Monitor — User Guide</h1>
+          <h1 className="text-white font-bold text-xl mb-1">Compass — User Guide</h1>
           <p className="text-gray-500 text-sm">Complete reference for all features and workflows.</p>
         </div>
 
@@ -1868,7 +1875,7 @@ export default function UserGuide({ onNavigate, initialSection } = {}) {
         )}
 
         <div className="text-gray-700 text-xs pb-8">
-          Stock Monitor · Built with FastAPI + React + Claude AI · Data from Yahoo Finance & SEC EDGAR
+          Compass · Built with FastAPI + React + Claude AI · Data from Yahoo Finance & SEC EDGAR
         </div>
       </div>
     </div>

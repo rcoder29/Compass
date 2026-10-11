@@ -143,19 +143,25 @@ def score_candidate(entry: dict, m: dict | None, returns: dict | None, bench_ret
 
 # ── per-name view ─────────────────────────────────────────────────────────────
 
+FUND_SETUP = {"score": None, "rawScore": None, "riskMultiplier": 1.0, "risk": "Fund", "label": "Fund", "capReason": None, "factors": {}}
+
+
 def member_view(entry: dict, m: dict | None, perf: dict | None, bench_returns: dict | None) -> dict:
+    is_fund = entry.get("kind", "stock") == "fund"
+    if is_fund:
+        m = None                                    # a fund has no company fundamentals; it gets live returns only
     returns = (perf or {}).get("returns") or {}
     ann = (perf or {}).get("annualised") or {}
-    cand = score_candidate(entry, m, returns, bench_returns)
-    if entry["role"] == "atrisk":                       # a "setup" is meaningless for a business the theme could undercut
+    cand = dict(FUND_SETUP) if is_fund else score_candidate(entry, m, returns, bench_returns)
+    if entry["role"] == "atrisk" and not is_fund:                       # a "setup" is meaningless for a business the theme could undercut
         cand = {**cand, "label": "Disruption risk", "capReason": None}
     hbs = hb.score(m) if m else None
     g = hb.blended_growth(m) if m else None
     return {
-        "symbol": entry["symbol"], "name": entry["name"], "layer": entry["layer"], "role": entry["role"], "exposure": entry["exposure"], "why": entry["why"],
+        "symbol": entry["symbol"], "name": entry["name"], "kind": "fund" if is_fund else "stock", "layer": entry["layer"], "role": entry["role"], "exposure": entry["exposure"], "why": entry["why"],
         "available": bool(perf or m),
         "price": (perf or {}).get("price") or (m or {}).get("price"),
-        "marketCap": (m or {}).get("marketCap"), "size": size_label((m or {}).get("marketCap")), "risk": risk_level(m),
+        "marketCap": (m or {}).get("marketCap"), "size": "Fund" if is_fund else size_label((m or {}).get("marketCap")), "risk": "Fund" if is_fund else risk_level(m),
         "returns": {p: returns.get(p) for p in PERIODS}, "annualised": {p: ann.get(p) for p in ("3Y", "5Y")},
         "excess": {p: (returns[p] - bench_returns[p]) if returns.get(p) is not None and (bench_returns or {}).get(p) is not None else None for p in ("3M", "6M", "1Y")},
         "upside": upside(m), "growth": g, "revenueGrowth": (m or {}).get("revenueGrowth"), "forwardPE": (m or {}).get("forwardPE"),
@@ -246,13 +252,13 @@ def build_theme(theme: dict, metrics: dict[str, dict], perf_rows: dict[str, dict
         basket[key]["annualised"] = annualised_mean(avail, key)
     out = outlook(avail, basket)
     by_role = {r: [v for v in views if v["role"] == r] for r in ("core", "enabler", "adjacent", "emerging", "atrisk")}
-    ranked = sorted([v for v in avail], key=lambda v: -v["setup"]["score"])
+    ranked = sorted([v for v in avail if v["setup"]["score"] is not None], key=lambda v: -v["setup"]["score"])
     movers = sorted([v for v in avail if v["returns"].get("3M") is not None], key=lambda v: -v["returns"]["3M"])
     etfs = [{"symbol": s, "name": n, **(etf_perf.get(s) or {})} for s, n in theme["etfs"]]
     return {
         "id": theme["id"], "name": theme["name"], "short": theme["short"], "color": theme["color"], "tagline": theme["tagline"], "thesis": theme["thesis"],
         "whyNow": theme["whyNow"], "layers": theme["layers"], "shortTerm": theme["shortTerm"], "longTerm": theme["longTerm"], "watch": theme["watch"],
-        "members": views, "roleCounts": {r: len(v) for r, v in by_role.items()}, "impact": theme.get("impact"),
+        "members": views, "roleCounts": {r: len(v) for r, v in by_role.items()}, "impact": theme.get("impact"), "roleLabels": theme.get("roleLabels"),
         "basket": basket, "benchmark": bench_returns, "series": series, "outlook": out, "scenarios": scenarios(),
         "top": [v["symbol"] for v in ranked[:5]], "leaders3M": [v["symbol"] for v in movers[:3]], "laggards3M": [v["symbol"] for v in movers[-3:]],
         "etfs": etfs, "unavailable": [v["symbol"] for v in views if not v["available"]],
@@ -264,6 +270,7 @@ def theme_summary(t: dict) -> dict:
     """The overview card for one built theme."""
     b = t["basket"]
     return {"id": t["id"], "name": t["name"], "short": t["short"], "color": t["color"], "tagline": t["tagline"], "members": len([m for m in t["members"] if m["available"]]),
+            "roleLabels": t.get("roleLabels"),
             "returns": {p: b[p]["mean"] for p in PERIODS}, "benchmark": t["benchmark"], "outlook": t["outlook"], "series": t["series"],
             "top": [{"symbol": s, "name": next(m["name"] for m in t["members"] if m["symbol"] == s), "score": next(m["setup"]["score"] for m in t["members"] if m["symbol"] == s)} for s in t["top"][:3]],
             "leaders3M": t["leaders3M"], "laggards3M": t["laggards3M"], "roleCounts": t["roleCounts"]}

@@ -241,6 +241,7 @@ const NAV_GROUPS = [
       { id: 'themequantum',   label: 'Quantum Computing' },
       { id: 'themespace',     label: 'Space Exploration' },
       { id: 'themeabundance', label: 'AI Abundance' },
+      { id: 'themedollar',     label: 'Dollar Regime Shift' },
     ],
   },
   {
@@ -993,7 +994,7 @@ export default function App() {
   const activeNavLabel = NAV_INDEX[activeTab]?.label || activeTab
   const handleExportPdf = () => {
     const prevTitle = document.title
-    document.title = `StockMonitor - ${activeNavLabel} - ${new Date().toISOString().slice(0, 10)}`
+    document.title = `Compass - ${activeNavLabel} - ${new Date().toISOString().slice(0, 10)}`
     const restore = () => { document.title = prevTitle; window.removeEventListener('afterprint', restore) }
     window.addEventListener('afterprint', restore)
     window.print()
@@ -1113,6 +1114,7 @@ export default function App() {
           {activeTab === 'themequantum'   && <ThemePage key="quantum" themeId="quantum" onNavigate={navigate} />}
           {activeTab === 'themespace'     && <ThemePage key="space" themeId="space" onNavigate={navigate} />}
           {activeTab === 'themeabundance' && <ThemePage key="abundance" themeId="abundance" onNavigate={navigate} />}
+          {activeTab === 'themedollar'    && <ThemePage key="dollar" themeId="dollar" onNavigate={navigate} />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
           {activeTab === 'econregime'      && <EconomyRegime onNavigate={navigate} />}

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _TTL = timedelta(minutes=15)
+_PARTIAL_TTL = timedelta(minutes=2)      # a partial result (fundamentals still loading) is reused briefly so polling can't re-download every price
 _SCAN_KEY = "themes:all"
 
 
@@ -62,6 +63,10 @@ def _build() -> dict:
         return {"status": "ready", **cached}
     syms = catalog.stock_symbols()
     have, missing = data.cached_metrics(syms)
+    if missing and data.cooling_down(_SCAN_KEY):
+        recent = cache_get("themes:partial", _PARTIAL_TTL)
+        if recent is not None:
+            return {"status": "ready", **recent}
     partial = None
     if missing and data.cooling_down(_SCAN_KEY):
         partial = {"missing": len(missing), "retryInSeconds": data.retry_in(_SCAN_KEY),
@@ -70,7 +75,9 @@ def _build() -> dict:
         job = data.start_scan(_SCAN_KEY, missing)
         return {"status": "running", "progress": {"done": len(syms) - len(missing) + min(job["done"], len(missing)), "total": len(syms)}, "error": job["error"]}
     out = _assemble({m["symbol"]: m for m in have}, partial)
-    if not partial:                                  # a partial result is shown but not cached, so the retry picks up fresh data
+    if partial:                                      # shown now, kept only briefly, so the retry after the cooldown picks up fresh data
+        cache_set("themes:partial", out)
+    else:
         cache_set("themes:built", out)
     return {"status": "ready", **out}
 

@@ -42,7 +42,7 @@ export default function Header({
         {/* Brand */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-emerald-400 text-lg">◆</span>
-          <span className="text-white font-bold text-base tracking-widest">STOCK MONITOR</span>
+          <span className="text-white font-bold text-base tracking-widest">COMPASS</span>
         </div>
 
         {/* Add ticker */}

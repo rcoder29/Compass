@@ -39,7 +39,7 @@ BENCH = {"1D": 0.0, "1W": 0.01, "1M": 0.02, "3M": 0.05, "6M": 0.08, "YTD": 0.1, 
 
 class TestCatalog:
     def test_launch_themes_with_complete_content(self):
-        assert [t["id"] for t in cat.THEMES] == ["ai", "robotics", "quantum", "space", "abundance"]
+        assert [t["id"] for t in cat.THEMES] == ["ai", "robotics", "quantum", "space", "abundance", "dollar"]
         for t in cat.THEMES:
             assert t["name"] and t["tagline"] and t["thesis"] and t["whyNow"] and t["watch"] and t["navId"] and t["color"].startswith("#")
             for block in (t["shortTerm"], t["longTerm"]):
@@ -53,8 +53,9 @@ class TestCatalog:
             for s in t["stocks"]:
                 assert s["role"] in cat.ROLES and s["layer"] in layers and s["exposure"] in (1, 2, 3) and s["why"] and s["name"], s
             assert {"core", "enabler", "emerging"} <= {s["role"] for s in t["stocks"]}, f"{t['id']} should show leaders, suppliers and speculative names"
-            if t["id"] != "abundance":
-                assert not any(s["role"] == "atrisk" for s in t["stocks"]), "at-risk names belong only on themes about disruption"
+            if t["id"] not in ("abundance", "dollar"):
+                assert not any(s["role"] == "atrisk" for s in t["stocks"]), "at-risk names belong only on themes about disruption or exposure"
+            assert all(s.get("kind") in ("stock", "fund") for s in t["stocks"])
             assert all(layer in {s["layer"] for s in t["stocks"]} for layer in layers), f"{t['id']} has an empty value-chain layer"
             assert t["etfs"] and all(len(e) == 2 for e in t["etfs"])
 
@@ -73,12 +74,23 @@ class TestCatalog:
 
 
 class TestAbundanceTheme:
-    def test_editorial_impact_block_is_complete(self):
-        imp = cat.BY_ID["abundance"]["impact"]
-        assert imp["intro"] and imp["jobs"]["summary"] and all(len(imp["jobs"][k]) >= 2 for k in ("exposed", "resilient", "emerging"))
-        assert len(imp["markets"]) >= 4 and all(m["title"] and m["text"] for m in imp["markets"])
-        assert len(imp["winners"]) >= 4 and all(w["who"] and w["why"] for w in imp["winners"])
-        assert len(imp["scenarios"]) == 3 and all(sc["name"] and sc["favours"] and sc["hurts"] for sc in imp["scenarios"])
+    def test_editorial_impact_sections_are_complete_and_well_typed(self):
+        for tid in ("abundance", "dollar"):
+            imp = cat.BY_ID[tid]["impact"]
+            assert imp["intro"] and len(imp["sections"]) >= 4
+            ids = [sec["id"] for sec in imp["sections"]]
+            assert len(ids) == len(set(ids))
+            for sec in imp["sections"]:
+                assert sec["label"] and sec["type"] in ("lists", "cards", "ranked", "scenarios"), (tid, sec["id"])
+                if sec["type"] == "lists":
+                    assert sec["summary"] and len(sec["columns"]) >= 2 and all(c["title"] and len(c["items"]) >= 2 and c["tone"] in ("good", "bad", "new") for c in sec["columns"])
+                elif sec["type"] == "cards":
+                    assert len(sec["items"]) >= 4 and all(i["title"] and i["text"] for i in sec["items"])
+                elif sec["type"] == "ranked":
+                    assert len(sec["items"]) >= 4 and all(i["who"] and i["why"] for i in sec["items"])
+                else:
+                    assert len(sec["items"]) == 3 and all(i["name"] and i["text"] and i["favours"] and i["hurts"] for i in sec["items"])
+        assert {"jobs", "markets", "winners", "scenarios"} <= {sec["id"] for sec in cat.BY_ID["abundance"]["impact"]["sections"]}
 
     def test_at_risk_names_are_shown_but_never_counted(self):
         theme = cat.BY_ID["abundance"]
@@ -101,6 +113,47 @@ class TestAbundanceTheme:
     def test_other_themes_have_no_impact_block_and_no_atrisk(self):
         built = th.build_theme(cat.BY_ID["space"], {}, {}, BENCH, None, {})
         assert built["impact"] is None and built["roleCounts"]["atrisk"] == 0
+
+
+class TestDollarTheme:
+    def test_funds_and_role_labels(self):
+        t = cat.BY_ID["dollar"]
+        funds = [x for x in t["stocks"] if x["kind"] == "fund"]
+        assert len(funds) >= 15 and {"GLD", "VGK", "INDA", "TLT", "UUP"} <= {x["symbol"] for x in funds}
+        assert set(t["roleLabels"]) == {"core", "enabler", "adjacent", "emerging", "atrisk"} and all(len(v) == 2 and all(v) for v in t["roleLabels"].values())
+        assert {x["symbol"] for x in t["stocks"] if x["role"] == "atrisk"} >= {"TLT", "UUP"}
+
+    def test_fund_symbols_are_not_fetched_as_companies_but_are_priced(self):
+        stocks = cat.stock_symbols()
+        assert "GLD" not in stocks and "NEM" in stocks and "TLT" not in stocks
+        assert {"GLD", "VGK", "TLT"} <= set(cat.all_symbols())
+
+    def test_fund_view_has_returns_but_no_score_and_ignores_any_metrics(self):
+        e = entry("GLD", kind="fund", role="core")
+        v = th.member_view(e, metrics("GLD"), {"returns": RET, "annualised": {}, "price": 300.0}, BENCH)
+        assert v["kind"] == "fund" and v["setup"]["label"] == "Fund" and v["setup"]["score"] is None and v["setup"]["factors"] == {}
+        assert v["risk"] == "Fund" and v["size"] == "Fund" and v["upside"] is None and v["bagger"] is None and v["marketCap"] is None
+        assert v["available"] and v["returns"]["3M"] == 0.2 and v["excess"]["3M"] == pytest.approx(0.15)
+        json.dumps(v)
+
+    def test_funds_count_in_the_basket_but_never_rank_as_candidates(self):
+        theme = cat.BY_ID["dollar"]
+        ms = {x["symbol"]: metrics(x["symbol"]) for x in theme["stocks"] if x["kind"] == "stock"}
+        rows = {x["symbol"]: {"returns": RET, "annualised": {"3Y": 0.2, "5Y": 0.2}, "price": 10} for x in theme["stocks"]}
+        funds = {x["symbol"] for x in theme["stocks"] if x["kind"] == "fund"}
+        atrisk = {x["symbol"] for x in theme["stocks"] if x["role"] == "atrisk"}
+        built = th.build_theme(theme, ms, rows, BENCH, None, {})
+        assert built["basket"]["3M"]["n"] == len(theme["stocks"]) - len(atrisk)             # funds are in, at-risk are out
+        assert built["top"] and not set(built["top"]) & funds                                # only companies are ranked
+        assert built["roleLabels"]["atrisk"][0] == "Most exposed to the shift" and built["impact"]["sections"]
+        assert th.theme_summary(built)["roleLabels"]["core"][0] == "Hard-asset hedges"
+        json.dumps(built)
+
+    def test_theme_with_no_ranked_companies_still_builds(self):
+        theme = {**cat.BY_ID["dollar"], "stocks": [x for x in cat.BY_ID["dollar"]["stocks"] if x["kind"] == "fund"]}
+        rows = {x["symbol"]: {"returns": RET, "annualised": {}, "price": 10} for x in theme["stocks"]}
+        built = th.build_theme(theme, {}, rows, BENCH, None, {})
+        assert built["top"] == [] and th.theme_summary(built)["top"] == []
 
 
 class TestUpsideAndRisk:
@@ -304,7 +357,7 @@ class TestEndpoints:
         assert j["status"] == "running" and j["progress"]["total"] == len(cat.stock_symbols()) and j["progress"]["done"] == 5
         client.state["missing"] = False
         j = client.get("/api/themes").json()
-        assert j["status"] == "ready" and [t["id"] for t in j["themes"]] == ["ai", "robotics", "quantum", "space", "abundance"]
+        assert j["status"] == "ready" and [t["id"] for t in j["themes"]] == ["ai", "robotics", "quantum", "space", "abundance", "dollar"]
         assert j["themes"][0]["returns"]["3M"] == pytest.approx(0.1) and j["partial"] is None and j["editorialDate"]
         json.dumps(j)
 
@@ -312,7 +365,7 @@ class TestEndpoints:
         client.state["missing"] = False
         j = client.get("/api/themes/robotics").json()
         t = j["theme"]
-        assert t["id"] == "robotics" and len(t["members"]) == len(cat.BY_ID["robotics"]["stocks"]) and {o["id"] for o in j["others"]} == {"ai", "quantum", "space", "abundance"}
+        assert t["id"] == "robotics" and len(t["members"]) == len(cat.BY_ID["robotics"]["stocks"]) and {o["id"] for o in j["others"]} == {"ai", "quantum", "space", "abundance", "dollar"}
         assert t["members"][0]["upside"]["mean"] == pytest.approx(0.25) and t["series"]["points"] and t["scenarios"]["rows"]
         assert t["etfs"][0]["returns"]["3M"] == pytest.approx(0.1)
 
@@ -331,7 +384,9 @@ class TestEndpoints:
         j = client.get("/api/themes/ai").json()
         assert j["status"] == "ready" and j["partial"]["retryInSeconds"] == 90 and "Prices and performance are complete" in j["partial"]["note"]
         assert j["theme"]["members"][0]["upside"] is None and j["theme"]["members"][0]["returns"]["3M"] == pytest.approx(0.1)
-        assert "themes:built" not in client.store                              # a partial result is never cached
+        assert "themes:built" not in client.store and "themes:partial" in client.store     # kept briefly, never as the full result
+        monkeypatch.setattr(holdings_perf, "download_daily", lambda ss: pytest.fail("prices must not be re-downloaded while polling"))
+        assert client.get("/api/themes/ai").json()["status"] == "ready"
 
     def test_price_failure_is_502(self, client, monkeypatch):
         client.state["missing"] = False

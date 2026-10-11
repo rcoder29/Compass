@@ -8,8 +8,12 @@ export const ROLE_BLURB = {
   adjacent: 'Large companies that benefit without depending on the theme', emerging: 'Small, early or unproven: high potential, high risk of permanent loss',
   atrisk: 'Businesses the theme could undercut: shown for contrast, left out of the basket, outlook and candidates',
 }
-export const SETUP_CLS = { 'Stronger setup': 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30', Mixed: 'text-gray-300 bg-gray-700/40 border-gray-600', 'Weaker setup': 'text-amber-300 bg-amber-500/10 border-amber-500/30', 'Disruption risk': 'text-red-300 bg-red-500/10 border-red-500/30' }
-export const RISK_CLS = { Lower: 'text-emerald-300', Moderate: 'text-sky-300', High: 'text-amber-300', 'Very high': 'text-red-300' }
+export const SETUP_CLS = { 'Stronger setup': 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30', Mixed: 'text-gray-300 bg-gray-700/40 border-gray-600', 'Weaker setup': 'text-amber-300 bg-amber-500/10 border-amber-500/30', 'Disruption risk': 'text-red-300 bg-red-500/10 border-red-500/30', Fund: 'text-gray-400 bg-gray-800/50 border-gray-700' }
+export const RISK_CLS = { Lower: 'text-emerald-300', Moderate: 'text-sky-300', High: 'text-amber-300', 'Very high': 'text-red-300', Fund: 'text-gray-500' }
+
+// Group names/blurbs: a theme can relabel the generic roles (e.g. the dollar theme calls 'core' 'Hard-asset hedges')
+export const roleName = (t, r) => t.roleLabels?.[r]?.[0] ?? ROLE_NAMES[r]
+export const roleBlurb = (t, r) => t.roleLabels?.[r]?.[1] ?? ROLE_BLURB[r]
 
 // colour scale for a return in a given column (longer horizons saturate later)
 export const HEAT = { '1M': 0.2, '3M': 0.35, '6M': 0.5, YTD: 0.6, '1Y': 0.9, '3Y': 2, '5Y': 3 }

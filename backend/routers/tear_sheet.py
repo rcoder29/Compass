@@ -925,7 +925,7 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
         },
         "snapshot": {
             "price": price, "changePct": _safe_float(info.get("regularMarketChangePercent")),
-            "marketCap": market_cap, "enterpriseValue": ev,
+            "marketCap": market_cap, "enterpriseValue": ev, "sharesOutstanding": shares,
             "week52High": w52_hi, "week52Low": w52_lo, "rangePosition": range_pos,
             "beta": beta, "avgVolume": _safe_float(info.get("averageVolume")),
             "nextEarnings": str(earn_dates[0]) if earn_dates else None,

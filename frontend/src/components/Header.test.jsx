@@ -19,7 +19,7 @@ beforeEach(() => vi.clearAllMocks())
 describe('Header', () => {
   it('renders brand name', () => {
     render(<Header {...baseProps} />)
-    expect(screen.getByText('STOCK MONITOR')).toBeInTheDocument()
+    expect(screen.getByText('COMPASS')).toBeInTheDocument()
   })
 
   it('calls onAddTicker with uppercased symbol on submit', async () => {

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import ChartModal from './ChartModal'
 import { usePolledApi, PageHeader, Loading, ErrorBox, Caveats, Card, TimeChart, fmtPct, fmtNum, signedClass, DASH } from './MacroKit'
-import { RETURN_COLS, ROLE_ORDER, ROLE_NAMES, ROLE_BLURB, RISK_CLS, RetCell, SetupPill, Stat, List, ScanProgress, PartialNote, Disclaimer } from './ThemeKit'
+import { RETURN_COLS, ROLE_ORDER, roleName, roleBlurb, RISK_CLS, RetCell, SetupPill, Stat, List, ScanProgress, PartialNote, Disclaimer } from './ThemeKit'
 
 function fmtCap(v) {
   if (v == null) return DASH
@@ -73,51 +73,56 @@ function Scenarios({ t }) {
   )
 }
 
+const TONE = { bad: ['text-red-200/80', '↓'], good: ['text-emerald-200/80', '↑'], new: ['text-sky-200/80', '+'] }
+
+function ImpactSection({ sec }) {
+  if (sec.type === 'lists') {
+    return (
+      <div className="space-y-3 text-xs">
+        <p className="text-gray-300">{sec.summary}</p>
+        <div className="grid md:grid-cols-3 gap-4">{sec.columns.map(c => <List key={c.title} title={c.title} items={c.items} tone={TONE[c.tone]?.[0]} marker={TONE[c.tone]?.[1]} />)}</div>
+      </div>
+    )
+  }
+  if (sec.type === 'cards') {
+    return <ul className="grid md:grid-cols-2 gap-3 text-xs">{sec.items.map(m => <li key={m.title} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3"><div className="text-gray-200 font-medium mb-1">{m.title}</div><p className="text-gray-400">{m.text}</p></li>)}</ul>
+  }
+  if (sec.type === 'ranked') {
+    return (
+      <ol className="space-y-2 text-xs">
+        {sec.items.map((w, i) => <li key={w.who} className="flex gap-3 bg-gray-950/40 border border-gray-800 rounded-lg p-3"><span className="text-gray-500 tabular-nums">{i + 1}</span><div><div className="text-gray-200 font-medium">{w.who}</div><p className="text-gray-400 mt-0.5">{w.why}</p></div></li>)}
+        <li className="text-[11px] text-gray-500 list-none">The companies and funds that fit each group are in the value chain and the table below, with live performance.</li>
+      </ol>
+    )
+  }
+  return (
+    <div className="grid md:grid-cols-3 gap-3 text-xs">
+      {sec.items.map(sc => (
+        <div key={sc.name} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3 space-y-2">
+          <div className="text-gray-100 font-medium">{sc.name}</div>
+          <p className="text-gray-400">{sc.text}</p>
+          <p><span className="text-emerald-300">Favours: </span><span className="text-gray-400">{sc.favours}</span></p>
+          <p><span className="text-red-300">Hurts: </span><span className="text-gray-400">{sc.hurts}</span></p>
+          {sc.positioning && <p><span className="text-sky-300">Positioning: </span><span className="text-gray-400">{sc.positioning}</span></p>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Impact({ imp }) {
-  const [tab, setTab] = useState('jobs')
-  const tabs = [['jobs', 'Jobs'], ['markets', 'Markets'], ['winners', 'Who is best set up'], ['scenarios', 'Scenarios']]
+  const [tab, setTab] = useState(imp.sections[0].id)
+  const sec = imp.sections.find(x => x.id === tab) ?? imp.sections[0]
   return (
     <Card title="What it could mean" right="editorial scenario map, not a forecast">
       <p className="text-xs text-gray-400 mb-3">{imp.intro}</p>
       <div className="flex flex-wrap gap-2 mb-3 text-xs" role="tablist" aria-label="Implications">
-        {tabs.map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-                  className={`px-3 py-1.5 rounded-lg border ${tab === id ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>{label}</button>
+        {imp.sections.map(x => (
+          <button key={x.id} role="tab" aria-selected={sec.id === x.id} onClick={() => setTab(x.id)}
+                  className={`px-3 py-1.5 rounded-lg border ${sec.id === x.id ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>{x.label}</button>
         ))}
       </div>
-      {tab === 'jobs' && (
-        <div className="space-y-3 text-xs">
-          <p className="text-gray-300">{imp.jobs.summary}</p>
-          <div className="grid md:grid-cols-3 gap-4">
-            <List title="Most exposed" items={imp.jobs.exposed} tone="text-red-200/80" marker="↓" />
-            <List title="More resilient" items={imp.jobs.resilient} tone="text-emerald-200/80" marker="↑" />
-            <List title="What could be created" items={imp.jobs.emerging} tone="text-sky-200/80" marker="+" />
-          </div>
-        </div>
-      )}
-      {tab === 'markets' && (
-        <ul className="grid md:grid-cols-2 gap-3 text-xs">
-          {imp.markets.map(m => <li key={m.title} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3"><div className="text-gray-200 font-medium mb-1">{m.title}</div><p className="text-gray-400">{m.text}</p></li>)}
-        </ul>
-      )}
-      {tab === 'winners' && (
-        <ol className="space-y-2 text-xs">
-          {imp.winners.map((w, i) => <li key={w.who} className="flex gap-3 bg-gray-950/40 border border-gray-800 rounded-lg p-3"><span className="text-gray-500 tabular-nums">{i + 1}</span><div><div className="text-gray-200 font-medium">{w.who}</div><p className="text-gray-400 mt-0.5">{w.why}</p></div></li>)}
-          <li className="text-[11px] text-gray-500 list-none">The companies that fit each group are in the value chain and company table below, with live performance, analyst targets and risk.</li>
-        </ol>
-      )}
-      {tab === 'scenarios' && (
-        <div className="grid md:grid-cols-3 gap-3 text-xs">
-          {imp.scenarios.map(sc => (
-            <div key={sc.name} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3 space-y-2">
-              <div className="text-gray-100 font-medium">{sc.name}</div>
-              <p className="text-gray-400">{sc.text}</p>
-              <p><span className="text-emerald-300">Favours: </span><span className="text-gray-400">{sc.favours}</span></p>
-              <p><span className="text-red-300">Hurts: </span><span className="text-gray-400">{sc.hurts}</span></p>
-            </div>
-          ))}
-        </div>
-      )}
+      <ImpactSection sec={sec} />
     </Card>
   )
 }
@@ -151,6 +156,18 @@ function ValueChain({ t, onPick }) {
 }
 
 function Detail({ m, names, onChart }) {
+  if (m.kind === 'fund') {
+    return (
+      <div className="grid lg:grid-cols-3 gap-4 px-4 py-3 bg-gray-950/40 text-xs" data-testid="member-detail">
+        <div className="lg:col-span-2 space-y-2">
+          <p className="text-gray-300">{m.why}</p>
+          <p className="text-gray-500">A fund: it has live returns but no company fundamentals, analyst targets or setup score. Compare it by what it holds, its fees and the currency it is priced in.</p>
+          <div className="flex gap-4 tabular-nums">{['1M', '3M', '1Y', '3Y', '5Y'].map(p => <span key={p}><span className="text-gray-600">{p} </span><span className={signedClass(m.returns[p])}>{fmtPct(m.returns[p], { digits: 0 })}</span></span>)}</div>
+        </div>
+        <div><button onClick={() => onChart(m)} className="px-3 py-1.5 rounded-lg border border-gray-700 text-gray-300 hover:border-gray-500">Open chart</button></div>
+      </div>
+    )
+  }
   return (
     <div className="grid lg:grid-cols-3 gap-4 px-4 py-3 bg-gray-950/40 text-xs" data-testid="member-detail">
       <div className="lg:col-span-2 space-y-3">
@@ -220,7 +237,7 @@ export default function ThemePage({ themeId, onNavigate }) {
     { name: `${t.short} basket`, color: t.color, points: t.series.points.map(p => [p[0], p[1]]) },
     { name: 'SPY', color: '#94a3b8', points: t.series.points.map(p => [p[0], p[2]]) },
   ] : null
-  const candidates = [...t.members].filter(m => m.available && m.role !== 'atrisk').sort((a, b) => b.setup.score - a.setup.score).slice(0, 6)
+  const candidates = [...t.members].filter(m => m.available && m.role !== 'atrisk' && m.setup.score != null).sort((a, b) => b.setup.score - a.setup.score).slice(0, 6)
   const b = t.basket
 
   return (
@@ -271,8 +288,8 @@ export default function ThemePage({ themeId, onNavigate }) {
 
       <Card title="Companies in the theme" right={`${rows.length} shown · click a row for the reasoning`}>
         <div className="flex flex-wrap gap-2 mb-3 text-xs" role="tablist" aria-label="Company group">
-          {[['all', 'All'], ...ROLE_ORDER.filter(r => (t.roleCounts[r] || 0) > 0).map(r => [r, ROLE_NAMES[r]])].map(([id, label]) => (
-            <button key={id} role="tab" aria-selected={roleTab === id} onClick={() => setRoleTab(id)} title={ROLE_BLURB[id]}
+          {[['all', 'All'], ...ROLE_ORDER.filter(r => (t.roleCounts[r] || 0) > 0).map(r => [r, roleName(t, r)])].map(([id, label]) => (
+            <button key={id} role="tab" aria-selected={roleTab === id} onClick={() => setRoleTab(id)} title={id === 'all' ? undefined : roleBlurb(t, id)}
                     className={`px-3 py-1.5 rounded-lg border ${roleTab === id ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>
               {label}{id !== 'all' && <span className="ml-1.5 text-gray-500">{t.roleCounts[id]}</span>}
             </button>
@@ -294,7 +311,7 @@ export default function ThemePage({ themeId, onNavigate }) {
             <tbody>
               {rows.length === 0 && <tr><td colSpan={11} className="text-center text-gray-500 py-6">No companies in this group.</td></tr>}
               {rows.map(m => (
-                <MemberRow key={m.symbol} m={m} open={open === m.symbol} onToggle={() => setOpen(open === m.symbol ? null : m.symbol)} names={t.factorNames} onChart={setChartRow} />
+                <MemberRow key={m.symbol} m={m} t={t} open={open === m.symbol} onToggle={() => setOpen(open === m.symbol ? null : m.symbol)} names={t.factorNames} onChart={setChartRow} />
               ))}
             </tbody>
           </table>
@@ -307,7 +324,7 @@ export default function ThemePage({ themeId, onNavigate }) {
           {candidates.map(m => (
             <button key={m.symbol} onClick={() => jump(m.symbol)} className="text-left bg-gray-950/40 border border-gray-800 hover:border-gray-600 rounded-lg p-3">
               <div className="flex items-center justify-between"><span className="text-sm font-semibold text-gray-100">{m.symbol} <span className="text-gray-500 font-normal text-xs">{m.name}</span></span><span className="tabular-nums text-gray-100 font-semibold">{Math.round(m.setup.score)}</span></div>
-              <div className="flex items-center gap-2 mt-1"><SetupPill setup={m.setup} /><span className={`text-[11px] ${RISK_CLS[m.risk]}`}>{m.risk} risk</span><span className="text-[11px] text-gray-500">{ROLE_NAMES[m.role]}</span></div>
+              <div className="flex items-center gap-2 mt-1"><SetupPill setup={m.setup} /><span className={`text-[11px] ${RISK_CLS[m.risk]}`}>{m.risk} risk</span><span className="text-[11px] text-gray-500">{roleName(t, m.role)}</span></div>
               <p className="text-[11px] text-gray-500 mt-2 line-clamp-2">{m.why}</p>
             </button>
           ))}
@@ -335,21 +352,21 @@ export default function ThemePage({ themeId, onNavigate }) {
   )
 }
 
-function MemberRow({ m, open, onToggle, names, onChart }) {
+function MemberRow({ m, t, open, onToggle, names, onChart }) {
   return (
     <>
       <tr id={`m-${m.symbol}`} onClick={onToggle} onKeyDown={e => e.key === 'Enter' && onToggle()} tabIndex={0} aria-expanded={open} aria-label={`${m.symbol} details`} data-testid="member-row"
           className={`cursor-pointer hover:bg-gray-800/40 ${open ? 'bg-sky-500/5' : ''}`}>
         <td className="px-2 py-2 border-t border-gray-800/60 min-w-[200px]">
           <span className="text-gray-100 font-medium">{m.symbol}</span> <span className="text-gray-400">{m.name}</span>
-          <div className="text-[11px] text-gray-600">{ROLE_NAMES[m.role]}{m.flags.length > 0 && <span className="text-amber-400 ml-2" title={m.flags.join('; ')}>⚠ {m.flags.length}</span>}</div>
+          <div className="text-[11px] text-gray-600">{roleName(t, m.role)}{m.flags.length > 0 && <span className="text-amber-400 ml-2" title={m.flags.join('; ')}>⚠ {m.flags.length}</span>}</div>
         </td>
-        <td className="px-2 py-2 text-right tabular-nums text-gray-300 border-t border-gray-800/60">{fmtCap(m.marketCap)}</td>
+        <td className="px-2 py-2 text-right tabular-nums text-gray-300 border-t border-gray-800/60">{m.kind === 'fund' ? 'Fund' : fmtCap(m.marketCap)}</td>
         {['1M', '3M', '1Y', '3Y'].map(p => <RetCell key={p} v={m.returns[p]} col={p} />)}
         <td className={`px-2 py-2 text-right tabular-nums border-t border-gray-800/60 ${signedClass(m.upside?.mean)}`}>{m.upside ? fmtPct(m.upside.mean, { digits: 0 }) : DASH}</td>
         <td className="px-2 py-2 text-right tabular-nums text-gray-300 border-t border-gray-800/60">{fmtPct(m.growth, { signed: false, digits: 0 })}</td>
         <td className={`px-2 py-2 border-t border-gray-800/60 whitespace-nowrap ${RISK_CLS[m.risk]}`}>{m.risk}</td>
-        <td className="px-2 py-2 border-t border-gray-800/60"><div className="flex items-center gap-2"><span className="tabular-nums text-gray-100 font-semibold w-7 text-right">{Math.round(m.setup.score)}</span><SetupPill setup={m.setup} /></div></td>
+        <td className="px-2 py-2 border-t border-gray-800/60"><div className="flex items-center gap-2"><span className="tabular-nums text-gray-100 font-semibold w-7 text-right">{m.setup.score == null ? DASH : Math.round(m.setup.score)}</span><SetupPill setup={m.setup} /></div></td>
       </tr>
       {open && <tr><td colSpan={11} className="border-t border-gray-800/60"><Detail m={m} names={names} onChart={onChart} /></td></tr>}
     </>

@@ -187,10 +187,17 @@ const overview = () => ({
 })
 
 const impact = () => ({
-  intro: 'A way of thinking about the scenario.', jobs: { summary: 'Tasks change before jobs vanish.', exposed: ['Routine screen work', 'Outsourced hours'], resilient: ['Skilled trades', 'Trust roles'], emerging: ['AI auditors', 'New services'] },
-  markets: [{ title: 'Scarce inputs reprice', text: 'Compute and power stay valuable.' }, { title: 'Demand is the loop', text: 'Output needs buyers with income.' }],
-  winners: [{ who: 'Owners of the scarce inputs', why: 'Compute, power, materials.' }, { who: 'Distribution and trust', why: 'Pricing power stays.' }],
-  scenarios: [{ name: 'Broad abundance', text: 'Productivity lifts everyone.', favours: 'Infrastructure', hurts: 'Headcount services' }, { name: 'Concentrated gains', text: 'Owners win.', favours: 'Platforms', hurts: 'Workers' }, { name: 'Slower than hoped', text: 'Plateau.', favours: 'Incumbents', hurts: 'Speculative names' }],
+  intro: 'A way of thinking about the scenario.',
+  sections: [
+    { id: 'jobs', label: 'Jobs', type: 'lists', summary: 'Tasks change before jobs vanish.', columns: [
+      { title: 'Most exposed', tone: 'bad', items: ['Routine screen work', 'Outsourced hours'] }, { title: 'More resilient', tone: 'good', items: ['Skilled trades', 'Trust roles'] },
+      { title: 'What could be created', tone: 'new', items: ['AI auditors', 'New services'] }] },
+    { id: 'markets', label: 'Markets', type: 'cards', items: [{ title: 'Scarce inputs reprice', text: 'Compute and power stay valuable.' }, { title: 'Demand is the loop', text: 'Output needs buyers with income.' }] },
+    { id: 'winners', label: 'Who is best set up', type: 'ranked', items: [{ who: 'Owners of the scarce inputs', why: 'Compute, power, materials.' }, { who: 'Distribution and trust', why: 'Pricing power stays.' }] },
+    { id: 'scenarios', label: 'Scenarios', type: 'scenarios', items: [
+      { name: 'Broad abundance', text: 'Productivity lifts everyone.', favours: 'Infrastructure', hurts: 'Headcount services' }, { name: 'Concentrated gains', text: 'Owners win.', favours: 'Platforms', hurts: 'Workers' },
+      { name: 'Slower than hoped', text: 'Plateau.', favours: 'Incumbents', hurts: 'Speculative names', positioning: 'Stay liquid.' }] },
+  ],
 })
 const abundance = () => {
   const t = theme()
@@ -237,6 +244,68 @@ describe('AI Abundance theme', () => {
     await screen.findByTestId('member-table')
     expect(screen.queryByText('What it could mean')).toBeNull()
     expect(screen.queryByRole('tab', { name: /At risk/ })).toBeNull()
+  })
+})
+
+const fund = (symbol, over = {}) => member(symbol, { kind: 'fund', marketCap: null, size: 'Fund', risk: 'Fund', upside: null, growth: null, bagger: null,
+  setup: { score: null, rawScore: null, riskMultiplier: 1, risk: 'Fund', label: 'Fund', capReason: null, factors: {} }, ...over })
+const dollar = () => {
+  const t = theme()
+  t.id = 'dollar'; t.name = 'Dollar Regime Shift'; t.short = 'Dollar'; t.impact = impact()
+  t.impact.sections = [...t.impact.sections.slice(0, 1), { id: 'reality', label: 'Reality check', type: 'cards', items: [{ title: 'No ready substitute', text: 'Only the US has markets this deep.' }] }, t.impact.sections[3]]
+  t.roleLabels = { core: ['Hard-asset hedges', 'Gold and miners'], enabler: ['Markets & resources that gain', 'Non-US markets'], adjacent: ['US multinationals', 'Earn abroad'], emerging: ['Speculative alternatives', 'Thin stores of value'], atrisk: ['Most exposed to the shift', 'Lose if dollar demand fades'] }
+  t.layers = [{ id: 'silicon', name: 'Gold & hard assets', blurb: 'Stores of value' }, { id: 'foundry', name: 'Developed markets', blurb: 'Europe, Japan' }]
+  t.members = [fund('GLD', { name: 'SPDR Gold Shares', role: 'core', why: 'Gold fund.' }), member('NEM', { role: 'core', layer: 'silicon', setup: setup(70) }), fund('VGK', { role: 'enabler', layer: 'foundry' }), fund('TLT', { role: 'atrisk', layer: 'foundry', why: 'Long Treasuries.' })]
+  t.roleCounts = { core: 2, enabler: 1, adjacent: 0, emerging: 0, atrisk: 1 }
+  return t
+}
+
+describe('Dollar Regime Shift theme', () => {
+  it('uses theme-specific group names and keeps funds out of the candidates', async () => {
+    mock(() => detail({ theme: dollar() }))
+    render(<ThemePage themeId="dollar" />)
+    await screen.findByTestId('member-table')
+    expect(screen.getByRole('tab', { name: /Hard-asset hedges/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Markets & resources that gain/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Most exposed to the shift/ })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /Picks & shovels/ })).toBeNull()
+    const candidates = screen.getByText('Candidates to research').closest('section')
+    expect(within(candidates).getAllByText(/NEM/).length).toBeGreaterThan(0)
+    expect(within(candidates).queryByText(/GLD/)).toBeNull()
+  })
+
+  it('shows funds as funds: no score, a Fund pill, and a short explanation when opened', async () => {
+    mock(() => detail({ theme: dollar() }))
+    render(<ThemePage themeId="dollar" />)
+    await screen.findByTestId('member-table')
+    const row = screen.getByLabelText('GLD details')
+    expect(within(row).getByText('Fund', { selector: 'span' })).toBeInTheDocument()
+    fireEvent.click(row)
+    const d = within(screen.getByTestId('member-detail'))
+    expect(d.getByText('Gold fund.')).toBeInTheDocument()
+    expect(d.getByText(/no company fundamentals, analyst targets or setup score/)).toBeInTheDocument()
+    fireEvent.click(d.getByText('Open chart'))
+    expect(screen.getByTestId('chart-modal')).toHaveTextContent('chart GLD')
+  })
+
+  it('sorting by setup keeps fund rows (no score) at the bottom', async () => {
+    mock(() => detail({ theme: dollar() }))
+    render(<ThemePage themeId="dollar" />)
+    await screen.findByTestId('member-table')
+    expect(names()[0]).toBe('NEM')                                                          // the only scored name
+    fireEvent.click(screen.getByRole('columnheader', { name: /^Setup/ }))                   // flip to ascending
+    expect(names()[0]).toBe('NEM')                                                          // unscored funds still sink to the bottom
+    expect(names().slice(1).sort()).toEqual(['GLD', 'TLT', 'VGK'])
+  })
+
+  it('renders the theme\'s own tabs (reality check) and the scenario positioning line', async () => {
+    mock(() => detail({ theme: dollar() }))
+    render(<ThemePage themeId="dollar" />)
+    await screen.findByText('What it could mean')
+    fireEvent.click(screen.getByRole('tab', { name: 'Reality check' }))
+    expect(screen.getByText('No ready substitute')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Scenarios' }))
+    expect(screen.getByText('Stay liquid.')).toBeInTheDocument()
   })
 })
 

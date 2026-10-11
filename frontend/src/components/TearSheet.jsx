@@ -1002,8 +1002,9 @@ export default function TearSheet({ initialSymbol }) {
                 <div className={`inline-block mt-1 px-2 py-0.5 rounded border text-[11px] font-semibold ${tone.pill}`}>{data.valuation.verdict.label}</div>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-3">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-3">
               <Stat label="Market cap" value={fmtBig(snap.marketCap)} />
+              <Stat label="Shares outstanding" value={fmtBig(snap.sharesOutstanding, '')} />
               <Stat label="Enterprise value" value={fmtBig(snap.enterpriseValue)} />
               <Stat label="P/E (trailing)" value={fmtX(data.valuation.multiples.trailingPE)} />
               <Stat label="Beta" value={fmtNum(snap.beta)} />

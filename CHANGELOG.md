@@ -4,6 +4,35 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Renamed to Compass
+
+- The app and its GitHub repository (`rcoder29/Compass`) are now **Compass** (previously Stock Monitor). Changed: the header, browser tab title, User Guide, README and architecture titles, the API title, the Tear Sheet PDF footer and author, and the digest test message.
+- Deliberately unchanged so nothing is lost or broken: the SQLite filename (`backend/stockmonitor.db`), the browser storage keys (`stockmonitor-watchlist`, `stockmonitor-portfolio`, pins and recents), the deploy service name in `render.yaml`, the local folder name, and the HTTP User-Agent strings. Earlier changelog entries and `PROJECT.md` keep the old name because they are dated records.
+
+---
+
+## 2026-10-11 — Themes: Dollar Regime Shift
+
+### Added
+- **Themes → Dollar Regime Shift** — a scenario theme about a world that gradually relies less on the US dollar as the main reserve, trade and borrowing currency. Members are mostly funds: gold and silver and the miners, country funds for Europe, Japan, South Korea, Taiwan, India, Brazil, Mexico, South Africa, Saudi Arabia, China and emerging markets, commodity producers, US multinationals that earn abroad, speculative alternatives (bitcoin, uranium, copper miners), and on the exposed side long and intermediate Treasuries and the dollar fund.
+- "What it could mean" has seven tabs: **US markets** (funding costs, multinational earnings, the valuation premium, bonds, inflation), **Global markets** (earnings translation, emerging-market relief, commodities, trade rerouting, currency risk), **Which markets benefit** (ranked, with China treated cautiously), **Reality check** (no ready substitute, sticky network effects, a weaker role is not a collapse, quick-break bets have a poor record), **How to position** (resilience first: home-market core, genuine non-US diversification, a hard-asset sleeve, bond duration, liquidity), **Scenarios** (dollar stays dominant, gradual multipolar drift, disorderly shift, each with who it favours, who it hurts and how to be positioned) and **What to watch** (signposts).
+- Funds are supported in the theme engine: live returns and charts, no company fundamentals or setup score, excluded from rankings and candidates. A theme can now relabel the generic groups (here: Hard-asset hedges, Markets & resources that gain, US multinationals, Speculative alternatives, Most exposed to the shift).
+- The editorial block is now a list of typed sections rendered generically, so each theme picks its own tabs (AI Abundance migrated to it).
+
+### Fixed
+- Polling a theme page while fundamentals were still loading re-downloaded all ~140 price histories on every request, which tripped Yahoo's rate limit and made the API alternate between ready and error. The partial result is now cached for two minutes.
+
+### Tests
+- Backend 901 -> 907, frontend 279 -> 284.
+
+---
+
+## 2026-10-11 — Tear Sheet: Shares Outstanding
+
+- The Tear Sheet's snapshot header (and the PDF's stat block) now shows **shares outstanding** beside market cap, formatted as a plain count (for example 15.20B) rather than a dollar amount. Backend `snapshot.sharesOutstanding` comes from the same Yahoo figure the DCF and fair-value models already used; it is blank when Yahoo has none. Tests: +1 backend, +1 frontend.
+
+---
+
 ## 2026-10-11 — Themes: AI Abundance
 
 ### Added

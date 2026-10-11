@@ -444,6 +444,12 @@ class TestBuildTearSheet:
         assert v["tenYearYield"] == 0.04
         assert v["earningsYieldVsBond"] == pytest.approx(6.0 / 100.0 - 0.04)
 
+    def test_snapshot_carries_shares_outstanding(self):
+        out = ts._build_tear_sheet("ACME", _raw())
+        assert out["snapshot"]["sharesOutstanding"] == 100.0
+        missing = ts._build_tear_sheet("ACME", _raw(info={"longName": "Acme", "currentPrice": 10.0}))
+        assert missing["snapshot"]["sharesOutstanding"] is None
+
     def test_no_price_is_an_error(self):
         out = ts._build_tear_sheet("NOPE", _raw(info={}))
         assert out["error"]
