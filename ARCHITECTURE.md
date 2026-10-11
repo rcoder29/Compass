@@ -510,8 +510,8 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 
 | Suite | Size | Notes |
 |---|---|---|
-| Backend (pytest) | 571 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 208 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Backend (pytest) | 795 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 252 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

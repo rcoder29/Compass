@@ -224,8 +224,8 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 ### Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 571 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 208 tests (Vitest + Testing Library)
+cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 795 tests, ~10 s, no network, isolated database
+cd frontend && npm test                # 252 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/stockmonitor.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -508,7 +508,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (571 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (795 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real stockmonitor.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -534,8 +534,15 @@ stockmonitor/
 │           ├── MarketBreadth.jsx        Breadth dashboard
 │           ├── IndexHeatmap.jsx         Index/ETF constituent heatmap with dynamic search
 │           ├── HoldingsPerformance.jsx  Holdings returns by period, ranked by YTD
-│           ├── SectorDashboard.jsx      Sector rotation table + heatmap
-│           ├── SectorMomentum.jsx       Sector momentum ranker
+│           ├── MacroKit.jsx             Shared Economy/Sectors kit: useApi, formatters, TimeChart, Sparkline
+│           ├── EconomyRegime.jsx        Economy → Regime Dashboard
+│           ├── EconomyIndicators.jsx    Economy → Indicators (+ detail chart)
+│           ├── IndicatorStudies.jsx     Economy → Indicator Studies
+│           ├── SectorScoreboard.jsx     Sectors → Scoreboard
+│           ├── SectorRotation.jsx       Sectors → Rotation Map
+│           ├── SectorScreener.jsx       Sectors → Sector Screener
+│           ├── SectorCycleFit.jsx       Sectors → Cycle Fit
+│           ├── SectorBacktest.jsx       Sectors → Sector Backtest
 │           ├── MacroCalendar.jsx        Economic event calendar
 │           ├── YieldCurve.jsx           Treasury curve + DXY
 │           ├── PriceTargets.jsx         Personal price targets
@@ -565,7 +572,7 @@ stockmonitor/
 │           ├── TearSheet.jsx           Tear Sheet — company snapshot, valuation verdict, projected returns
 │           ├── HomeDashboard.jsx, CommandPalette.jsx   Home landing page + ⌘K palette
 │           ├── Markets: RedditTrending, ShortSqueeze, IpoCalendar, InsiderFeed, FedWatch, CryptoDashboard,
-│           │            EconomicDashboard, MarketSentimentDashboard (.jsx)
+│           │            MarketSentimentDashboard (.jsx)
 │           ├── Research: PriceProjection, EarningsSurpriseTracker, EarningsStrategyAnalyzer, AnalystRatingTracker,
 │           │             FundHoldingsExplorer, CorporateBonds, ConvertibleBonds, TreasuryBonds, ActivistTracker,
 │           │             RelativeStrengthRanker, SeasonalPatterns, EtfOverlapAnalyzer (.jsx)
@@ -604,8 +611,8 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 | Fundamentals | 5 min (quote panels) · 2 hr (comparison, DCF pre-fill) |
 | Market overview / performance | 15 min |
 | News / headlines | 5 min |
-| Market breadth, sector momentum, economic indicators, Fed Watch | 30 min |
-| Sector rotation, index constituents, options chain | 15 min |
+| Market breadth, Fed Watch | 30 min |
+| Index constituents, options chain | 15 min |
 | Treasury yields + DXY | 30 min (live) · 6 hr (Treasury.gov curve CSV) |
 | Earnings calendar | 4 hr (upcoming) · 2 hr (Earnings+) |
 | Unusual options | 10 min per symbol · 30 min scan |
