@@ -491,6 +491,138 @@ function FinancialsSection({ d }) {
   )
 }
 
+// ── Quarterly income flow (Sankey) ────────────────────────────────────────────
+// The backend lays the diagram out (income_flow.layout_sankey) in an 800x400 space so this and the
+// PDF draw identical geometry; here we only render rectangles, link paths and labels.
+
+export function fmtQuarter(iso) {
+  if (!iso) return DASH
+  const d = new Date(iso + 'T00:00:00')
+  return isNaN(d) ? iso : d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+const clip = (t, n = 26) => (t.length > n ? t.slice(0, n - 1) + '…' : t)   // left-side labels get less room, see SankeyDiagram
+
+export function SankeyDiagram({ flow, sym = '$' }) {
+  return (
+    <svg viewBox={`0 0 ${flow.width} ${flow.height}`} className="w-full" role="img" aria-label="Income flow diagram"
+         data-testid="sankey">
+      <g>
+        {flow.links.map((l, i) => (
+          <path key={i} d={l.d} fill="none" stroke={l.color} strokeWidth={Math.max(l.thickness, 0.6)} strokeOpacity="0.38">
+            <title>{`${l.source.replace(/^[a-z_]+:/, '')} → ${l.target}: ${fmtBig(l.value, sym)}`}</title>
+          </path>
+        ))}
+      </g>
+      <g>
+        {flow.nodes.map(n => (
+          <rect key={n.id} x={n.x} y={n.y} width={n.w} height={n.h} fill={n.color} rx="2">
+            <title>{`${n.label}: ${fmtBig(n.value, sym)} (${fmtPct(n.pct, 1)} of revenue)`}</title>
+          </rect>
+        ))}
+      </g>
+      <g fontFamily="ui-sans-serif, system-ui, sans-serif">
+        {flow.nodes.map(n => {
+          const left = n.labelSide === 'left'
+          const x = left ? n.x - 6 : n.x + n.w + 6
+          const cy = n.y + n.h / 2
+          const halo = { paintOrder: 'stroke', stroke: '#0b1220', strokeWidth: 3, strokeLinejoin: 'round' }
+          const title = n.detail ? `${n.label} · ${n.detail}` : n.label
+          return (
+            <text key={n.id} x={x} y={cy - 1} textAnchor={left ? 'end' : 'start'} data-node={n.id}>
+              <tspan fontSize="11" fontWeight="600" fill="#e5e7eb" style={halo}>{clip(title, left ? 22 : 26)}</tspan>
+              <tspan x={x} dy="12" fontSize="10" fill="#9ca3af" style={halo}>
+                {`${fmtBig(n.value, sym)} · ${fmtPct(n.pct, 1)}`}
+              </tspan>
+            </text>
+          )
+        })}
+      </g>
+    </svg>
+  )
+}
+
+function IncomeFlowSection({ d }) {
+  const [sel, setSel] = useState(0)
+  const data = d.incomeFlow
+  if (!data || !data.quarters?.length) return null
+  const quarters = data.quarters
+  const q = quarters[Math.min(sel, quarters.length - 1)]
+  const sym = d.currencyNote ? d.currencyNote.financial + ' ' : '$'
+  const p = q.pnl
+  const ratio = (a, b) => (a != null && b ? a / b : null)
+  const payout = p.netIncome > 0 && (p.dividendsPaid || p.buybacks) ? ((p.dividendsPaid || 0) + (p.buybacks || 0)) / p.netIncome : null
+  const st = q.streams
+
+  return (
+    <Section id="ts-incomeflow" title="Where the money goes — quarterly income flow"
+             subtitle="How each quarter's revenue splits across income streams, then flows through costs, taxes and profit to dividends and buybacks">
+      <div className="flex flex-wrap gap-1.5 mb-3 print:hidden" role="tablist" aria-label="Quarter">
+        {quarters.map((x, i) => (
+          <button key={x.quarter} role="tab" aria-selected={i === sel} onClick={() => setSel(i)}
+                  className={`text-[11px] px-2.5 py-1 rounded border transition-colors ${i === sel
+                    ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>
+            {fmtQuarter(x.quarter)}
+          </button>
+        ))}
+        <span className="text-[11px] text-gray-500 self-center ml-1">quarter ended {q.quarter}</span>
+      </div>
+
+      <div data-testid="income-flow">
+        {q.flow ? <SankeyDiagram flow={q.flow} sym={sym} />
+          : <Empty>The quarterly statements for this period don't have enough detail to draw the flow.</Empty>}
+      </div>
+      {q.flow?.notes?.length > 0 && (
+        <ul className="mt-2 space-y-1 text-[11px] text-gray-400">
+          {q.flow.notes.map(n => <li key={n}>ⓘ {n}</li>)}
+        </ul>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+        <Stat label="Revenue" value={fmtBig(p.revenue, sym)} sub={q.revenueYoY != null ? `${fmtPct(q.revenueYoY, 1, true)} vs. year ago` : undefined}
+              valueClass="text-gray-100" />
+        <Stat label="Net income" value={fmtBig(p.netIncome, sym)} sub={p.netIncome != null && p.revenue ? `${fmtPct(p.netIncome / p.revenue, 1)} net margin` : undefined}
+              valueClass={posNeg(p.netIncome)} />
+        <Stat label="Dividends paid" value={p.dividendsPaid ? fmtBig(p.dividendsPaid, sym) : 'None'}
+              sub={p.dividendPerShare ? `≈ ${fmtMoney(p.dividendPerShare, 2, sym)} per share` : undefined} />
+        <Stat label="Share buybacks" value={p.buybacks ? fmtBig(p.buybacks, sym) : 'None'}
+              sub={payout != null ? `${fmtPct(payout, 0)} of net income returned` : undefined} />
+      </div>
+
+      {st && (
+        <div className="mt-4">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">
+            Revenue by income stream ({st.axisLabel.toLowerCase()}) · source: SEC {st.form}
+            {st.derived ? ' — Q4 derived as fiscal year minus nine months' : ''}
+          </div>
+          <Table head={['Income stream', 'Revenue', '% of revenue', 'vs. year ago']}
+                 rows={st.streams.map(x => [x.name, fmtBig(x.value, sym), fmtPct(x.share, 1),
+                   { v: fmtPct(x.yoy, 1, true), cls: posNeg(x.yoy) }])} />
+        </div>
+      )}
+
+      <div className="mt-4">
+        <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Recent quarters</div>
+        <Table
+          head={['', ...quarters.map(x => fmtQuarter(x.quarter))]}
+          rows={[
+            ['Revenue', ...quarters.map(x => fmtBig(x.pnl.revenue, sym))],
+            ['  growth vs. year ago', ...quarters.map(x => ({ v: fmtPct(x.revenueYoY, 1, true), cls: posNeg(x.revenueYoY) }))],
+            ['Gross margin', ...quarters.map(x => fmtPct(ratio(x.pnl.grossProfit, x.pnl.revenue)))],
+            ['Operating margin', ...quarters.map(x => fmtPct(ratio(x.pnl.operatingIncome, x.pnl.revenue)))],
+            ['Net income', ...quarters.map(x => fmtBig(x.pnl.netIncome, sym))],
+            ['Net margin', ...quarters.map(x => fmtPct(ratio(x.pnl.netIncome, x.pnl.revenue)))],
+            ['Dividends paid', ...quarters.map(x => (x.pnl.dividendsPaid ? fmtBig(x.pnl.dividendsPaid, sym) : DASH))],
+            ['Share buybacks', ...quarters.map(x => (x.pnl.buybacks ? fmtBig(x.pnl.buybacks, sym) : DASH))],
+          ]} />
+      </div>
+      <p className="text-[10px] text-gray-500 mt-2">
+        Income statement and cash flow from Yahoo Finance. Dividends and buybacks are cash paid in the quarter, so they can differ from declared amounts.
+      </p>
+    </Section>
+  )
+}
+
 function BalanceSheetSection({ b }) {
   const nd = b.netDebt
   return (
@@ -892,6 +1024,7 @@ export default function TearSheet({ initialSymbol }) {
           <BusinessSection d={data} />
           <PerformanceSection d={data} />
           <FinancialsSection d={data} />
+          <IncomeFlowSection d={data} />
           <BalanceSheetSection b={data.balanceSheet} />
           <ValuationSection d={data} />
           <ProjectedReturnsSection d={data} />

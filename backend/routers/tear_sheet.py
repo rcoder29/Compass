@@ -36,6 +36,7 @@ from fastapi import APIRouter
 
 from database import cache_get, cache_set
 from edgar_utils import _session, _safe_float, _dividend_yield_fraction
+from income_flow import build_income_flows
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -764,6 +765,16 @@ def _ten_year_yield() -> float | None:
     return None
 
 
+def _quarter_streams(sym: str, ticker) -> dict | None:
+    """Revenue by income stream (SEC filings) for the quarters the income flow will show."""
+    from sec_revenue_streams import streams_for_quarters
+    q = ticker.quarterly_income_stmt
+    if q is None or q.empty:
+        return None
+    dates = [pd.Timestamp(c).date() for c in sorted(q.columns, reverse=True)[:4]]
+    return streams_for_quarters(sym, dates)
+
+
 def _fetch_raw(sym: str) -> dict:
     t = yf.Ticker(sym, session=_session)
     jobs = {
@@ -783,6 +794,10 @@ def _fetch_raw(sym: str) -> dict:
         # Close = split-adjusted only (right for P/E); Adj Close adds dividends (right for returns)
         "hist": lambda: t.history(period="10y", interval="1d", auto_adjust=False),
         "splits": lambda: t.splits,
+        "q_income": lambda: t.quarterly_income_stmt,
+        "q_cash": lambda: t.quarterly_cashflow,
+        "dividends": lambda: t.dividends,
+        "streams": lambda: _quarter_streams(sym, t),
         "edgar": lambda: _edgar_annual_history(sym, _safe(lambda: t.splits)),
         "spy": lambda: yf.Ticker("SPY", session=_session).history(period="5y", interval="1d", auto_adjust=True),
         "tnx": _ten_year_yield,
@@ -955,6 +970,7 @@ def _build_tear_sheet(sym: str, raw: dict) -> dict:
             "eps": earn_rows, "revenue": rev_rows, "revisions": _revisions(raw.get("eps_trend")),
             "growthUsed": growth,
         },
+        "incomeFlow": build_income_flows(raw.get("q_income"), raw.get("q_cash"), raw.get("dividends"), raw.get("streams")),
         "earningsTrack": track,
         "analysts": analysts,
         "ownership": {

@@ -743,6 +743,63 @@ class TestBuildLongHistory:
         assert out["financials"]["ttm"]["freeCashFlow"] == 500.0
 
 
+class TestIncomeFlowInSheet:
+    def _quarterly(self, n=5):
+        cols = [pd.Timestamp("2026-06-30") - pd.offsets.QuarterEnd(i) for i in range(n)]
+        data = {c: {"Total Revenue": 100.0 - i, "Cost Of Revenue": 40.0, "Gross Profit": 60.0 - i, "Operating Income": 35.0 - i,
+                    "Pretax Income": 36.0 - i, "Tax Provision": 6.0, "Net Income": 30.0 - i} for i, c in enumerate(cols)}
+        return pd.DataFrame(data)
+
+    def _cash(self):
+        return pd.DataFrame({pd.Timestamp("2026-06-27"): {"Cash Dividends Paid": -4.0, "Repurchase Of Capital Stock": -20.0}})
+
+    def test_payload_has_quarters_with_flow_geometry(self):
+        out = ts._build_tear_sheet("ACME", _raw(q_income=self._quarterly(), q_cash=self._cash(), dividends=None, streams=None))
+        quarters = out["incomeFlow"]["quarters"]
+        assert [q["quarter"] for q in quarters][0] == "2026-06-30" and len(quarters) == 4
+        flow = quarters[0]["flow"]
+        assert flow["nodes"] and flow["links"] and flow["width"] == 1000
+        assert quarters[0]["pnl"]["dividendsPaid"] == 4.0 and quarters[0]["streams"] is None
+
+    def test_sec_streams_flow_through_to_the_payload(self):
+        streams = {"2026-06-30": {"axisLabel": "Products & services", "total": 100.0, "priorTotal": 80.0, "form": "10-Q", "derived": False,
+                                  "streams": [{"name": "Hardware", "value": 60.0, "prior": 50.0}, {"name": "Services", "value": 40.0, "prior": 30.0}]}}
+        out = ts._build_tear_sheet("ACME", _raw(q_income=self._quarterly(), q_cash=self._cash(), streams=streams))
+        q = out["incomeFlow"]["quarters"][0]
+        assert [s["name"] for s in q["streams"]["streams"]] == ["Hardware", "Services"] and q["revenueYoY"] == pytest.approx(0.25)
+        assert q["flow"]["hasStreams"] is True
+
+    def test_no_quarterly_statements_means_no_section(self):
+        assert ts._build_tear_sheet("ACME", _raw())["incomeFlow"] is None
+        assert ts._build_tear_sheet("SPY", _raw(info={"currentPrice": 500.0, "quoteType": "ETF"}, income=None, q_income=pd.DataFrame()))["incomeFlow"] is None
+
+    def test_payload_is_json_serialisable(self):
+        import json
+        out = ts._build_tear_sheet("ACME", _raw(q_income=self._quarterly(), q_cash=self._cash()))
+        assert json.loads(json.dumps(out, default=str))["incomeFlow"]["quarters"]
+
+
+class TestQuarterStreamsHelper:
+    class FakeTicker:
+        def __init__(self, frame):
+            self.quarterly_income_stmt = frame
+
+    def test_asks_for_the_four_latest_quarter_dates(self, monkeypatch):
+        import sec_revenue_streams
+        got = {}
+        monkeypatch.setattr(sec_revenue_streams, "streams_for_quarters", lambda sym, dates: got.update(sym=sym, dates=dates) or {"ok": 1})
+        cols = [pd.Timestamp("2026-06-30") - pd.offsets.QuarterEnd(i) for i in range(6)]
+        frame = pd.DataFrame({c: {"Total Revenue": 1.0} for c in cols})
+        assert ts._quarter_streams("ACME", self.FakeTicker(frame)) == {"ok": 1}
+        assert got["sym"] == "ACME" and [str(d) for d in got["dates"]] == ["2026-06-30", "2026-03-31", "2025-12-31", "2025-09-30"]
+
+    @pytest.mark.parametrize("frame", [None, pd.DataFrame()])
+    def test_no_statements_no_lookup(self, frame, monkeypatch):
+        import sec_revenue_streams
+        monkeypatch.setattr(sec_revenue_streams, "streams_for_quarters", lambda *a: pytest.fail("should not look up"))
+        assert ts._quarter_streams("ACME", self.FakeTicker(frame)) is None
+
+
 class TestEndpoint:
     @pytest.fixture
     def client(self):

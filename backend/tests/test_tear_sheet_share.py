@@ -120,6 +120,120 @@ class TestPdfHelpers:
         assert len(polylines) == 2
 
 
+# ── Quarterly income flow in the PDF ──────────────────────────────────────────
+
+def quarterly_frame(n=5):
+    import pandas as pd
+    cols = [pd.Timestamp("2026-06-30") - pd.offsets.QuarterEnd(i) for i in range(n)]
+    return pd.DataFrame({c: {"Total Revenue": 100.0e9 - i * 1e9, "Cost Of Revenue": 40.0e9, "Gross Profit": 60.0e9 - i * 1e9,
+                             "Research And Development": 10.0e9, "Selling General And Administration": 15.0e9,
+                             "Operating Income": 35.0e9 - i * 1e9, "Pretax Income": 36.0e9 - i * 1e9, "Tax Provision": 6.0e9,
+                             "Net Income": 30.0e9 - i * 1e9} for i, c in enumerate(cols)})
+
+
+def quarterly_cash():
+    import pandas as pd
+    return pd.DataFrame({pd.Timestamp("2026-06-27"): {"Cash Dividends Paid": -4.0e9, "Repurchase Of Capital Stock": -20.0e9}})
+
+
+def quarterly_dividends():
+    import pandas as pd
+    return pd.Series([0.26, 0.27], index=pd.to_datetime(["2026-02-09", "2026-05-11"]))
+
+
+STREAMS = {"2026-06-30": {"axisLabel": "Products & services", "total": 100.0e9, "priorTotal": 80.0e9, "form": "10-Q", "derived": False,
+                          "streams": [{"name": "Hardware", "value": 60.0e9, "prior": 50.0e9}, {"name": "Cloud Services", "value": 40.0e9, "prior": 30.0e9}]}}
+
+
+class TestPdfIncomeFlow:
+    def sheet(self, **over):
+        return make_sheet(q_income=quarterly_frame(), q_cash=quarterly_cash(), dividends=quarterly_dividends(), streams=STREAMS, **over)
+
+    def test_section_headline_streams_and_quarter_table(self):
+        pdf = tp.build_pdf(self.sheet(), compress=False)
+        for needle in [b"quarterly income flow", b"Quarter ended 2026-06-30", b"Revenue by income stream", b"products & services",
+                       b"source: SEC 10-Q", b"Hardware", b"Cloud Services", b"Recent quarters", b"Jun 2026", b"Mar 2026",
+                       b"Dividends paid", b"Share buybacks", b"80% of net income returned"]:
+            assert needle in pdf, needle
+
+    def test_diagram_labels_are_drawn(self):
+        pdf = tp.build_pdf(self.sheet(), compress=False)
+        for needle in [b"Gross profit", b"Cost of revenue", b"Operating income", b"Net income", b"Dividends - $0.27/share", b"Share buybacks"]:
+            assert needle in pdf, needle
+
+    def test_no_section_without_quarterly_statements(self):
+        pdf = tp.build_pdf(make_sheet(), compress=False)
+        assert b"quarterly income flow" not in pdf
+
+    def test_flow_less_quarter_explains_itself(self):
+        sheet = self.sheet()
+        sheet["incomeFlow"]["quarters"][0]["flow"] = None
+        pdf = tp.build_pdf(sheet, compress=False)
+        assert b"enough detail to draw the flow" in pdf
+
+    def test_notes_are_printed_under_the_diagram(self):
+        sheet = make_sheet(q_income=quarterly_frame(), q_cash=None)          # no cash flow -> no dividends or buybacks
+        assert b"No dividends or buybacks were paid" in tp.build_pdf(sheet, compress=False)
+
+    def test_derived_q4_streams_are_labelled(self):
+        sheet = self.sheet()
+        sheet["incomeFlow"]["quarters"][0]["streams"].update(derived=True, form="10-K")
+        assert b"Q4 derived as fiscal year minus nine months" in tp.build_pdf(sheet, compress=False)
+
+    def test_reporting_currency_is_used(self):
+        info = {**_raw()["info"], "financialCurrency": "TWD", "currency": "USD"}
+        assert b"TWD 60.00B" in tp.build_pdf(make_sheet(info=info, q_income=quarterly_frame(), q_cash=quarterly_cash()), compress=False)
+
+    def test_section_adds_a_page_but_stays_readable(self):
+        with_flow = tp.build_pdf(self.sheet())
+        without = tp.build_pdf(make_sheet())
+        assert page_count(with_flow) >= page_count(without) and len(with_flow) > len(without)
+
+
+class TestSankeyDrawing:
+    def flow(self):
+        sheet = make_sheet(q_income=quarterly_frame(), q_cash=quarterly_cash(), dividends=quarterly_dividends(), streams=STREAMS)
+        return sheet["incomeFlow"]["quarters"][0]["flow"]
+
+    def test_draws_every_node_and_link(self):
+        f = self.flow()
+        d = tp._sankey_drawing(f)
+        kinds = [type(x).__name__ for x in d.contents]
+        assert kinds.count("Path") == len(f["links"]) and kinds.count("Rect") == len(f["nodes"])
+        assert kinds.count("String") == 2 * len(f["nodes"])             # label + value line per node
+
+    def test_scales_the_layout_to_the_requested_width_and_keeps_aspect(self):
+        f = self.flow()
+        d = tp._sankey_drawing(f, width=400)
+        assert d.width == 400 and d.height == pytest.approx(400 * f["height"] / f["width"])
+
+    def test_everything_is_inside_the_drawing(self):
+        f = self.flow()
+        d = tp._sankey_drawing(f)
+        for shape in d.contents:
+            if type(shape).__name__ == "Rect":
+                assert 0 <= shape.x and shape.x + shape.width <= d.width + 0.01 and 0 <= shape.y and shape.y + shape.height <= d.height + 0.01
+
+    def test_y_axis_is_flipped_for_pdf(self):
+        f = self.flow()
+        d = tp._sankey_drawing(f)
+        top_node = min(f["nodes"], key=lambda n: n["y"])
+        rects = [s for s in d.contents if type(s).__name__ == "Rect"]
+        assert max(r.y + r.height for r in rects) == pytest.approx(d.height - top_node["y"] * (d.width / f["width"]), abs=0.01)
+
+    def test_long_labels_are_clipped_and_non_latin_text_survives(self):
+        f = self.flow()
+        f["nodes"][0]["label"] = "Wearables, Home and Accessories and 日本語"
+        f["nodes"][0]["labelSide"] = "left"
+        d = tp._sankey_drawing(f)
+        strings = [s.text for s in d.contents if type(s).__name__ == "String"]
+        clipped = [t for t in strings if t.endswith("...")]
+        assert clipped and all(len(t) == 22 for t in clipped)       # left-side labels get 22 characters including the dots
+
+    def test_quarter_label(self):
+        assert tp._quarter_label("2026-06-30") == "Jun 2026" and tp._quarter_label(None) == "—" and tp._quarter_label("junk") == "junk"
+
+
 # ── Endpoint ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture

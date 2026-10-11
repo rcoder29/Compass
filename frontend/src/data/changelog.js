@@ -10,6 +10,11 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Tear Sheet: Quarterly Income Flow', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'New "Where the money goes" section on the Tear Sheet: a Sankey diagram for each of the last four quarters showing revenue split across income streams (iPhone / Services, AWS / advertising, segments or regions — read from the company\'s SEC 10-Q/10-K filings) flowing through cost of revenue, R&D, SG&A, other income, taxes and net income, and out to dividends, buybacks and retained earnings.',
+    'Includes a stream table (revenue, share of total, year-over-year), headline stats (net margin, dividends and buybacks, share of net income returned) and a four-quarter comparison. Loss-making quarters, banks (no gross profit line) and payouts that exceed earnings are all handled and explained on the chart. The same diagram is included in the PDF.',
+  ]},
   { type: 'h3', text: '2026-10-09 — Tear Sheet: Email Removed', tabId: 'tearsheet' },
   { type: 'bullets', items: [
     'Removed the Tear Sheet\'s Email… feature (SMTP sending, the email panel, and the SMTP_* / EMAIL_ALLOWED_RECIPIENTS settings, which are no longer read). Download PDF and Print remain; the PDF itself is unchanged.',

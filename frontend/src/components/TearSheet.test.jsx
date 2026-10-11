@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import TearSheet, { fmtMoney, fmtBig, fmtPct, fmtX } from './TearSheet'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import TearSheet, { fmtMoney, fmtBig, fmtPct, fmtX, fmtQuarter, SankeyDiagram } from './TearSheet'
 
 const sheet = (over = {}) => ({
   symbol: 'ACME',
@@ -420,5 +420,223 @@ describe('TearSheet PDF export', () => {
     fireEvent.click(screen.getByText('MSFT'))
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
     expect(screen.getByText('Download PDF')).toBeInTheDocument()
+  })
+})
+
+// ── Quarterly income flow ─────────────────────────────────────────────────────
+
+const node = (id, label, column, y, h, value, over = {}) => ({
+  id, label, kind: 'profit', color: '#34d399', detail: null, x: 150 + column * 130, y, w: 12, h, value, pct: value / 100e9,
+  labelSide: column === 0 ? 'left' : 'right', column, ...over,
+})
+
+const flowFixture = (over = {}) => ({
+  width: 1000, height: 420,
+  nodes: [
+    node('stream:0', 'iPhone', 0, 10, 200, 60e9, { kind: 'stream', color: '#38bdf8' }),
+    node('stream:1', 'Services', 0, 230, 120, 40e9, { kind: 'stream', color: '#818cf8' }),
+    node('revenue', 'Revenue', 1, 10, 340, 100e9, { kind: 'revenue', color: '#3b82f6' }),
+    node('gross', 'Gross profit', 2, 10, 200, 60e9),
+    node('cost', 'Cost of revenue', 2, 230, 130, 40e9, { kind: 'cost', color: '#f87171' }),
+    node('net', 'Net income', 3, 10, 100, 30e9, { kind: 'net', color: '#10b981' }),
+    node('dividends', 'Dividends', 4, 10, 20, 4e9, { kind: 'dividend', color: '#a78bfa', detail: '$0.27/share' }),
+  ],
+  links: [
+    { source: 'stream:0', target: 'revenue', value: 60e9, d: 'M162,110 C200,110 200,100 280,100', thickness: 200, color: '#38bdf8' },
+    { source: 'revenue', target: 'gross', value: 60e9, d: 'M292,100 C330,100 330,100 410,100', thickness: 200, color: '#34d399' },
+    { source: 'gross', target: 'net', value: 30e9, d: 'M422,100 C460,100 460,60 540,60', thickness: 0.1, color: '#10b981' },
+  ],
+  notes: [], hasStreams: true, ...over,
+})
+
+const pnlFixture = (over = {}) => ({
+  quarter: '2026-06-30', revenue: 100e9, costOfRevenue: 40e9, grossProfit: 60e9, operatingIncome: 35e9, netIncome: 30e9,
+  dividendsPaid: 4e9, buybacks: 20e9, dividendPerShare: 0.27, ...over,
+})
+
+const flowSheet = (over = {}) => sheet({
+  incomeFlow: {
+    quarters: [
+      { quarter: '2026-06-30', pnl: pnlFixture(), revenueYoY: 0.164, flow: flowFixture(),
+        streams: { axisLabel: 'Products & services', form: '10-Q', derived: false, streams: [
+          { name: 'iPhone', value: 60e9, share: 0.6, yoy: 0.22 }, { name: 'Services', value: 40e9, share: 0.4, yoy: -0.05 }] } },
+      { quarter: '2026-03-31', pnl: pnlFixture({ quarter: '2026-03-31', revenue: 90e9, netIncome: 25e9, dividendsPaid: null, buybacks: null }),
+        revenueYoY: null, flow: flowFixture({ notes: ['No dividends or buybacks were paid this quarter, so all of net income is retained.'] }), streams: null },
+    ],
+  },
+  ...over,
+})
+
+describe('formatters for the income flow', () => {
+  it('formats a quarter-end date without timezone drift', () => {
+    expect(fmtQuarter('2026-06-30')).toBe('Jun 2026')
+    expect(fmtQuarter('2025-12-31')).toBe('Dec 2025')
+    expect(fmtQuarter('2026-01-01')).toBe('Jan 2026')
+    expect(fmtQuarter(null)).toBe('—')
+    expect(fmtQuarter('garbage')).toBe('garbage')
+  })
+})
+
+describe('SankeyDiagram', () => {
+  it('draws a rectangle per node and a path per link', () => {
+    const { container } = render(<SankeyDiagram flow={flowFixture()} />)
+    expect(container.querySelectorAll('rect')).toHaveLength(7)
+    expect(container.querySelectorAll('path')).toHaveLength(3)
+    expect(screen.getByRole('img', { name: 'Income flow diagram' })).toHaveAttribute('viewBox', '0 0 1000 420')
+  })
+
+  it('labels each node with its value and share of revenue', () => {
+    render(<SankeyDiagram flow={flowFixture()} />)
+    const gross = document.querySelector('[data-node="gross"]')
+    expect(gross).toHaveTextContent('Gross profit')
+    expect(gross).toHaveTextContent('$60.00B · 60.0%')
+    expect(document.querySelector('[data-node="revenue"]')).toHaveTextContent('$100.00B · 100.0%')
+  })
+
+  it('puts first-column labels on the left and the rest on the right', () => {
+    render(<SankeyDiagram flow={flowFixture()} />)
+    expect(document.querySelector('[data-node="stream:0"]')).toHaveAttribute('text-anchor', 'end')
+    expect(document.querySelector('[data-node="gross"]')).toHaveAttribute('text-anchor', 'start')
+    const x = id => Number(document.querySelector(`[data-node="${id}"]`).getAttribute('x'))
+    expect(x('stream:0')).toBeLessThan(150)       // left of the node
+    expect(x('gross')).toBeGreaterThan(150 + 2 * 130 + 12)   // right of the node
+  })
+
+  it('appends the per-share detail to the dividends label', () => {
+    render(<SankeyDiagram flow={flowFixture()} />)
+    expect(document.querySelector('[data-node="dividends"]')).toHaveTextContent('Dividends · $0.27/share')
+  })
+
+  it('clips long labels, leaving less room on the left', () => {
+    const long = 'Wearables, Home and Accessories and more'
+    const flow = flowFixture({ nodes: [node('a', long, 0, 10, 50, 5e9, { kind: 'stream' }), node('b', long, 1, 10, 50, 5e9)] })
+    render(<SankeyDiagram flow={flow} />)
+    const text = id => document.querySelector(`[data-node="${id}"] tspan`).textContent
+    expect(text('a')).toHaveLength(22)
+    expect(text('a').endsWith('…')).toBe(true)
+    expect(text('b')).toHaveLength(26)
+  })
+
+  it('never draws a hairline link thinner than readable', () => {
+    const { container } = render(<SankeyDiagram flow={flowFixture()} />)
+    const widths = [...container.querySelectorAll('path')].map(p => Number(p.getAttribute('stroke-width')))
+    expect(Math.min(...widths)).toBeGreaterThanOrEqual(0.6)
+  })
+
+  it('uses the given currency symbol', () => {
+    render(<SankeyDiagram flow={flowFixture()} sym="TWD " />)
+    expect(document.querySelector('[data-node="gross"]')).toHaveTextContent('TWD 60.00B')
+  })
+
+  it('exposes full details as tooltips', () => {
+    const { container } = render(<SankeyDiagram flow={flowFixture()} />)
+    const titles = [...container.querySelectorAll('title')].map(t => t.textContent)
+    expect(titles).toContain('Gross profit: $60.00B (60.0% of revenue)')
+  })
+})
+
+describe('TearSheet income flow section', () => {
+  beforeEach(() => { window.print = vi.fn() })
+  afterEach(() => { vi.restoreAllMocks() })
+
+  async function loaded(payload) {
+    mockFetch(payload)
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+  }
+
+  it('renders the section with the latest quarter selected', async () => {
+    await loaded(flowSheet())
+    expect(screen.getByText('Where the money goes — quarterly income flow')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Jun 2026' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Mar 2026' })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getByText('quarter ended 2026-06-30')).toBeInTheDocument()
+    expect(screen.getByTestId('sankey')).toBeInTheDocument()
+  })
+
+  it('switches quarters when a tab is clicked', async () => {
+    await loaded(flowSheet())
+    fireEvent.click(screen.getByRole('tab', { name: 'Mar 2026' }))
+    expect(screen.getByRole('tab', { name: 'Mar 2026' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('quarter ended 2026-03-31')).toBeInTheDocument()
+    expect(screen.getByText(/No dividends or buybacks were paid this quarter/)).toBeInTheDocument()
+  })
+
+  it('shows the headline numbers for the selected quarter', async () => {
+    await loaded(flowSheet())
+    const flow = screen.getByTestId('income-flow').parentElement
+    expect(flow).toHaveTextContent('$100.00B')
+    expect(flow).toHaveTextContent('+16.4% vs. year ago')
+    expect(flow).toHaveTextContent('30.0% net margin')
+    expect(flow).toHaveTextContent('≈ $0.27 per share')
+    expect(flow).toHaveTextContent('80% of net income returned')
+  })
+
+  it('shows None for dividends and buybacks that were not paid', async () => {
+    await loaded(flowSheet())
+    fireEvent.click(screen.getByRole('tab', { name: 'Mar 2026' }))
+    const stats = screen.getByTestId('income-flow').parentElement
+    expect(within(stats).getAllByText('None')).toHaveLength(2)
+  })
+
+  it('lists revenue by income stream with share and year-over-year change', async () => {
+    await loaded(flowSheet())
+    expect(screen.getByText(/Revenue by income stream \(products & services\) · source: SEC 10-Q/)).toBeInTheDocument()
+    const section = screen.getByTestId('income-flow').parentElement
+    expect(within(section).getAllByText('iPhone').length).toBeGreaterThan(0)
+    expect(within(section).getByText('+22.0%')).toBeInTheDocument()
+    expect(within(section).getByText('-5.0%')).toBeInTheDocument()
+  })
+
+  it('notes when Q4 revenue streams were derived', async () => {
+    const p = flowSheet()
+    p.incomeFlow.quarters[0].streams.derived = true
+    p.incomeFlow.quarters[0].streams.form = '10-K'
+    await loaded(p)
+    expect(screen.getByText(/source: SEC 10-K — Q4 derived as fiscal year minus nine months/)).toBeInTheDocument()
+  })
+
+  it('omits the stream table when no breakdown is available', async () => {
+    await loaded(flowSheet())
+    fireEvent.click(screen.getByRole('tab', { name: 'Mar 2026' }))
+    expect(screen.queryByText(/Revenue by income stream/)).not.toBeInTheDocument()
+  })
+
+  it('shows a four-quarter summary table', async () => {
+    await loaded(flowSheet())
+    expect(screen.getByText('Recent quarters')).toBeInTheDocument()
+    for (const label of ['Gross margin', 'Operating margin', 'Net margin', 'Dividends paid', 'Share buybacks']) {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0)
+    }
+  })
+
+  it('explains itself when a quarter has no flow', async () => {
+    const p = flowSheet()
+    p.incomeFlow.quarters[0].flow = null
+    await loaded(p)
+    expect(screen.getByText(/don't have enough detail to draw the flow/)).toBeInTheDocument()
+    expect(screen.queryByTestId('sankey')).not.toBeInTheDocument()
+  })
+
+  it.each([[null], [{ quarters: [] }]])('is hidden for companies without quarterly statements (%j)', async incomeFlow => {
+    await loaded(flowSheet({ incomeFlow }))
+    expect(screen.queryByText('Where the money goes — quarterly income flow')).not.toBeInTheDocument()
+  })
+
+  it('uses the reporting currency for foreign filers', async () => {
+    await loaded(flowSheet({ currencyNote: { financial: 'TWD', trading: 'USD' } }))
+    expect(document.querySelector('[data-node="gross"]')).toHaveTextContent('TWD 60.00B')
+  })
+
+  it('does not break when the quarter list shrinks on a new lookup', async () => {
+    await loaded(flowSheet())
+    fireEvent.click(screen.getByRole('tab', { name: 'Mar 2026' }))
+    const one = flowSheet({ symbol: 'MSFT' })
+    one.incomeFlow.quarters = one.incomeFlow.quarters.slice(0, 1)
+    mockFetch(one)
+    fireEvent.click(screen.getByText('MSFT'))
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Jun 2026' })).toBeInTheDocument())
+    expect(screen.queryByRole('tab', { name: 'Mar 2026' })).not.toBeInTheDocument()
   })
 })

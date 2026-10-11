@@ -13,7 +13,7 @@ import io
 from datetime import date
 from xml.sax.saxutils import escape
 
-from reportlab.graphics.shapes import Circle, Drawing, Line, PolyLine, Rect, String
+from reportlab.graphics.shapes import Circle, Drawing, Line, Path, PolyLine, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import letter
@@ -529,6 +529,111 @@ def _financials(d):
     return out
 
 
+def _quarter_label(iso: str) -> str:
+    try:
+        return date.fromisoformat(iso).strftime("%b %Y")
+    except (TypeError, ValueError):
+        return iso or DASH
+
+
+def _sankey_drawing(flow, sym="$", width=W):
+    """Vector Sankey from the backend's layout geometry (income_flow.layout_sankey), scaled to `width`.
+    The layout's y axis points down and PDF's points up, so y is flipped; text sizes are set in points
+    here (not scaled) so labels stay legible at print size."""
+    scale = width / flow["width"]
+    height = flow["height"] * scale
+    d = Drawing(width, height)
+
+    def X(x):
+        return x * scale
+
+    def Y(y):
+        return height - y * scale
+    for l in flow["links"]:
+        xm = (l["x0"] + l["x1"]) / 2
+        path = Path(strokeColor=colors.HexColor(l["color"]), strokeWidth=max(l["thickness"] * scale, 0.3), strokeOpacity=0.4,
+                    fillColor=None)
+        path.moveTo(X(l["x0"]), Y(l["y0"]))
+        path.curveTo(X(xm), Y(l["y0"]), X(xm), Y(l["y1"]), X(l["x1"]), Y(l["y1"]))
+        d.add(path)
+    for n in flow["nodes"]:
+        d.add(Rect(X(n["x"]), Y(n["y"] + n["h"]), n["w"] * scale, n["h"] * scale, fillColor=colors.HexColor(n["color"]), strokeColor=None))
+    for n in flow["nodes"]:
+        left = n["labelSide"] == "left"
+        x = X(n["x"] - 6) if left else X(n["x"] + n["w"] + 6)
+        cy = Y(n["y"] + n["h"] / 2)
+        title = f"{n['label']} - {n['detail']}" if n.get("detail") else n["label"]
+        limit = 22 if left else 26
+        title = title if len(title) <= limit else title[:limit - 3] + "..."
+        anchor = "end" if left else "start"
+        d.add(String(x, cy + 0.8, _txt(title), fontName="Helvetica-Bold", fontSize=6.2, fillColor=INK, textAnchor=anchor))
+        d.add(String(x, cy - 6.4, _txt(f"{big(n['value'], sym)} - {pct(n['pct'])}"), fontName="Helvetica", fontSize=5.6,
+                     fillColor=MUTED, textAnchor=anchor))
+    return d
+
+
+def _income_flow(d):
+    data = d.get("incomeFlow")
+    if not data or not data.get("quarters"):
+        return []
+    quarters = data["quarters"]
+    q = quarters[0]
+    p = q["pnl"]
+    sym = d["currencyNote"]["financial"] + " " if d.get("currencyNote") else "$"
+    out = _section("Where the money goes - quarterly income flow",
+                   f"Quarter ended {q['quarter']}: revenue split across income streams, then through costs, taxes and profit to dividends and buybacks",
+                   need=4.4 * inch)
+    if q.get("flow"):
+        out.append(_sankey_drawing(q["flow"], sym))
+        for note in q["flow"].get("notes", []):
+            out.append(_p(f"Note: {note}", S_SMALL))
+    else:
+        out.append(_p("The quarterly statements for this period don't have enough detail to draw the flow.", S_SMALL))
+
+    payout = None
+    if (p.get("netIncome") or 0) > 0 and (p.get("dividendsPaid") or p.get("buybacks")):
+        payout = ((p.get("dividendsPaid") or 0) + (p.get("buybacks") or 0)) / p["netIncome"]
+    yoy = q.get("revenueYoY")
+    out += [Spacer(1, 4), _stat_row([
+        ("Revenue", big(p.get("revenue"), sym), f"{pct(yoy, 1, True)} vs. year ago" if yoy is not None else None),
+        ("Net income", big(p.get("netIncome"), sym),
+         f"{pct(p['netIncome'] / p['revenue'], 1)} net margin" if p.get("netIncome") is not None and p.get("revenue") else None,
+         _posneg(p.get("netIncome"))),
+        ("Dividends paid", big(p["dividendsPaid"], sym) if p.get("dividendsPaid") else "None",
+         f"about {money(p['dividendPerShare'], 2, sym)} per share" if p.get("dividendPerShare") else None),
+        ("Share buybacks", big(p["buybacks"], sym) if p.get("buybacks") else "None",
+         f"{pct(payout, 0)} of net income returned" if payout is not None else None)])]
+
+    st = q.get("streams")
+    if st:
+        src = f"SEC {st.get('form')}" + (" - Q4 derived as fiscal year minus nine months" if st.get("derived") else "")
+        out += [Spacer(1, 4), _caption_with(f"Revenue by income stream ({st['axisLabel'].lower()}) - source: {src}",
+                                            _table(["Income stream", "Revenue", "% of revenue", "vs. year ago"],
+                                                   [[x["name"], big(x["value"], sym), pct(x["share"], 1), (pct(x["yoy"], 1, True), _posneg(x["yoy"]))]
+                                                    for x in st["streams"]],
+                                                   widths=[W * 0.43, W * 0.19, W * 0.19, W * 0.19]))]
+
+    def ratio(a, b):
+        return a / b if a is not None and b else None
+    head = [""] + [_quarter_label(x["quarter"]) for x in quarters]
+    n = len(quarters)
+    cw = [W * 0.28] + [W * 0.72 / n] * n
+    rows = [
+        ["Revenue"] + [big(x["pnl"].get("revenue"), sym) for x in quarters],
+        ["  growth vs. year ago"] + [(pct(x.get("revenueYoY"), 1, True), _posneg(x.get("revenueYoY"))) for x in quarters],
+        ["Gross margin"] + [pct(ratio(x["pnl"].get("grossProfit"), x["pnl"].get("revenue"))) for x in quarters],
+        ["Operating margin"] + [pct(ratio(x["pnl"].get("operatingIncome"), x["pnl"].get("revenue"))) for x in quarters],
+        ["Net income"] + [big(x["pnl"].get("netIncome"), sym) for x in quarters],
+        ["Net margin"] + [pct(ratio(x["pnl"].get("netIncome"), x["pnl"].get("revenue"))) for x in quarters],
+        ["Dividends paid"] + [big(x["pnl"]["dividendsPaid"], sym) if x["pnl"].get("dividendsPaid") else DASH for x in quarters],
+        ["Share buybacks"] + [big(x["pnl"]["buybacks"], sym) if x["pnl"].get("buybacks") else DASH for x in quarters],
+    ]
+    out += [Spacer(1, 4), _caption_with("Recent quarters", _table(head, rows, widths=cw)),
+            _p("Income statement and cash flow from Yahoo Finance. Dividends and buybacks are cash paid in the quarter, "
+               "so they can differ from declared amounts.", S_SMALL)]
+    return out
+
+
 def _balance(d):
     b = d["balanceSheet"]
     sym = d["currencyNote"]["financial"] + " " if d.get("currencyNote") else "$"
@@ -693,7 +798,7 @@ def build_pdf(sheet: dict, compress: bool = True) -> bytes:
     doc.addPageTemplates([PageTemplate(id="main", frames=[frame], onPage=lambda c, dd: _footer(c, dd, symbol, as_of))])
     story = []
     for part in (_header(sheet), _verdict_section(sheet), _takeaways(sheet), _business(sheet), _performance(sheet), _financials(sheet),
-                 _balance(sheet), _valuation(sheet), _returns(sheet), _estimates(sheet), _analysts(sheet), _ownership(sheet)):
+                 _income_flow(sheet), _balance(sheet), _valuation(sheet), _returns(sheet), _estimates(sheet), _analysts(sheet), _ownership(sheet)):
         story += part
     doc.build(story)
     return buf.getvalue()
