@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph Frontend["Frontend — localhost:5173"]
         App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
-        Components["~110 component files\n(99 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
+        Components["~110 component files\n(100 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -286,6 +286,7 @@ Design notes:
 - *One fetch, two features.* The 100-Bagger Finder and the Themes pages share the per-symbol Yahoo fetch (`hb:{symbol}`), so scanning one warms the other. A single background scan covers every company in every theme; any theme page just polls its progress.
 - *Prices reuse the Holdings Performance engine.* All themes' tickers (plus SPY and the ETFs) go through one `build_payload` call, so 3Y/5Y returns come from the shared anchor cache; only the baskets and members are assembled per theme.
 - *Editorial and live data are kept apart.* The catalog carries framing and classification (role, exposure, layer); it has no numbers, and a test enforces that. The setup score is computed from live data plus the catalog's exposure rating, with a risk haircut and label cap so unprofitable, deeply fallen or very small names cannot rank as strong setups.
+- *Scenario themes carry an `impact` block and an `atrisk` role.* AI Abundance adds hand-written jobs / markets / winners / scenarios content, rendered as tabs, and companies a theme could undercut. Those are displayed with live data but excluded from the basket, outlook, series, setup ranking and candidates (tested), so a disrupted business never reads as a recommendation.
 - *Degrades instead of failing.* If Yahoo refuses fundamentals, the pages render prices and performance with a note and retry after the cooldown; a partial result is never cached.
 
 ## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing / Advisor)
@@ -309,7 +310,7 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-99 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
+100 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
 
 ```
 Home
@@ -539,8 +540,8 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 
 | Suite | Size | Notes |
 |---|---|---|
-| Backend (pytest) | 898 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 276 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Backend (pytest) | 901 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 279 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

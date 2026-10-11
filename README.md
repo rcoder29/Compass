@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Stock Monitor started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **99 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **93 API routers / ~185 endpoints**, with **898 backend and 276 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **100 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **93 API routers / ~185 endpoints**, with **901 backend and 279 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -53,11 +53,12 @@ A US sector-ETF strategy toolkit on the eleven SPDR sector funds against SPY (to
 | **Sector Backtest** | Month-end rotation into the top-N sectors (only data known at the time), optional defensive switch below SPY's 10-month average, trading costs, versus SPY and equal-weight sectors. |
 
 ### Themes
-Thematic investing: companies grouped by a long-term force instead of a sector. One data-driven page per theme plus an overview; adding a theme is a catalog entry.
+Thematic investing: companies grouped by a long-term force instead of a sector. One data-driven page per theme (AI, Robotics, Quantum, Space, AI Abundance) plus an overview; adding a theme is a catalog entry.
 
 | Feature | Description |
 |---|---|
 | **Themes Overview** | A card per theme (basket sparkline, 3M / 1Y / 3Y vs SPY, median analyst upside, strongest setups), a side-by-side returns table with SPY, leaders and laggards, and the mix of core / supplier / other / speculative names. |
+| **AI Abundance** | A scenario theme: what if AI and robots make intelligence, labor and energy cheap and plentiful? The usual theme page plus a "What it could mean" section (tabs: Jobs, Markets, Who is best set up, Scenarios) and an "At risk of disruption" group (outsourcing, staffing, call centers, homework help) that is displayed with live prices but excluded from the basket, analyst outlook, setup ranking and candidates. |
 | **Artificial Intelligence · Robotics · Quantum Computing · Space Exploration** | Each page: thesis and why-now; an equal-weight basket vs SPY (12-month chart, 1M-5Y returns, volatility, drawdown); a near-term outlook (analyst price-target upside, share at Buy, catalysts and risks) and a long-term one (growth, profitability, drivers and risks); compounding scenarios beside the basket's own record; a value-chain map showing who else benefits; a sortable company table by role (core leaders, picks & shovels, other beneficiaries, emerging & speculative) with per-name reasoning; the top candidates to research; and theme ETFs. |
 | **Setup score** | A transparent 0-100 comparison within a theme (exposure 20, momentum vs SPY 20, analyst upside 20, growth 20, financial strength 10, valuation 10) with a risk haircut and a label cap, so cheap-looking speculation can't top the list. |
 
@@ -234,8 +235,8 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 ### Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 898 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 276 tests (Vitest + Testing Library)
+cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 901 tests, ~10 s, no network, isolated database
+cd frontend && npm test                # 279 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/stockmonitor.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -528,7 +529,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (898 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (901 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real stockmonitor.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal

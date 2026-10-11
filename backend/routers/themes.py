@@ -49,7 +49,7 @@ def _assemble(metrics: dict[str, dict], partial: dict | None) -> dict:
     bench = (payload.get("benchmark") or {}).get("returns")
     built = []
     for t in catalog.THEMES:
-        series = themes.basket_series(daily, [s["symbol"] for s in t["stocks"]])
+        series = themes.basket_series(daily, [s["symbol"] for s in t["stocks"] if s["role"] != "atrisk"])
         etf_perf = {sym: {"returns": rows[sym]["returns"], "price": rows[sym].get("price")} for sym, _ in t["etfs"] if sym in rows}
         built.append(themes.build_theme(t, metrics, rows, bench, series, etf_perf))
     return {"asOf": payload.get("asOf"), "benchmark": bench, "themes": built, "partial": partial,

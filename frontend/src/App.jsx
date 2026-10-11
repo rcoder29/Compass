@@ -240,6 +240,7 @@ const NAV_GROUPS = [
       { id: 'themerobotics',  label: 'Robotics' },
       { id: 'themequantum',   label: 'Quantum Computing' },
       { id: 'themespace',     label: 'Space Exploration' },
+      { id: 'themeabundance', label: 'AI Abundance' },
     ],
   },
   {
@@ -1111,6 +1112,7 @@ export default function App() {
           {activeTab === 'themerobotics'  && <ThemePage key="robotics" themeId="robotics" onNavigate={navigate} />}
           {activeTab === 'themequantum'   && <ThemePage key="quantum" themeId="quantum" onNavigate={navigate} />}
           {activeTab === 'themespace'     && <ThemePage key="space" themeId="space" onNavigate={navigate} />}
+          {activeTab === 'themeabundance' && <ThemePage key="abundance" themeId="abundance" onNavigate={navigate} />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
           {activeTab === 'econregime'      && <EconomyRegime onNavigate={navigate} />}

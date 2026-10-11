@@ -1,13 +1,14 @@
 import { Card, fmtPct, fmtNum, signedClass, heat, Sparkline } from './MacroKit'
 
 export const RETURN_COLS = ['1M', '3M', '6M', 'YTD', '1Y', '3Y', '5Y']
-export const ROLE_ORDER = ['core', 'enabler', 'adjacent', 'emerging']
-export const ROLE_NAMES = { core: 'Core leaders', enabler: 'Picks & shovels', adjacent: 'Other beneficiaries', emerging: 'Emerging & speculative' }
+export const ROLE_ORDER = ['core', 'enabler', 'adjacent', 'emerging', 'atrisk']
+export const ROLE_NAMES = { core: 'Core leaders', enabler: 'Picks & shovels', adjacent: 'Other beneficiaries', emerging: 'Emerging & speculative', atrisk: 'At risk of disruption' }
 export const ROLE_BLURB = {
   core: 'Pure plays and the clear leaders', enabler: 'Suppliers the theme cannot grow without',
   adjacent: 'Large companies that benefit without depending on the theme', emerging: 'Small, early or unproven: high potential, high risk of permanent loss',
+  atrisk: 'Businesses the theme could undercut: shown for contrast, left out of the basket, outlook and candidates',
 }
-export const SETUP_CLS = { 'Stronger setup': 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30', Mixed: 'text-gray-300 bg-gray-700/40 border-gray-600', 'Weaker setup': 'text-amber-300 bg-amber-500/10 border-amber-500/30' }
+export const SETUP_CLS = { 'Stronger setup': 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30', Mixed: 'text-gray-300 bg-gray-700/40 border-gray-600', 'Weaker setup': 'text-amber-300 bg-amber-500/10 border-amber-500/30', 'Disruption risk': 'text-red-300 bg-red-500/10 border-red-500/30' }
 export const RISK_CLS = { Lower: 'text-emerald-300', Moderate: 'text-sky-300', High: 'text-amber-300', 'Very high': 'text-red-300' }
 
 // colour scale for a return in a given column (longer horizons saturate later)

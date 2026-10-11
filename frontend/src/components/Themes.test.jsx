@@ -84,8 +84,7 @@ describe('ThemePage', () => {
     expect(names()).toEqual(['BBB'])
     fireEvent.click(screen.getByRole('tab', { name: /Emerging & speculative/ }))
     expect(names()).toEqual(['CCC'])
-    fireEvent.click(screen.getByRole('tab', { name: /Other beneficiaries/ }))
-    expect(screen.getByText(/No companies in this group/)).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /Other beneficiaries/ })).toBeNull()          // groups with no companies get no tab
     fireEvent.click(screen.getByRole('tab', { name: 'All' }))
     fireEvent.click(screen.getByRole('columnheader', { name: /^Mkt cap/ }))
     expect(names()).toEqual(['AAA', 'BBB', 'CCC'])                                          // descending
@@ -185,6 +184,60 @@ const overview = () => ({
   status: 'ready', asOf: '2026-10-09', benchmark: RET({ '1Y': 0.17, '3M': 0.05 }), partial: null, editorialDate: 'October 2026', periods: [],
   themes: [summary('ai', 'Artificial Intelligence', { returns: { '1Y': 0.42, '3M': 0.1 } }), summary('robotics', 'Robotics & Automation', { returns: { '1Y': 0.07, '3M': -0.02 } }),
            summary('quantum', 'Quantum Computing', { returns: { '1Y': 0.16, '3M': -0.04 } }), summary('space', 'Space Exploration', { returns: { '1Y': 0.06, '3M': -0.12 } })],
+})
+
+const impact = () => ({
+  intro: 'A way of thinking about the scenario.', jobs: { summary: 'Tasks change before jobs vanish.', exposed: ['Routine screen work', 'Outsourced hours'], resilient: ['Skilled trades', 'Trust roles'], emerging: ['AI auditors', 'New services'] },
+  markets: [{ title: 'Scarce inputs reprice', text: 'Compute and power stay valuable.' }, { title: 'Demand is the loop', text: 'Output needs buyers with income.' }],
+  winners: [{ who: 'Owners of the scarce inputs', why: 'Compute, power, materials.' }, { who: 'Distribution and trust', why: 'Pricing power stays.' }],
+  scenarios: [{ name: 'Broad abundance', text: 'Productivity lifts everyone.', favours: 'Infrastructure', hurts: 'Headcount services' }, { name: 'Concentrated gains', text: 'Owners win.', favours: 'Platforms', hurts: 'Workers' }, { name: 'Slower than hoped', text: 'Plateau.', favours: 'Incumbents', hurts: 'Speculative names' }],
+})
+const abundance = () => {
+  const t = theme()
+  t.id = 'abundance'; t.name = 'AI Abundance'; t.short = 'Abundance'; t.impact = impact()
+  t.layers = [...t.layers, { id: 'disrupted', name: 'At risk of disruption', blurb: 'Sell routine human hours' }]
+  t.members = [...members().filter(m => m.available), member('RISKY', { role: 'atrisk', layer: 'disrupted', setup: setup(50, 'Disruption risk') })]
+  t.roleCounts = { core: 1, enabler: 1, adjacent: 0, emerging: 1, atrisk: 1 }
+  return t
+}
+
+describe('AI Abundance theme', () => {
+  it('shows the jobs, markets, winners and scenarios tabs', async () => {
+    mock(() => detail({ theme: abundance() }))
+    render(<ThemePage themeId="abundance" />)
+    await screen.findByText('What it could mean')
+    expect(screen.getByText('Tasks change before jobs vanish.')).toBeInTheDocument()
+    expect(screen.getByText('Routine screen work')).toBeInTheDocument()
+    expect(screen.getByText('Skilled trades')).toBeInTheDocument()
+    expect(screen.getByText('AI auditors')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Markets' }))
+    expect(screen.getByText('Scarce inputs reprice')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Who is best set up' }))
+    expect(screen.getByText('Owners of the scarce inputs')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: 'Scenarios' }))
+    expect(screen.getByText('Broad abundance')).toBeInTheDocument()
+    expect(screen.getByText('Headcount services')).toBeInTheDocument()
+  })
+
+  it('offers an at-risk tab, labels those names, and keeps them out of the candidates', async () => {
+    mock(() => detail({ theme: abundance() }))
+    render(<ThemePage themeId="abundance" />)
+    await screen.findByTestId('member-table')
+    fireEvent.click(screen.getByRole('tab', { name: /At risk of disruption/ }))
+    expect(names()).toEqual(['RISKY'])
+    expect(within(screen.getByTestId('member-table')).getByText('Disruption risk')).toBeInTheDocument()
+    const candidates = screen.getByText('Candidates to research').closest('section')
+    expect(within(candidates).queryByText(/RISKY/)).toBeNull()
+    expect(screen.getByText(/red outline: at risk of disruption/)).toBeInTheDocument()
+  })
+
+  it('other themes have neither the impact section nor an at-risk tab', async () => {
+    mock(() => detail())
+    render(<ThemePage themeId="ai" />)
+    await screen.findByTestId('member-table')
+    expect(screen.queryByText('What it could mean')).toBeNull()
+    expect(screen.queryByRole('tab', { name: /At risk/ })).toBeNull()
+  })
 })
 
 describe('ThemesOverview', () => {

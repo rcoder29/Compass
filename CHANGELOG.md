@@ -4,6 +4,18 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Themes: AI Abundance
+
+### Added
+- **Themes → AI Abundance** — a scenario theme for a world where AI and robots make intelligence, labor and energy cheap and plentiful. The standard theme page (basket vs SPY, near- and long-term outlook, value chain across cheap intelligence, automated labor, abundant energy, science and health, scarce inputs, and distribution and trust) plus a **"What it could mean"** section with four tabs: **Jobs** (most exposed, more resilient, what could be created), **Markets** (how costs, scarce inputs, concentration, rates and demand could shift), **Who is best set up** (ranked kinds of owners) and **Scenarios** (broad abundance, concentrated gains, slower than hoped, each with who it favours and hurts). 30 companies.
+- A new **"At risk of disruption"** role (outsourcing, staffing, call centers, homework help): shown with live prices for contrast, labelled "Disruption risk", and excluded from the basket, analyst outlook, chart series, setup ranking and candidates so they never read as recommendations.
+- Role tabs on theme pages now appear only for groups that have companies.
+
+### Tests
+- Backend +3 (impact content, at-risk exclusion from every aggregate, other themes unaffected); frontend +3 (the four tabs, the at-risk tab and exclusions, other themes unchanged). Totals 901 backend, 279 frontend.
+
+---
+
 ## 2026-10-11 — Themes: AI, Robotics, Quantum Computing, Space Exploration
 
 A new top-level **Themes** group: an overview plus one page per theme, all driven by one component and a curated catalog.

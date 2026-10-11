@@ -73,6 +73,55 @@ function Scenarios({ t }) {
   )
 }
 
+function Impact({ imp }) {
+  const [tab, setTab] = useState('jobs')
+  const tabs = [['jobs', 'Jobs'], ['markets', 'Markets'], ['winners', 'Who is best set up'], ['scenarios', 'Scenarios']]
+  return (
+    <Card title="What it could mean" right="editorial scenario map, not a forecast">
+      <p className="text-xs text-gray-400 mb-3">{imp.intro}</p>
+      <div className="flex flex-wrap gap-2 mb-3 text-xs" role="tablist" aria-label="Implications">
+        {tabs.map(([id, label]) => (
+          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+                  className={`px-3 py-1.5 rounded-lg border ${tab === id ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>{label}</button>
+        ))}
+      </div>
+      {tab === 'jobs' && (
+        <div className="space-y-3 text-xs">
+          <p className="text-gray-300">{imp.jobs.summary}</p>
+          <div className="grid md:grid-cols-3 gap-4">
+            <List title="Most exposed" items={imp.jobs.exposed} tone="text-red-200/80" marker="↓" />
+            <List title="More resilient" items={imp.jobs.resilient} tone="text-emerald-200/80" marker="↑" />
+            <List title="What could be created" items={imp.jobs.emerging} tone="text-sky-200/80" marker="+" />
+          </div>
+        </div>
+      )}
+      {tab === 'markets' && (
+        <ul className="grid md:grid-cols-2 gap-3 text-xs">
+          {imp.markets.map(m => <li key={m.title} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3"><div className="text-gray-200 font-medium mb-1">{m.title}</div><p className="text-gray-400">{m.text}</p></li>)}
+        </ul>
+      )}
+      {tab === 'winners' && (
+        <ol className="space-y-2 text-xs">
+          {imp.winners.map((w, i) => <li key={w.who} className="flex gap-3 bg-gray-950/40 border border-gray-800 rounded-lg p-3"><span className="text-gray-500 tabular-nums">{i + 1}</span><div><div className="text-gray-200 font-medium">{w.who}</div><p className="text-gray-400 mt-0.5">{w.why}</p></div></li>)}
+          <li className="text-[11px] text-gray-500 list-none">The companies that fit each group are in the value chain and company table below, with live performance, analyst targets and risk.</li>
+        </ol>
+      )}
+      {tab === 'scenarios' && (
+        <div className="grid md:grid-cols-3 gap-3 text-xs">
+          {imp.scenarios.map(sc => (
+            <div key={sc.name} className="bg-gray-950/40 border border-gray-800 rounded-lg p-3 space-y-2">
+              <div className="text-gray-100 font-medium">{sc.name}</div>
+              <p className="text-gray-400">{sc.text}</p>
+              <p><span className="text-emerald-300">Favours: </span><span className="text-gray-400">{sc.favours}</span></p>
+              <p><span className="text-red-300">Hurts: </span><span className="text-gray-400">{sc.hurts}</span></p>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 function ValueChain({ t, onPick }) {
   return (
     <Card title="The value chain: who else benefits" right="click a name to jump to it">
@@ -85,7 +134,7 @@ function ValueChain({ t, onPick }) {
               <div className="flex flex-wrap gap-1.5">
                 {names.map(m => (
                   <button key={m.symbol} onClick={() => onPick(m.symbol)} title={`${m.name}: ${m.why}`} disabled={!m.available}
-                          className={`px-2 py-1 rounded-md border text-[11px] ${m.role === 'emerging' ? 'border-dashed' : ''} border-gray-700 hover:border-gray-500 disabled:opacity-40`}>
+                          className={`px-2 py-1 rounded-md border text-[11px] ${m.role === 'emerging' ? 'border-dashed border-gray-700' : m.role === 'atrisk' ? 'border-red-500/40' : 'border-gray-700'} hover:border-gray-500 disabled:opacity-40`}>
                     <span className="text-gray-100 font-medium">{m.symbol}</span>
                     <span className={`ml-1.5 tabular-nums ${signedClass(m.returns['3M'])}`}>{fmtPct(m.returns['3M'], { digits: 0 })}</span>
                   </button>
@@ -96,7 +145,7 @@ function ValueChain({ t, onPick }) {
           )
         })}
       </div>
-      <p className="text-[11px] text-gray-600 mt-3">Dashed outline: emerging or speculative. The number is the 3-month price change.</p>
+      <p className="text-[11px] text-gray-600 mt-3">Dashed outline: emerging or speculative{t.roleCounts.atrisk > 0 && '; red outline: at risk of disruption'}. The number is the 3-month price change.</p>
     </Card>
   )
 }
@@ -171,7 +220,7 @@ export default function ThemePage({ themeId, onNavigate }) {
     { name: `${t.short} basket`, color: t.color, points: t.series.points.map(p => [p[0], p[1]]) },
     { name: 'SPY', color: '#94a3b8', points: t.series.points.map(p => [p[0], p[2]]) },
   ] : null
-  const candidates = [...t.members].filter(m => m.available).sort((a, b) => b.setup.score - a.setup.score).slice(0, 6)
+  const candidates = [...t.members].filter(m => m.available && m.role !== 'atrisk').sort((a, b) => b.setup.score - a.setup.score).slice(0, 6)
   const b = t.basket
 
   return (
@@ -216,12 +265,13 @@ export default function ThemePage({ themeId, onNavigate }) {
       </Card>
 
       <Outlook t={t} />
+      {t.impact && <Impact imp={t.impact} />}
       <Scenarios t={t} />
       <ValueChain t={t} onPick={jump} />
 
       <Card title="Companies in the theme" right={`${rows.length} shown · click a row for the reasoning`}>
         <div className="flex flex-wrap gap-2 mb-3 text-xs" role="tablist" aria-label="Company group">
-          {[['all', 'All'], ...ROLE_ORDER.map(r => [r, ROLE_NAMES[r]])].map(([id, label]) => (
+          {[['all', 'All'], ...ROLE_ORDER.filter(r => (t.roleCounts[r] || 0) > 0).map(r => [r, ROLE_NAMES[r]])].map(([id, label]) => (
             <button key={id} role="tab" aria-selected={roleTab === id} onClick={() => setRoleTab(id)} title={ROLE_BLURB[id]}
                     className={`px-3 py-1.5 rounded-lg border ${roleTab === id ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'border-gray-700 text-gray-400 hover:text-gray-200'}`}>
               {label}{id !== 'all' && <span className="ml-1.5 text-gray-500">{t.roleCounts[id]}</span>}

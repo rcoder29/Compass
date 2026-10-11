@@ -147,6 +147,8 @@ def member_view(entry: dict, m: dict | None, perf: dict | None, bench_returns: d
     returns = (perf or {}).get("returns") or {}
     ann = (perf or {}).get("annualised") or {}
     cand = score_candidate(entry, m, returns, bench_returns)
+    if entry["role"] == "atrisk":                       # a "setup" is meaningless for a business the theme could undercut
+        cand = {**cand, "label": "Disruption risk", "capReason": None}
     hbs = hb.score(m) if m else None
     g = hb.blended_growth(m) if m else None
     return {
@@ -238,19 +240,19 @@ def annualised_mean(views: list[dict], key: str) -> float | None:
 
 def build_theme(theme: dict, metrics: dict[str, dict], perf_rows: dict[str, dict], bench_returns: dict | None, series: dict | None, etf_perf: dict[str, dict]) -> dict:
     views = [member_view(e, metrics.get(e["symbol"]), perf_rows.get(e["symbol"]), bench_returns) for e in theme["stocks"]]
-    avail = [v for v in views if v["available"]]
+    avail = [v for v in views if v["available"] and v["role"] != "atrisk"]      # at-risk names are shown, never counted
     basket = basket_returns(avail)
     for key in ("3Y", "5Y"):
         basket[key]["annualised"] = annualised_mean(avail, key)
     out = outlook(avail, basket)
-    by_role = {r: [v for v in views if v["role"] == r] for r in ("core", "enabler", "adjacent", "emerging")}
+    by_role = {r: [v for v in views if v["role"] == r] for r in ("core", "enabler", "adjacent", "emerging", "atrisk")}
     ranked = sorted([v for v in avail], key=lambda v: -v["setup"]["score"])
     movers = sorted([v for v in avail if v["returns"].get("3M") is not None], key=lambda v: -v["returns"]["3M"])
     etfs = [{"symbol": s, "name": n, **(etf_perf.get(s) or {})} for s, n in theme["etfs"]]
     return {
         "id": theme["id"], "name": theme["name"], "short": theme["short"], "color": theme["color"], "tagline": theme["tagline"], "thesis": theme["thesis"],
         "whyNow": theme["whyNow"], "layers": theme["layers"], "shortTerm": theme["shortTerm"], "longTerm": theme["longTerm"], "watch": theme["watch"],
-        "members": views, "roleCounts": {r: len(v) for r, v in by_role.items()},
+        "members": views, "roleCounts": {r: len(v) for r, v in by_role.items()}, "impact": theme.get("impact"),
         "basket": basket, "benchmark": bench_returns, "series": series, "outlook": out, "scenarios": scenarios(),
         "top": [v["symbol"] for v in ranked[:5]], "leaders3M": [v["symbol"] for v in movers[:3]], "laggards3M": [v["symbol"] for v in movers[-3:]],
         "etfs": etfs, "unavailable": [v["symbol"] for v in views if not v["available"]],

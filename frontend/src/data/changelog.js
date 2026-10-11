@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Themes: AI Abundance', tabId: 'themeabundance' },
+  { type: 'bullets', items: [
+    'New Themes → AI Abundance: what if AI and robots make intelligence, labor and energy cheap and plentiful? A "What it could mean" section covers jobs (most exposed, more resilient, what could be created), markets (how costs, scarce inputs, concentration, rates and demand could shift), who is best set up, and three scenarios.',
+    'The page maps the value chain from cheap intelligence and energy to science, scarce inputs and distribution, and shows an "At risk of disruption" group for contrast. Those names are never part of the basket, outlook or candidates.',
+    'The commentary is a hand-written, dated scenario map, not a forecast.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Themes: AI, Robotics, Quantum & Space', tabIds: [
     { id: 'themesoverview', label: 'Themes Overview' }, { id: 'themeai', label: 'Artificial Intelligence' }, { id: 'themerobotics', label: 'Robotics' },
     { id: 'themequantum', label: 'Quantum Computing' }, { id: 'themespace', label: 'Space Exploration' },

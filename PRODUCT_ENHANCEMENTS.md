@@ -8,7 +8,7 @@
 
 ## What exists today
 
-The app has grown from 7 tabs to **99 views across 13 sidebar groups**, plus a Home dashboard, an in-app User Guide and an Investor Education module (a layered map of investing concepts, separate from the view count). Nearly everything proposed in the original (2026-05-27) version of this roadmap has since shipped. The groups below are generated from the sidebar definition in `App.jsx`:
+The app has grown from 7 tabs to **100 views across 13 sidebar groups**, plus a Home dashboard, an in-app User Guide and an Investor Education module (a layered map of investing concepts, separate from the view count). Nearly everything proposed in the original (2026-05-27) version of this roadmap has since shipped. The groups below are generated from the sidebar definition in `App.jsx`:
 
 | Group | Views |
 |-------|-------|
@@ -16,7 +16,7 @@ The app has grown from 7 tabs to **99 views across 13 sidebar groups**, plus a H
 | **Markets** | Overview, Sentiment, Reddit Trending, Index Heatmap, Holdings Performance, Breadth, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto |
 | **Economy** | Regime Dashboard, Indicators, Indicator Studies, Fed Watch, Yield Curve, Macro Calendar |
 | **Sectors** | Scoreboard, Rotation Map, Sector Screener, Cycle Fit, Sector Backtest |
-| **Themes** | Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration |
+| **Themes** | Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance |
 | **Research** | Tear Sheet, 100-Bagger Finder, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options |
 | **Watchlist** | Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts |
 | **News** | My News Feed |

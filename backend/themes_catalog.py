@@ -9,6 +9,8 @@ Roles:
   enabler   "picks and shovels": suppliers whose products the theme cannot grow without
   adjacent  large companies that benefit but are not driven by the theme alone
   emerging  small, early or unproven companies; high potential and high risk of permanent loss
+  atrisk    companies the theme could undercut (only on themes where disruption is the point); displayed, but excluded
+            from the basket, the analyst outlook and the candidate ranking so they never read as recommendations
 
 `exposure` (1-3) is how much of the business depends on the theme: 3 = most of it, 1 = a minor part.
 Companies get acquired, rename and delist: the pages show a name as unavailable if Yahoo has no data for it.
@@ -19,6 +21,7 @@ ROLES = {
     "enabler": {"name": "Picks & shovels", "blurb": "Suppliers the theme cannot grow without"},
     "adjacent": {"name": "Other beneficiaries", "blurb": "Large companies that benefit without depending on the theme"},
     "emerging": {"name": "Emerging & speculative", "blurb": "Small, early or unproven: high potential, high risk of permanent loss"},
+    "atrisk": {"name": "At risk of disruption", "blurb": "Businesses the theme could undercut; shown for contrast and left out of the basket, outlook and candidate rankings"},
 }
 EDITORIAL_DATE = "October 2026"
 
@@ -246,6 +249,103 @@ THEMES = [
                       "Long timelines to profit for companies that need repeated financing"],
         },
         "watch": "Defense primes anchor the theme with steady cash flows; the pure plays offer the growth, and the risk. Check who the customers are: dependence on one government contract or one large customer is the common weak point.",
+    },
+    {
+        "id": "abundance", "name": "AI Abundance", "short": "Abundance", "color": "#f472b6", "navId": "themeabundance",
+        "tagline": "If intelligence, labor and energy become cheap and plentiful: what changes for jobs, for markets, and who is best placed.",
+        "thesis": "The abundance argument is that AI and robots could make cognitive work, physical labor, scientific discovery and eventually energy dramatically cheaper, so that goods and services once limited by human time become plentiful. If it happens, the gains go first to whoever owns the scarce inputs (compute, power, data, distribution and trust), while businesses that sell human hours at a markup are squeezed. It is a scenario, not a forecast: the pace, and who captures the gains, are both uncertain.",
+        "whyNow": "The cost of AI capability per dollar has been falling fast, capital is flowing into power and compute, and companies are starting to replace routine knowledge work with software.",
+        "layers": [
+            {"id": "intelligence", "name": "Cheap intelligence", "blurb": "The chips, clouds and models that make thinking inexpensive"},
+            {"id": "labor", "name": "Automated labor", "blurb": "Robots and machines doing physical and medical work"},
+            {"id": "energy", "name": "Abundant energy", "blurb": "Power generation that data centers and automation consume"},
+            {"id": "science", "name": "Science & health", "blurb": "Faster drug discovery, diagnostics and surgery"},
+            {"id": "scarce", "name": "Scarce inputs & assets", "blurb": "Materials and physical infrastructure that stay limited"},
+            {"id": "distribution", "name": "Distribution & trust", "blurb": "Networks, payments and brands that keep their pricing power"},
+            {"id": "disrupted", "name": "At risk of disruption", "blurb": "Businesses that sell routine human hours"},
+        ],
+        "stocks": [
+            S("NVDA", "NVIDIA", "intelligence", "core", 3, "Sells the compute that makes machine intelligence possible; the clearest owner of a scarce input."),
+            S("GOOGL", "Alphabet", "intelligence", "core", 2, "Models, custom chips, a cloud, and distribution to billions of users."),
+            S("MSFT", "Microsoft", "intelligence", "core", 2, "Cloud, models and the software workers already use every day."),
+            S("TSLA", "Tesla", "labor", "core", 1, "Autonomy and a humanoid robot program; the stock is driven mostly by cars and energy."),
+            S("ISRG", "Intuitive Surgical", "labor", "core", 2, "Robotic surgery, an early example of machines extending skilled labor."),
+            S("GEV", "GE Vernova", "energy", "enabler", 2, "Gas turbines, grid equipment and wind: the hardware of added power capacity."),
+            S("CEG", "Constellation Energy", "energy", "enabler", 2, "Nuclear fleet supplying around-the-clock carbon-free power."),
+            S("NEE", "NextEra Energy", "energy", "enabler", 2, "Largest renewable developer with a regulated utility base."),
+            S("CCJ", "Cameco", "energy", "enabler", 3, "Uranium miner: fuel for a nuclear build-out if one materialises."),
+            S("FCX", "Freeport-McMoRan", "scarce", "enabler", 2, "Copper, which electrification, grids and data centers all need and cannot easily replace."),
+            S("EQIX", "Equinix", "scarce", "enabler", 2, "Data-center real estate and interconnection."),
+            S("VRT", "Vertiv", "scarce", "enabler", 2, "Power and cooling gear that every dense compute site needs."),
+            S("LLY", "Eli Lilly", "science", "adjacent", 1, "Scaling obesity and diabetes drugs and using AI in discovery."),
+            S("AMZN", "Amazon", "distribution", "adjacent", 1, "Cloud, logistics and robots at scale; a distributor that can pass on cheaper costs."),
+            S("V", "Visa", "distribution", "adjacent", 1, "A payments network that benefits from more transactions at little extra cost."),
+            S("COST", "Costco", "distribution", "adjacent", 1, "Trusted retail that passes lower costs to members; hard for AI to replace."),
+            S("PLD", "Prologis", "scarce", "adjacent", 1, "Logistics and warehouse real estate that automation still needs."),
+            S("OKLO", "Oklo", "energy", "emerging", 3, "Pre-revenue small modular nuclear reactor developer."),
+            S("SMR", "NuScale Power", "energy", "emerging", 3, "Small modular reactor designer; years from commercial output."),
+            S("BE", "Bloom Energy", "energy", "emerging", 3, "Fuel cells increasingly sold as on-site power for data centers."),
+            S("RXRX", "Recursion Pharmaceuticals", "science", "emerging", 3, "AI-driven drug discovery; unproven and cash-burning."),
+            S("TEM", "Tempus AI", "science", "emerging", 3, "AI applied to clinical and genomic data."),
+            S("ACN", "Accenture", "disrupted", "atrisk", 3, "Sells consulting and technology labor by the hour; also adapting by selling AI services."),
+            S("CTSH", "Cognizant", "disrupted", "atrisk", 3, "IT services and outsourcing built on large teams of engineers."),
+            S("EPAM", "EPAM Systems", "disrupted", "atrisk", 3, "Software engineering outsourcing."),
+            S("GLOB", "Globant", "disrupted", "atrisk", 3, "Digital engineering services priced on headcount."),
+            S("TTEC", "TTEC Holdings", "disrupted", "atrisk", 3, "Call-center outsourcing, a direct target for AI agents."),
+            S("RHI", "Robert Half", "disrupted", "atrisk", 3, "Staffing for white-collar roles AI may reduce."),
+            S("MAN", "ManpowerGroup", "disrupted", "atrisk", 3, "Global staffing; sensitive to both the cycle and automation."),
+            S("CHGG", "Chegg", "disrupted", "atrisk", 3, "Homework help, already hit hard by free AI tutors: an example of how fast it can happen."),
+        ],
+        "etfs": [("SMH", "VanEck Semiconductor ETF"), ("BOTZ", "Global X Robotics & AI ETF"), ("GRID", "First Trust NASDAQ Clean Edge Smart Grid Infrastructure ETF")],
+        "shortTerm": {
+            "catalysts": ["Evidence that AI is replacing or speeding up routine knowledge work inside large companies",
+                          "Power and grid investment announcements tied to data centers",
+                          "Falling prices for AI usage widening what is worth automating"],
+            "risks": ["Hype outrunning real productivity gains, followed by a sharp reset",
+                      "Power, chips and permitting bottlenecks slowing the build-out",
+                      "Political and regulatory backlash over jobs, safety and concentration"],
+        },
+        "longTerm": {
+            "drivers": ["Machines making cognitive work, and later much physical work, far cheaper",
+                        "Cheaper energy and faster science (medicine, materials) compounding the effect",
+                        "Productivity gains that, if widely shared, raise living standards and create new kinds of demand and work"],
+            "risks": ["Gains concentrating in a few owners, with weak demand if wages and employment fall faster than new work appears",
+                      "Transition pain for displaced workers prompting heavy regulation or new taxes on capital",
+                      "The technology plateauing short of the vision, leaving expensive infrastructure and unmet expectations"],
+        },
+        "watch": "Treat this as a scenario map, not a forecast. The infrastructure owners are the most direct bet, but they are also the most crowded. The disrupted names are shown for contrast, not as short ideas: many will adapt, and prices may already reflect the threat.",
+        "impact": {
+            "intro": "What follows is a way of thinking about the scenario, written by hand and dated. None of it is a prediction; the timing and the distribution of gains are the two things nobody knows.",
+            "jobs": {
+                "summary": "Past technology waves removed some jobs, created others and raised output, but each transition was uneven and slow for the people in the middle. AI is different in that it targets thinking tasks, not only physical ones, and it may move faster. The likeliest pattern in any version of the future is that tasks change before whole jobs vanish.",
+                "exposed": ["Routine, screen-based work: data entry, basic customer support, first-draft writing, simple coding, back-office processing",
+                            "Work sold by the hour with a standard output: outsourcing, entry-level analysis, translation, basic legal and accounting prep"],
+                "resilient": ["Hands-on skilled trades and care work in unpredictable physical settings",
+                              "Roles built on trust, accountability or presence: clinicians, teachers, managers, regulated professions",
+                              "People who direct, check and combine AI tools, and those who own the scarce inputs"],
+                "emerging": ["Roles to build, run, secure and audit AI systems and the power and data-center infrastructure under them",
+                             "New products and services made affordable by cheap intelligence, which today's job titles don't capture"],
+            },
+            "markets": [
+                {"title": "Costs fall faster than prices", "text": "Where AI cuts the cost of producing a service, profit margins can widen at first, until competition passes the savings on to customers. Early winners are the companies that pocket the gap."},
+                {"title": "Scarce inputs reprice", "text": "When intelligence is cheap, what stays scarce becomes valuable: compute, electricity, certain materials, land near power and fiber, proprietary data, distribution and trusted brands."},
+                {"title": "Winner-take-most tendencies", "text": "Scale in compute, data and distribution compounds. Markets may concentrate further, which helps leaders and raises regulatory and political risk."},
+                {"title": "Prices and rates are unclear", "text": "Cheaper goods and services could push inflation down. A surge in investment, or in government spending to cushion workers, could push the other way. The path of interest rates would shape every valuation."},
+                {"title": "Demand is the loop", "text": "Abundant output only pays off if people still have income to buy it. Whether gains are broadly shared, taxed or redistributed decides whether the abundance is a boom, a slump, or something new."},
+            ],
+            "winners": [
+                {"who": "Owners of the scarce inputs", "why": "Compute and chips, power generation and grid equipment, and the minerals and real estate they depend on sell into demand that grows whoever wins downstream. Most direct, and most crowded."},
+                {"who": "Distribution and trust", "why": "Networks, payments, marketplaces and trusted brands keep pricing power while their costs fall, and AI strengthens rather than replaces them."},
+                {"who": "Science and health", "why": "If AI speeds discovery and cuts the cost of care, the winners are the companies with real products, data and regulatory approval, though this is a slower and riskier path."},
+                {"who": "Labor-saving machines", "why": "Robotics and automation benefit as labor stays expensive relative to machines, with the long-term upside still unproven for general-purpose robots."},
+                {"who": "Adaptable incumbents", "why": "Large companies that use AI to cut costs and keep their customers can gain from the shift, so even 'at risk' sectors contain survivors."},
+            ],
+            "scenarios": [
+                {"name": "Broad abundance", "text": "AI and automation lift productivity widely, goods and services get cheaper, and new demand and jobs appear. Output and living standards rise.", "favours": "Infrastructure, energy, science and health, consumer-facing leaders, the whole market", "hurts": "Pure headcount-based services"},
+                {"name": "Concentrated gains", "text": "Productivity rises but the benefits go mostly to the owners of compute, data and distribution while many workers lose out. Demand weakens and politics responds.", "favours": "A handful of platform and infrastructure owners, until regulation or taxes bite", "hurts": "Labor-intensive sectors, consumer discretionary, anything dependent on mid-income spending"},
+                {"name": "Slower than hoped", "text": "Reliability, cost, power or regulation limit how fast AI is adopted; the build-out overshoots and expectations reset.", "favours": "Cash-rich incumbents, defensive businesses", "hurts": "Heavily valued infrastructure and speculative names that financed growth with debt or new shares"},
+            ],
+        },
     },
 ]
 
