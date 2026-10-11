@@ -24,6 +24,7 @@ router = APIRouter()
 _TTL = timedelta(minutes=15)
 _PARTIAL_TTL = timedelta(minutes=2)      # a partial result (fundamentals still loading) is reused briefly so polling can't re-download every price
 _SCAN_KEY = "themes:all"
+_PRICE_CHUNK = 60
 
 
 def _universe() -> dict:
@@ -41,7 +42,9 @@ def _universe() -> dict:
 def _assemble(metrics: dict[str, dict], partial: dict | None) -> dict:
     uni = _universe()
     symbols = [m["symbol"] for m in uni["members"]]
-    daily = holdings_perf.download_daily(symbols)
+    daily: dict = {}
+    for i in range(0, len(symbols), _PRICE_CHUNK):          # chunked: one bulk request for 200+ symbols invites rate limiting
+        daily.update(holdings_perf.download_daily(symbols[i:i + _PRICE_CHUNK]))
     if "SPY" not in daily or len(daily) < 10:
         raise RuntimeError("couldn't download price history (Yahoo may be rate-limiting)")
     anchors = holdings_perf.load_anchors(symbols)

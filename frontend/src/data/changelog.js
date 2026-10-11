@@ -10,6 +10,15 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Themes: Clean Energy, Cybersecurity, Healthcare & Fintech', tabIds: [
+    { id: 'themecleanenergy', label: 'Clean Energy & Nuclear' }, { id: 'themecyber', label: 'Cybersecurity' },
+    { id: 'themehealth', label: 'Healthcare Innovation' }, { id: 'themefintech', label: 'Fintech & Digital Payments' },
+  ] },
+  { type: 'bullets', items: [
+    'Four new theme pages: Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation (obesity drugs, gene editing, AI medicine) and Fintech & Digital Payments.',
+    'Each separates the established leaders and suppliers from speculative names, with performance against SPY, a near- and long-term outlook, a value-chain map, a company table with a transparent setup score, candidates to research and theme ETFs.',
+    'The first load now reads about 170 companies, so it takes a few minutes; after that it is cached for a day.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Renamed to Compass' },
   { type: 'bullets', items: [
     'Stock Monitor is now Compass: new name in the header, browser tab, User Guide and the Tear Sheet PDF. Your saved watchlist, portfolio, pins and settings are unaffected.',

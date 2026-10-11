@@ -243,6 +243,10 @@ const NAV_GROUPS = [
       { id: 'themespace',     label: 'Space Exploration' },
       { id: 'themeabundance', label: 'AI Abundance' },
       { id: 'themedollar',     label: 'Dollar Regime Shift' },
+      { id: 'themecleanenergy', label: 'Clean Energy & Nuclear' },
+      { id: 'themecyber',     label: 'Cybersecurity' },
+      { id: 'themehealth',    label: 'Healthcare Innovation' },
+      { id: 'themefintech',   label: 'Fintech & Digital Payments' },
     ],
   },
   {
@@ -1116,6 +1120,10 @@ export default function App() {
           {activeTab === 'themespace'     && <ThemePage key="space" themeId="space" onNavigate={navigate} />}
           {activeTab === 'themeabundance' && <ThemePage key="abundance" themeId="abundance" onNavigate={navigate} />}
           {activeTab === 'themedollar'    && <ThemePage key="dollar" themeId="dollar" onNavigate={navigate} />}
+          {activeTab === 'themecleanenergy' && <ThemePage key="cleanenergy" themeId="cleanenergy" onNavigate={navigate} />}
+          {activeTab === 'themecyber'     && <ThemePage key="cyber" themeId="cyber" onNavigate={navigate} />}
+          {activeTab === 'themehealth'    && <ThemePage key="health" themeId="health" onNavigate={navigate} />}
+          {activeTab === 'themefintech'   && <ThemePage key="fintech" themeId="fintech" onNavigate={navigate} />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
           {activeTab === 'econregime'      && <EconomyRegime onNavigate={navigate} />}

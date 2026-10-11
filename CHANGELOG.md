@@ -4,6 +4,21 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Four more themes
+
+### Added
+- **Themes → Clean Energy & Nuclear** (22 companies: NextEra, First Solar, Enphase, Constellation, Brookfield Renewable; grid and nuclear suppliers GE Vernova, Eaton, Quanta, Nextracker, Cameco, BWX, Albemarle; and pre-revenue developers Oklo, NuScale, Centrus, Nano Nuclear, Bloom, Fluence, Sunrun, Plug).
+- **Themes → Cybersecurity** (18: CrowdStrike, Palo Alto, Fortinet, Zscaler, Check Point; Cloudflare, Okta, Qualys, Tenable; Microsoft, Cisco, Akamai, Gen as bundlers; SentinelOne, Rubrik, Rapid7, Varonis, SailPoint as younger platforms).
+- **Themes → Healthcare Innovation** (19: obesity and diabetes leaders Lilly and Novo, Vertex, Regeneron, Intuitive Surgical; tools and suppliers Thermo Fisher, Danaher, Illumina, West; Dexcom and Insulet; gene-editing, obesity and AI-discovery biotechs).
+- **Themes → Fintech & Digital Payments** (17: Visa, Mastercard, PayPal, Block, Nu; processors FIS, Global Payments, Jack Henry, Toast; Amex, Shopify, Intuit; SoFi, Affirm, Upstart, Robinhood, Coinbase).
+- Each uses the standard layout (basket vs SPY, near- and long-term outlook, compounding scenarios, value chain, company table by role, candidates, ETFs) with hand-written, dated commentary and no numeric forecasts.
+- Theme prices are now downloaded in chunks of 60 instead of one request for every symbol; ten themes means ~215 priced symbols, and one bulk request invites Yahoo rate limiting.
+
+### Tests
+- Backend +1 (chunked price download across all themes; 916 total with the two live-Yahoo tests passing, frontend 292); the catalog integrity tests cover the new themes automatically (non-empty layers, valid roles and layers, no numeric forecasts in the text).
+
+---
+
 ## 2026-10-11 — Renamed to Compass
 
 - The app and its GitHub repository (`rcoder29/Compass`) are now **Compass** (previously Stock Monitor). Changed: the header, browser tab title, User Guide, README and architecture titles, the API title, the Tear Sheet PDF footer and author, and the digest test message.

@@ -1,7 +1,8 @@
 import { usePolledApi, PageHeader, Loading, ErrorBox, Caveats, Card, fmtPct, signedClass, DASH } from './MacroKit'
 import { RETURN_COLS, RetCell, MiniSeries, ScanProgress, PartialNote, Disclaimer } from './ThemeKit'
 
-const NAV = { ai: 'themeai', robotics: 'themerobotics', quantum: 'themequantum', space: 'themespace', abundance: 'themeabundance', dollar: 'themedollar' }
+const NAV = { ai: 'themeai', robotics: 'themerobotics', quantum: 'themequantum', space: 'themespace', abundance: 'themeabundance', dollar: 'themedollar',
+  cleanenergy: 'themecleanenergy', cyber: 'themecyber', health: 'themehealth', fintech: 'themefintech' }
 
 export default function ThemesOverview({ onNavigate }) {
   const { data, error } = usePolledApi('/api/themes')
@@ -21,7 +22,7 @@ export default function ThemesOverview({ onNavigate }) {
       </PageHeader>
       <PartialNote partial={data.partial} />
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4">
         {themes.map(t => (
           <button key={t.id} onClick={() => onNavigate?.(NAV[t.id])} aria-label={`${t.name} theme`} className="text-left bg-gray-900/60 border border-gray-800 hover:border-gray-600 rounded-xl p-4 space-y-3" style={{ borderTop: `3px solid ${t.color}` }}>
             <div>
@@ -76,7 +77,7 @@ export default function ThemesOverview({ onNavigate }) {
       </Card>
 
       <Card title="Where the leaders are, right now">
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4 text-xs">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4 text-xs">
           {themes.map(t => (
             <div key={t.id}>
               <div className="font-medium mb-1.5" style={{ color: t.color }}>{t.short}</div>

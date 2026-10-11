@@ -39,7 +39,7 @@ BENCH = {"1D": 0.0, "1W": 0.01, "1M": 0.02, "3M": 0.05, "6M": 0.08, "YTD": 0.1, 
 
 class TestCatalog:
     def test_launch_themes_with_complete_content(self):
-        assert [t["id"] for t in cat.THEMES] == ["ai", "robotics", "quantum", "space", "abundance", "dollar"]
+        assert [t["id"] for t in cat.THEMES] == ["ai", "robotics", "quantum", "space", "abundance", "dollar", "cleanenergy", "cyber", "health", "fintech"]
         for t in cat.THEMES:
             assert t["name"] and t["tagline"] and t["thesis"] and t["whyNow"] and t["watch"] and t["navId"] and t["color"].startswith("#")
             for block in (t["shortTerm"], t["longTerm"]):
@@ -154,6 +154,22 @@ class TestDollarTheme:
         rows = {x["symbol"]: {"returns": RET, "annualised": {}, "price": 10} for x in theme["stocks"]}
         built = th.build_theme(theme, {}, rows, BENCH, None, {})
         assert built["top"] == [] and th.theme_summary(built)["top"] == []
+
+
+class TestPriceChunking:
+    def test_prices_are_requested_in_bounded_chunks_and_merged(self, monkeypatch):
+        sizes = []
+        d = {s: pd.Series(100 * np.cumprod(np.full(300, 1.0005)), index=pd.bdate_range(end="2026-10-09", periods=300)) for s in cat.all_symbols()}
+        def fake(ss):
+            sizes.append(len(ss))
+            return {s: d[s] for s in ss if s in d}
+        monkeypatch.setattr(holdings_perf, "download_daily", fake)
+        monkeypatch.setattr(holdings_perf, "load_anchors", lambda ss: {})
+        monkeypatch.setattr(holdings_perf, "compute_returns", lambda daily, anchors: None if daily is None else {
+            "returns": {p: 0.1 for p in holdings_perf.PERIODS}, "annualised": {}, "price": float(daily.iloc[-1]), "asOf": "2026-10-09"})
+        out = router_mod._assemble({}, None)
+        assert max(sizes) <= router_mod._PRICE_CHUNK and len(sizes) > 1 and sum(sizes) == len(router_mod._universe()["members"])
+        assert len(out["themes"]) == len(cat.THEMES) and all(t["members"] for t in out["themes"])
 
 
 class TestUpsideAndRisk:
@@ -357,7 +373,7 @@ class TestEndpoints:
         assert j["status"] == "running" and j["progress"]["total"] == len(cat.stock_symbols()) and j["progress"]["done"] == 5
         client.state["missing"] = False
         j = client.get("/api/themes").json()
-        assert j["status"] == "ready" and [t["id"] for t in j["themes"]] == ["ai", "robotics", "quantum", "space", "abundance", "dollar"]
+        assert j["status"] == "ready" and [t["id"] for t in j["themes"]] == ["ai", "robotics", "quantum", "space", "abundance", "dollar", "cleanenergy", "cyber", "health", "fintech"]
         assert j["themes"][0]["returns"]["3M"] == pytest.approx(0.1) and j["partial"] is None and j["editorialDate"]
         json.dumps(j)
 
@@ -365,7 +381,7 @@ class TestEndpoints:
         client.state["missing"] = False
         j = client.get("/api/themes/robotics").json()
         t = j["theme"]
-        assert t["id"] == "robotics" and len(t["members"]) == len(cat.BY_ID["robotics"]["stocks"]) and {o["id"] for o in j["others"]} == {"ai", "quantum", "space", "abundance", "dollar"}
+        assert t["id"] == "robotics" and len(t["members"]) == len(cat.BY_ID["robotics"]["stocks"]) and {o["id"] for o in j["others"]} == {t["id"] for t in cat.THEMES} - {"robotics"}
         assert t["members"][0]["upside"]["mean"] == pytest.approx(0.25) and t["series"]["points"] and t["scenarios"]["rows"]
         assert t["etfs"][0]["returns"]["3M"] == pytest.approx(0.1)
 
