@@ -10,6 +10,22 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Themes: AI, Robotics, Quantum & Space', tabIds: [
+    { id: 'themesoverview', label: 'Themes Overview' }, { id: 'themeai', label: 'Artificial Intelligence' }, { id: 'themerobotics', label: 'Robotics' },
+    { id: 'themequantum', label: 'Quantum Computing' }, { id: 'themespace', label: 'Space Exploration' },
+  ] },
+  { type: 'bullets', items: [
+    'New Themes group for thematic investing: an overview comparing the themes, and a page each for Artificial Intelligence, Robotics, Quantum Computing and Space Exploration.',
+    'Each theme page shows how an equal-weight basket of its companies has performed against SPY, a near-term outlook (analyst price-target upside, catalysts, risks) and a long-term one (growth, profitability, drivers, risks), what compounding at different rates would mean, and a value-chain map of who else benefits.',
+    'The company table separates core leaders, picks-and-shovels suppliers, other beneficiaries and emerging speculative names, with a transparent setup score that marks down very risky names. Candidates to research and theme ETFs are listed at the bottom.',
+    'The commentary is hand-written and dated; every number is live from Yahoo Finance.',
+  ]},
+  { type: 'h3', text: '2026-10-11 — 100-Bagger Finder', tabId: 'hundredbaggers' },
+  { type: 'bullets', items: [
+    'New Research → 100-Bagger Finder: screens the S&P SmallCap 600, MidCap 400 or your watchlist for the traits of past 100x compounders (small to start with, fast growth, high returns on capital, owner-operators, a sound balance sheet, a sane price) and scores each 0-100.',
+    'Click a stock for the factor-by-factor reasons, a trait checklist, cautions, and the arithmetic of what 100x would take (the market cap it implies and the years it needs at its current growth).',
+    'It scores traits; it does not predict winners. If Yahoo is rate-limiting the app, you get partial results with a note and it retries on its own.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Economy: Regime, Indicators & Studies', tabId: 'econregime' },
   { type: 'bullets', items: [
     'New Economy group. Regime Dashboard: the cycle phase, the growth × inflation quadrant and a 0-100 recession-risk score built from ten warning signs, each with its rule, plus the score\'s record around every US recession since 1973.',

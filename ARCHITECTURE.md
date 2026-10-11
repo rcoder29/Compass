@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph Frontend["Frontend — localhost:5173"]
         App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
-        Components["~110 component files\n(93 sidebar views in 12 groups + Home + Help:\nMarkets, Economy, Sectors, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
+        Components["~110 component files\n(99 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -23,8 +23,8 @@ flowchart TD
 
     subgraph Backend["Backend — localhost:8000 (FastAPI + Uvicorn)"]
         Core["main.py — permanent core (~550 lines)\n_fetch_quote / _fetch_fundamentals / _fetch_perf_one /\n_fetch_screener_quotes / _fetch_feed + their TTLs,\nhealth check, SPA catchall, FastAPI lifespan"]
-        Routers["backend/routers/ — 91 files\none APIRouter per feature, registered in main.py"]
-        Helpers["Helper modules (backend root)\ndatabase · edgar_utils · digest_* ·\ntear_sheet_pdf · income_flow ·\nholdings_perf · sec_revenue_streams ·\nfred_data · economy* · market_history · sectors"]
+        Routers["backend/routers/ — 93 files\none APIRouter per feature, registered in main.py"]
+        Helpers["Helper modules (backend root)\ndatabase · edgar_utils · digest_* ·\ntear_sheet_pdf · income_flow ·\nholdings_perf · sec_revenue_streams ·\nfred_data · economy* · market_history · sectors ·\nthemes · themes_catalog · hundred_bagger* · yahoo_limits"]
         Scheduler["Digest scheduler thread\n(started by main.py's lifespan)"]
         WS["WebSocket\n/ws/quotes"]
         SSE["SSE endpoints\n/api/ai-chat, /api/financial-plan,\n/api/trade-ideas, /api/ai/morning-briefing, …"]
@@ -267,6 +267,27 @@ Design notes:
 - *Calibrated, then disclosed.* The recession phase threshold (55) was chosen by checking the score against NBER dates since 1990: Sahm and CFNAI were tried as stand-alone overrides and produced false alarms (1992, 2002, 2010, 2021, 2024), so they contribute only through the composite. The page shows the score's record around each recession.
 - *Honest samples.* Studies count independent episodes (runs of the condition, merged within six months) instead of months, and flag fewer than four as anecdotal; the sector figures begin in 1999 and say so.
 
+## Data Flow — Themes
+
+```mermaid
+flowchart LR
+    CAT["themes_catalog.py\neditorial: thesis, value chain,\ntagged companies"] --> TH["themes.py\nbasket, outlook, scenarios,\nsetup score"]
+    YF1["Yahoo info + statements\n(per symbol, 4 workers)"] --> LIM["yahoo_limits.py\n429 back-off"]
+    LIM --> HB["hundred_bagger_data.py\nhb:{symbol} 24 hr"]
+    HB --> TH
+    HB --> HBF["100-Bagger Finder"]
+    YF2["yf.download (locked)\ndaily + weekly anchors"] --> HP["holdings_perf.py\nbuild_payload"]
+    HP --> TH
+    TH --> R["/api/themes\n/api/themes/{id}"]
+```
+
+Design notes:
+
+- *One fetch, two features.* The 100-Bagger Finder and the Themes pages share the per-symbol Yahoo fetch (`hb:{symbol}`), so scanning one warms the other. A single background scan covers every company in every theme; any theme page just polls its progress.
+- *Prices reuse the Holdings Performance engine.* All themes' tickers (plus SPY and the ETFs) go through one `build_payload` call, so 3Y/5Y returns come from the shared anchor cache; only the baskets and members are assembled per theme.
+- *Editorial and live data are kept apart.* The catalog carries framing and classification (role, exposure, layer); it has no numbers, and a test enforces that. The setup score is computed from live data plus the catalog's exposure rating, with a risk haircut and label cap so unprofitable, deeply fallen or very small names cannot rank as strong setups.
+- *Degrades instead of failing.* If Yahoo refuses fundamentals, the pages render prices and performance with a note and retry after the cooldown; a partial result is never cached.
+
 ## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing / Advisor)
 
 ```mermaid
@@ -288,7 +309,7 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-93 sidebar views in 12 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
+99 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
 
 ```
 Home
@@ -308,6 +329,11 @@ Economy  (6)
 ├── YieldCurve.jsx, FedWatch.jsx, MacroCalendar.jsx
 └── MacroKit.jsx               Shared: useApi hook, formatters, TimeChart (SVG, recession bands, hover), Sparkline
 
+Themes  (5)
+├── ThemesOverview.jsx         Cards, side-by-side returns, leaders and laggards
+├── ThemePage.jsx              One data-driven page per theme: basket vs SPY, outlook, scenarios, value chain, company table, candidates
+└── ThemeKit.jsx               Shared return cells, setup pill, scan progress, partial-data note
+
 Sectors  (5)
 ├── SectorScoreboard.jsx       11 SPDR sectors × 11 periods, risk view, calendar years, drill-down to holdings
 ├── SectorRotation.jsx         Relative-rotation graph with trails
@@ -322,8 +348,9 @@ Watchlist  (7)
 
 News  (1)         CustomNews.jsx — multi-ticker news feed
 
-Research  (21)
+Research  (22)
 ├── TearSheet.jsx              Company snapshot, valuation verdict, quarterly income flow (Sankey), PDF
+├── HundredBaggers.jsx         100-bagger trait screen (background scan + progress, factor breakdown)
 ├── PriceProjection.jsx        1-year price cone from options, rates, VIX and credit
 ├── Screener.jsx, RangeScreener.jsx, TechnicalSignals.jsx
 ├── Backtester.jsx, DcfCalculator.jsx, FundamentalComparison.jsx, StockComparison.jsx
@@ -400,6 +427,8 @@ Every key and TTL below was extracted from the code (`grep cache_get`), so it is
 | `treasury_current`, `treasury_history:…`, `treasury_yield_curve` | 6 hr | `routers/treasury.py` → Treasury.gov par yields; `treasury_csv:{year}` is 6 hr for the current year, 30 days for past years |
 | `market:breadth`, `market:fed-watch`, `mkt_sentiment_v1`, `market:short-squeeze`, `reddit_trending_{source}_{limit}` | 30 min | one per Markets view of the same name |
 | `index:constituents:{index}`, `etf:holdings:{etf}` | 15 min | `routers/index_constituents.py` |
+| `themes:built` | 15 min | `routers/themes.py` → all four themes assembled (prices, baskets, members); not cached when fundamentals are partial |
+| `hb:{symbol}` · `hb_u:{id}` | 24 hr | `hundred_bagger_data.py` → Yahoo fundamentals and statements for one symbol (failures are not cached); S&P 600/400 membership |
 | `fred:{series}` | 6 hr | `fred_data.py` → one FRED series as {dates, values} |
 | `economy:catalog`, `economy:regime` | 30 min | `routers/economy.py` → indicator table; regime dashboard |
 | `economy:detail:{id}` | 30 min | `routers/economy.py` → one indicator's history |
@@ -510,8 +539,8 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 
 | Suite | Size | Notes |
 |---|---|---|
-| Backend (pytest) | 795 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 252 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Backend (pytest) | 898 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 276 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

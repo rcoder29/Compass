@@ -24,6 +24,30 @@ export function useApi(url) {
   return state
 }
 
+// Like useApi, but for endpoints that run a background scan: re-requests every 2 s while the response says
+// status "running", and again after `partial.retryInSeconds` when it comes back with partial results.
+export function usePolledApi(url) {
+  const [state, setState] = useState({ data: null, error: null })
+  const [tick, setTick] = useState(0)
+  const req = useRef(0)
+  useEffect(() => { setState({ data: null, error: null }) }, [url])
+  useEffect(() => {
+    if (!url) return undefined
+    const id = ++req.current
+    let timer
+    fetch(url).then(async r => {
+      const j = await r.json().catch(() => ({}))
+      if (id !== req.current) return
+      if (!r.ok) { setState({ data: null, error: j.detail || `Request failed (${r.status})` }); return }
+      setState({ data: j, error: null })
+      if (j.status === 'running') timer = setTimeout(() => setTick(t => t + 1), 2000)
+      else if (j.partial) timer = setTimeout(() => setTick(t => t + 1), Math.max(j.partial.retryInSeconds || 0, 5) * 1000 + 2000)
+    }).catch(e => { if (id === req.current) setState({ data: null, error: e.message }) })
+    return () => clearTimeout(timer)
+  }, [url, tick])
+  return state
+}
+
 // ── Formatting ────────────────────────────────────────────────────────────────
 
 export const DASH = '—'

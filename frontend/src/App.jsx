@@ -25,6 +25,9 @@ const Screener = lazy(() => import('./components/Screener'))
 const RangeScreener = lazy(() => import('./components/RangeScreener'))
 const PriceProjection = lazy(() => import('./components/PriceProjection'))
 const TearSheet = lazy(() => import('./components/TearSheet'))
+const ThemesOverview = lazy(() => import('./components/ThemesOverview'))
+const ThemePage = lazy(() => import('./components/ThemePage'))
+const HundredBaggers = lazy(() => import('./components/HundredBaggers'))
 const HoldingsPerformance = lazy(() => import('./components/HoldingsPerformance'))
 const TradeJournal = lazy(() => import('./components/TradeJournal'))
 const MacroCalendar = lazy(() => import('./components/MacroCalendar'))
@@ -140,6 +143,11 @@ const Icons = {
       <path d="M1.5 2v12h13"/><path d="M4.5 10.5l3-3.5 2.5 2 4-5"/>
     </svg>
   ),
+  themes: (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
+      <path d="M8 1l1.8 3.7 4.1.6-3 2.9.7 4.1L8 10.4l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 1z"/>
+    </svg>
+  ),
   sectors: (
     <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
       <path d="M8 1.5A6.5 6.5 0 1014.5 8H8V1.5zm1.5-.1V6.5H15A6.52 6.52 0 009.5 1.4z"/>
@@ -223,11 +231,24 @@ const NAV_GROUPS = [
     ],
   },
   {
+    id: 'themes',
+    label: 'Themes',
+    icon: Icons.themes,
+    items: [
+      { id: 'themesoverview', label: 'Themes Overview' },
+      { id: 'themeai',        label: 'Artificial Intelligence' },
+      { id: 'themerobotics',  label: 'Robotics' },
+      { id: 'themequantum',   label: 'Quantum Computing' },
+      { id: 'themespace',     label: 'Space Exploration' },
+    ],
+  },
+  {
     id: 'research',
     label: 'Research',
     icon: Icons.research,
     items: [
       { id: 'tearsheet',    label: 'Tear Sheet' },
+      { id: 'hundredbaggers', label: '100-Bagger Finder' },
       { id: 'screener',     label: 'Screener' },
       { id: 'rangescreener', label: 'Range Screener' },
       { id: 'priceprojection', label: 'Price Projection' },
@@ -1084,6 +1105,12 @@ export default function App() {
           {activeTab === 'rangescreener'   && <RangeScreener />}
           {activeTab === 'priceprojection' && <PriceProjection />}
           {activeTab === 'tearsheet' && <TearSheet />}
+          {activeTab === 'hundredbaggers' && <HundredBaggers watchlist={watchlist} />}
+          {activeTab === 'themesoverview' && <ThemesOverview onNavigate={navigate} />}
+          {activeTab === 'themeai'        && <ThemePage key="ai" themeId="ai" onNavigate={navigate} />}
+          {activeTab === 'themerobotics'  && <ThemePage key="robotics" themeId="robotics" onNavigate={navigate} />}
+          {activeTab === 'themequantum'   && <ThemePage key="quantum" themeId="quantum" onNavigate={navigate} />}
+          {activeTab === 'themespace'     && <ThemePage key="space" themeId="space" onNavigate={navigate} />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
           {activeTab === 'econregime'      && <EconomyRegime onNavigate={navigate} />}

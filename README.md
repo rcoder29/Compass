@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Stock Monitor started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **93 views in 12 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **91 API routers / ~180 endpoints**, with **795 backend and 252 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **99 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **93 API routers / ~185 endpoints**, with **898 backend and 276 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -52,6 +52,15 @@ A US sector-ETF strategy toolkit on the eleven SPDR sector funds against SPY (to
 | **Cycle Fit** | Average monthly excess return of each sector by cycle phase or growth/inflation quadrant since 1999, with months, episodes and hit rate behind every cell. |
 | **Sector Backtest** | Month-end rotation into the top-N sectors (only data known at the time), optional defensive switch below SPY's 10-month average, trading costs, versus SPY and equal-weight sectors. |
 
+### Themes
+Thematic investing: companies grouped by a long-term force instead of a sector. One data-driven page per theme plus an overview; adding a theme is a catalog entry.
+
+| Feature | Description |
+|---|---|
+| **Themes Overview** | A card per theme (basket sparkline, 3M / 1Y / 3Y vs SPY, median analyst upside, strongest setups), a side-by-side returns table with SPY, leaders and laggards, and the mix of core / supplier / other / speculative names. |
+| **Artificial Intelligence · Robotics · Quantum Computing · Space Exploration** | Each page: thesis and why-now; an equal-weight basket vs SPY (12-month chart, 1M-5Y returns, volatility, drawdown); a near-term outlook (analyst price-target upside, share at Buy, catalysts and risks) and a long-term one (growth, profitability, drivers and risks); compounding scenarios beside the basket's own record; a value-chain map showing who else benefits; a sortable company table by role (core leaders, picks & shovels, other beneficiaries, emerging & speculative) with per-name reasoning; the top candidates to research; and theme ETFs. |
+| **Setup score** | A transparent 0-100 comparison within a theme (exposure 20, momentum vs SPY 20, analyst upside 20, growth 20, financial strength 10, valuation 10) with a risk haircut and a label cap, so cheap-looking speculation can't top the list. |
+
 ### Watchlist
 | Feature | Description |
 |---|---|
@@ -77,6 +86,7 @@ A US sector-ETF strategy toolkit on the eleven SPDR sector funds against SPY (to
 ### Research
 | Feature | Description |
 |---|---|
+| **100-Bagger Finder** | Scores S&P 600 / S&P 400 stocks (or your watchlist) on the traits of past 100x compounders: room to grow (market cap), revenue growth, return on equity, margins, balance sheet, insider ownership and growth-adjusted valuation. Per-factor breakdown with reasons, trait checklist, cautions, and the arithmetic of what 100x would require (years at current growth, implied market cap). A scan runs in the background with a progress bar and backs off when Yahoo rate-limits. |
 | **Screener** | Technical scans (52W High, Golden/Death Cross, RSI extremes, High Rel-Vol), fundamental presets (Quality Growth, Deep Value, Dividend Income, Momentum+Quality), and Claude NLP mode ("profitable tech with >20% revenue growth"). |
 | **Range Screener** | Scans a ~290-name universe for stocks trading sideways within a 30/60/90-day support/resistance band (Kaufman efficiency ratio + edge-touch counts to confirm a real range, not one outlier), flagging names near either edge with a mechanical entry/target/stop and a clickable 1-year inline chart (opens the full ChartModal) showing the range against prior swings and resets. |
 | **Price Projection** | A 1-year-forward price cone (10th/25th/50th/75th/90th percentile) for any stock or ETF, built entirely from market-implied inputs: options-implied volatility across every expiry out to ~13 months, the 1-year Treasury as the risk-free rate net of dividend yield, a VIX-regime multiplier, and the issuer's own corporate-bond credit spread as a CDS proxy. Every raw input is shown beside the chart. |
@@ -224,8 +234,8 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 ### Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 795 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 252 tests (Vitest + Testing Library)
+cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 898 tests, ~10 s, no network, isolated database
+cd frontend && npm test                # 276 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/stockmonitor.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -308,6 +318,9 @@ A curated tour — every route below was checked against the code. With the back
 ### Research
 | Endpoint | Description |
 |---|---|
+| `GET /api/themes` · `GET /api/themes/{ai|robotics|quantum|space}` | Theme summaries; one theme in full (members, basket series, outlook, scenarios). Returns scan progress while fundamentals load, partial results if Yahoo rate-limits |
+| `GET /api/hundred-baggers?universe=SP600` · `?symbols=A,B` | 100-bagger scores for an index or your own tickers; returns scan progress while data loads, partial results with a retry time if Yahoo rate-limits |
+| `GET /api/hundred-baggers/universes` | Presets, factor weights and the CAGR-by-horizon table |
 | `GET /api/tear-sheet/{symbol}` | Full company tear sheet (profile, performance, 10-year financials, quarterly income flow, valuation verdict, estimates, analysts, ownership) |
 | `GET /api/tear-sheet/{symbol}/pdf` | The tear sheet as a PDF download |
 | `GET /api/price-projection/{symbol}` | 1-year price cone from options, rates, VIX and credit |
@@ -387,6 +400,11 @@ stockmonitor/
 │   ├── economy_regime.py    Growth/inflation composites, quadrant, recession-risk score, cycle phase, history labels
 │   ├── economy_studies.py   Episode detection and forward-return studies (publication-lag-aware, baseline-relative)
 │   ├── market_history.py    Long monthly/daily price history (Ticker.history, cached) for studies and sectors
+│   ├── yahoo_limits.py      Shared Yahoo 429 back-off (pauses all workers, grows with consecutive hits)
+│   ├── themes_catalog.py    Curated theme content: thesis, value chain, tagged companies, catalysts and risks (no numeric forecasts)
+│   ├── themes.py            Basket returns/series, analyst-implied outlook, scenarios, setup score (pure)
+│   ├── hundred_bagger.py    100-bagger trait scoring (pure): factors, thresholds, caps, flags, 100x arithmetic
+│   ├── hundred_bagger_data.py  S&P 600/400 membership, per-symbol Yahoo fundamentals (24 hr cache), background scanner with rate-limit back-off
 │   ├── sectors.py           Scoreboard, rotation map, horizon screener, cycle fit, backtest
 │   ├── holdings_perf.py     Index/ETF universes + multi-period total returns (daily + chunked weekly history)
 │   ├── sec_revenue_streams.py  Revenue by product/segment/region from SEC 10-Q/10-K XBRL (Q4 derived)
@@ -484,6 +502,8 @@ stockmonitor/
 │   │   ├── crypto_dashboard.py          Markets → Crypto
 │   │   ├── ai_portfolio_review.py       AI Tools → Portfolio Review — _fetch_quote deferred
 │   │   ├── economy.py                   Economy → Regime Dashboard, Indicators, Indicator Studies
+│   │   ├── hundred_baggers.py           Research → 100-Bagger Finder
+│   │   ├── themes.py                    Themes → Overview and the four theme pages
 │   │   ├── sectors.py                   Sectors → Scoreboard, Rotation Map, Screener, Cycle Fit, Backtest
 │   │   ├── ai_stock_analyzer.py         AI Tools → Stock Analyzer (snapshot + AI analysis)
 │   │   ├── dividend_tracker.py          Portfolio → Dividend Tracker
@@ -508,7 +528,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (795 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (898 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real stockmonitor.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -538,6 +558,10 @@ stockmonitor/
 │           ├── EconomyRegime.jsx        Economy → Regime Dashboard
 │           ├── EconomyIndicators.jsx    Economy → Indicators (+ detail chart)
 │           ├── IndicatorStudies.jsx     Economy → Indicator Studies
+│           ├── ThemesOverview.jsx       Themes → Overview
+│           ├── ThemePage.jsx            Themes → one data-driven page per theme (AI, Robotics, Quantum, Space)
+│           ├── ThemeKit.jsx             Shared theme pieces: return cells, setup pill, scan progress
+│           ├── HundredBaggers.jsx       Research → 100-Bagger Finder
 │           ├── SectorScoreboard.jsx     Sectors → Scoreboard
 │           ├── SectorRotation.jsx       Sectors → Rotation Map
 │           ├── SectorScreener.jsx       Sectors → Sector Screener
@@ -622,6 +646,8 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 | Price Projection | 2 hr |
 | Tear Sheet | 1 hr (assembled) · 24 hr (10-year SEC history) · 30 days (SEC revenue-by-stream facts, per filing — filings never change) |
 | Holdings Performance | 15 min (table) · 26 hr (long-history anchor prices, shared across indexes) · 24 hr (index membership) |
+| Themes | 15 min assembled (prices) · fundamentals/analyst data 24 hr (shared `hb:{symbol}` with the 100-Bagger Finder) |
+| 100-Bagger metrics | 24 hr per symbol (`hb:{symbol}`), index membership 24 hr (`hb_u:{id}`); scoring recomputed on every request |
 | Economy indicators / regime | 30 min (computed tables) · 6 hr (the FRED series behind them) |
 | Indicator Studies, Cycle Fit, Backtest | 6 hr · long price history 24 hr (monthly) / 6 hr (daily) |
 | Sectors Scoreboard, Rotation, Screener | 30 min |
@@ -636,6 +662,8 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 - **Best-effort enrichment:** several features layer optional data on a reliable core and degrade quietly rather than failing — for example the Tear Sheet's revenue-by-income-stream breakdown (read from SEC XBRL filings; companies whose filings don't reconcile to reported revenue show a single revenue node) and its 10-year history (SEC filings, falling back to Yahoo's ~4 years for foreign filers and funds).
 - **Index and ETF coverage:** the S&P 500 list comes from Wikipedia, the Nasdaq-100 from Nasdaq, and the Dow 30 from a list maintained in this app, so it can lag index changes. Yahoo publishes only an ETF's top 10 holdings, so Holdings Performance shows full holdings only for those indexes, their ETFs and the sector SPDRs, and flags every other ETF as partial.
 - **Economy data is revised data.** FRED serves current values, not what was known at each release, so history (and the studies and regime labels built on it) looks cleaner than it did in real time. ICE credit spreads carry only the last three years on FRED, so credit stress uses Moody's Baa spread instead. Indicator Studies delay entry by each series' publication lag and count episodes, not months, to avoid overstating the sample.
+- **Yahoo rate limiting.** Per-symbol fundamentals (100-Bagger Finder, Themes) go through `yahoo_limits.py`: four workers, a shared pause that grows after each 429, failures never cached, and a five-minute cooldown after a scan that ends with symbols missing so a block can't turn into a retry storm. Pages show partial results with a note instead of failing.
+- **Themes' commentary is editorial.** `themes_catalog.py` holds hand-written, dated framing (thesis, value chain, catalysts, risks, which companies sit where); a test asserts it contains no market-size or growth numbers. Every number on the pages is live.
 - **Rule-based, not fitted.** The regime, recession-risk score and sector screener are fixed, explainable rules. The recession-score threshold was checked against NBER dates since 1990 (67 of 74 recession months flagged, no false alarms outside the nine months after a recession) and the page shows the score's record. Backtests cover only a few cycles and are labelled as hypothetical.
 - **ANTHROPIC_API_KEY:** Required only for AI-powered features. All market data features work without it.
 - **WebSocket:** Run uvicorn without `--reload` in production to avoid zombie worker processes on Windows.

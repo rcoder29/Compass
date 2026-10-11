@@ -4,6 +4,38 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Themes: AI, Robotics, Quantum Computing, Space Exploration
+
+A new top-level **Themes** group: an overview plus one page per theme, all driven by one component and a curated catalog.
+
+### Added
+- **Themes Overview** — a card per theme (basket sparkline, 3M / 1Y / 3Y versus SPY, median analyst upside, strongest setups), a side-by-side returns table with SPY, leaders and laggards, and the mix of core / supplier / other / speculative names.
+- **Theme pages (AI, Robotics & Automation, Quantum Computing, Space Exploration)** — thesis and why-now; an equal-weight basket vs SPY over the last year with 1M-5Y returns, volatility and drawdown; a **near-term outlook** (analyst price-target upside, share at Buy, catalysts and risks) and a **long-term outlook** (median growth, profitability, forward P/E, drivers and risks); compounding scenarios (8% / 15% / 25% a year over 1-10 years) beside the basket's own record; a **value-chain map** showing who else benefits (e.g. for AI: chips, manufacturing, data-center infrastructure, power, platforms, software); a sortable company table by role (core leaders, picks and shovels, other beneficiaries, emerging and speculative) with per-name reasoning and a score breakdown; the top candidates to research; and theme ETFs. 79 companies across the four themes.
+- **Setup score** (0-100, within a theme): exposure 20, momentum vs SPY 20, analyst upside 20, growth 20, financial strength 10, valuation 10. A risk haircut (x0.85 very high risk, x0.93 high) and a label cap (very-high-risk names and anything down 40%+ in a year can't be "Stronger setup") were added after the first live run ranked unprofitable, cash-burning quantum names at the top on analyst upside alone.
+
+### Backend
+- `themes_catalog.py` (hand-written, dated framing; a test asserts it contains no market-size or growth numbers), `themes.py` (basket, outlook, scenarios, score), `routers/themes.py`. Fundamentals and analyst targets reuse the 100-Bagger Finder's cached fetch (`hb:{symbol}`, now carrying price targets, consensus and 52-week range); prices reuse the Holdings Performance engine.
+- New `yahoo_limits.py`: the shared Yahoo 429 back-off, now used by both features.
+
+### Tests
+- Backend 847 -> 898 (+48 themes, +3 around the shared limiter and analyst fields); frontend 263 -> 276 (+13: pages, filters, sorting, detail, scenarios, progress polling, partial data, overview).
+
+---
+
+## 2026-10-11 — 100-Bagger Finder
+
+### Added
+- **Research → 100-Bagger Finder** — scores stocks on the traits of past 100x compounders (Mayer / Phelps): room to grow 20, growth 25, return on equity 15, margins 10, balance sheet 10, owner-operators 10, growth-adjusted valuation 10, on fixed thresholds. Universes: S&P SmallCap 600, S&P MidCap 400, or your watchlist. Each stock shows a factor-by-factor breakdown with reasons, seven trait dots, cautions (shrinking revenue, burning cash, narrowing margins…), and the arithmetic of 100x (implied market cap; years at current growth, which is capped at 50% so one lumpy year can't promise 100x in four). Never-profitable companies are capped at 60; stocks above $120B are left out because 100x would exceed any plausible company.
+- A scan of ~600 stocks takes about a minute; it runs in a background thread with a progress bar and caches per symbol for a day.
+
+### Fixed during the build
+- A first version retried failed fetches without limit, which under Yahoo rate limiting generated thousands of failed requests and slowed the rest of the app. Scans now use 4 workers, pause every worker with a growing back-off after a rate-limit response, never cache failures, and — if a scan ends with symbols missing — show partial results with a banner and retry after five minutes instead of rescanning on every poll.
+
+### Tests
+- Backend +55 (arithmetic, every factor's thresholds, caps, flags, ranking, universe parsing, caching, scanner, back-off, endpoints); frontend +11 (table, progress polling, filters, sorting, detail, watchlist, partial banner).
+
+---
+
 ## 2026-10-11 — Economy & Sectors
 
 Two new top-level sidebar groups (Markets is no longer the catch-all for macro and sector views).
