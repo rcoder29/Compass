@@ -978,8 +978,8 @@ def _compute_tear_sheet(sym: str) -> dict:
 
 
 async def load_tear_sheet(symbol: str) -> dict:
-    """Cached tear sheet for a symbol; shared by the JSON endpoint and the PDF/email share endpoints
-    (routers/tear_sheet_share.py) so a shared PDF is built from exactly what the page showed."""
+    """Cached tear sheet for a symbol; shared by the JSON endpoint and the PDF endpoint
+    (routers/tear_sheet_share.py) so the PDF is built from exactly what the page showed."""
     sym = symbol.upper().strip()
     cache_key = f"tearsheet:{sym}"
     cached = cache_get(cache_key, _TEAR_SHEET_TTL)

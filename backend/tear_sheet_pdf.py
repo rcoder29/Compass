@@ -2,8 +2,8 @@
 
 Renders the dict returned by GET /api/tear-sheet/{symbol} as a multi-page, light-theme
 PDF (letter, portrait) using reportlab: the same sections as the on-screen page, with
-charts redrawn as vector graphics. The same bytes are served by the Download button and
-attached to shared emails, so what a recipient sees is exactly what the user saw.
+charts redrawn as vector graphics. The Download PDF button serves these bytes, so the file
+matches what the user saw on screen.
 
 Helvetica (a built-in PDF font) only covers Windows-1252, so every string passes through
 `_txt`, which maps the few symbols the page uses outside that set and replaces anything

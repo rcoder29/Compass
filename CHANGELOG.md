@@ -4,6 +4,21 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-09 — Tear Sheet: Email Removed
+
+Backs out the email half of the same day's "Download PDF & Email" entry below (history left as written). The PDF download is unchanged.
+
+### Removed
+- `backend/email_sender.py` (SMTP sender) and the `POST /api/tear-sheet/{symbol}/email` and `GET /api/tear-sheet-share/status` endpoints, including the recipient validation, per-message and hourly caps and allowlist that existed only to make an unauthenticated send endpoint safe. The `SMTP_*` and `EMAIL_ALLOWED_RECIPIENTS` environment variables are no longer read — anyone who added them to `backend/.env` can delete them.
+- The Email… button and panel in `TearSheet.jsx` (setup instructions, recipient field, note, remembered recipients, share-status request). `SharePanel` became `ExportButtons` (Download PDF + Print).
+- The summary-email composer and all SMTP/endpoint tests.
+
+### Kept
+- `tear_sheet_pdf.py`, `GET /api/tear-sheet/{symbol}/pdf`, the `reportlab` dependency, and `routers/tear_sheet_share.py` (now PDF-only; the file name is a leftover).
+
+### Verified
+- Backend 307/307 (PDF renderer and endpoint tests retained); `TearSheet.test.jsx` 32/32; no references to the sender remain in the code.
+
 ## 2026-10-09 — Tear Sheet: Download PDF & Email
 
 Sharing for the Tear Sheet. Previously the only export was the browser's print dialog, which can't be attached to anything.

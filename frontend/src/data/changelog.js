@@ -10,6 +10,10 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-09 — Tear Sheet: Email Removed', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'Removed the Tear Sheet\'s Email… feature (SMTP sending, the email panel, and the SMTP_* / EMAIL_ALLOWED_RECIPIENTS settings, which are no longer read). Download PDF and Print remain; the PDF itself is unchanged.',
+  ]},
   { type: 'h3', text: '2026-10-09 — Tear Sheet: Download PDF & Email', tabId: 'tearsheet' },
   { type: 'bullets', items: [
     'The Tear Sheet now has Download PDF, Email… and Print buttons. Download PDF builds a clean, light-theme, multi-page PDF on the server (vector charts, same sections as the page) and saves it as TICKER_TearSheet_date.pdf.',

@@ -709,23 +709,13 @@ function OwnershipSection({ o }) {
   )
 }
 
-// ── Share: download PDF / email ───────────────────────────────────────────────
+// ── Download PDF ──────────────────────────────────────────────────────────────
 
-const EMAIL_KEY = 'tearsheet:lastRecipients'
-
-function readSavedRecipients() {
-  try { return localStorage.getItem(EMAIL_KEY) || '' } catch { return '' }
-}
-function saveRecipients(v) {
-  try { localStorage.setItem(EMAIL_KEY, v) } catch { /* private mode etc. — convenience only */ }
-}
-
-// FastAPI returns {detail: "..."} for our errors but {detail: [{msg}...]} for validation (422)
+// FastAPI returns {detail: "..."} for our errors
 async function errorText(res, fallback) {
   try {
     const body = await res.json()
     if (typeof body.detail === 'string') return body.detail
-    if (Array.isArray(body.detail) && body.detail[0]?.msg) return body.detail[0].msg
   } catch { /* not JSON */ }
   return fallback
 }
@@ -735,30 +725,16 @@ function filenameFrom(res, fallback) {
   return m ? m[1] : fallback
 }
 
-function SharePanel({ symbol }) {
-  const [emailOpen, setEmailOpen] = useState(false)
-  const [configured, setConfigured] = useState(null)   // null = still checking
-  const [to, setTo] = useState(readSavedRecipients)
-  const [note, setNote] = useState('')
+function ExportButtons({ symbol }) {
   const [pdfBusy, setPdfBusy] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [msg, setMsg] = useState(null)                 // {kind: 'ok' | 'err', text}
-
-  useEffect(() => {
-    let live = true
-    fetch('/api/tear-sheet-share/status')
-      .then(r => r.json())
-      .then(j => { if (live) setConfigured(!!j.emailConfigured) })
-      .catch(() => { if (live) setConfigured(false) })
-    return () => { live = false }
-  }, [])
+  const [error, setError] = useState(null)
 
   async function downloadPdf() {
     setPdfBusy(true)
-    setMsg(null)
+    setError(null)
     try {
       const res = await fetch(`/api/tear-sheet/${encodeURIComponent(symbol)}/pdf`)
-      if (!res.ok) { setMsg({ kind: 'err', text: await errorText(res, 'Could not build the PDF.') }); return }
+      if (!res.ok) { setError(await errorText(res, 'Could not build the PDF.')); return }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -769,30 +745,9 @@ function SharePanel({ symbol }) {
       a.remove()
       URL.revokeObjectURL(url)
     } catch (e) {
-      setMsg({ kind: 'err', text: e.message })
+      setError(e.message)
     } finally {
       setPdfBusy(false)
-    }
-  }
-
-  async function sendEmail() {
-    if (!to.trim()) { setMsg({ kind: 'err', text: 'Enter at least one email address.' }); return }
-    setSending(true)
-    setMsg(null)
-    try {
-      const res = await fetch(`/api/tear-sheet/${encodeURIComponent(symbol)}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: to.trim(), note }),
-      })
-      if (!res.ok) { setMsg({ kind: 'err', text: await errorText(res, 'Could not send the email.') }); return }
-      const json = await res.json()
-      saveRecipients(to.trim())
-      setMsg({ kind: 'ok', text: `Sent to ${json.sent.join(', ')} with ${json.filename} attached.` })
-    } catch (e) {
-      setMsg({ kind: 'err', text: e.message })
-    } finally {
-      setSending(false)
     }
   }
 
@@ -804,63 +759,12 @@ function SharePanel({ symbol }) {
                 className={`${btn} border-emerald-600 text-emerald-300 hover:bg-emerald-600/20`}>
           {pdfBusy ? 'Building PDF…' : 'Download PDF'}
         </button>
-        <button onClick={() => { setEmailOpen(o => !o); setMsg(null) }} aria-expanded={emailOpen}
-                className={`${btn} border-sky-600 text-sky-300 hover:bg-sky-600/20`}>
-          Email…
-        </button>
         <button onClick={() => window.print()} className={`${btn} border-gray-700 text-gray-400 hover:text-gray-200`}>
           Print
         </button>
       </div>
-
-      {emailOpen && (
-        <div className="mt-3 bg-gray-800/50 border border-gray-700 rounded-lg p-3 space-y-2" data-testid="email-panel">
-          {configured === false ? (
-            <div className="text-xs text-gray-300 space-y-1.5">
-              <div className="text-amber-300 font-semibold">Email isn't set up yet</div>
-              <p>Add your SMTP settings to <code className="text-gray-100">backend/.env</code> and restart the backend. For Gmail, create an
-                 app password (Google Account → Security → 2-Step Verification → App passwords) and use it as the password:</p>
-              <pre className="bg-gray-900 rounded p-2 text-[11px] text-gray-200 overflow-x-auto">{`SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=you@gmail.com
-SMTP_PASSWORD=your-16-char-app-password`}</pre>
-              <p className="text-gray-500">Optional: <code>SMTP_FROM</code> to change the sender, <code>EMAIL_ALLOWED_RECIPIENTS</code> to restrict who can receive mail.</p>
-            </div>
-          ) : (
-            <>
-              <label className="block text-[11px] text-gray-400">
-                To <span className="text-gray-600">(separate several addresses with commas)</span>
-                <input value={to} onChange={e => setTo(e.target.value)} aria-label="Recipients" placeholder="friend@example.com"
-                       onKeyDown={e => e.key === 'Enter' && !sending && sendEmail()}
-                       className="mt-1 w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm px-2.5 py-1.5 rounded
-                                  focus:outline-none focus:border-sky-500 placeholder-gray-600" />
-              </label>
-              <label className="block text-[11px] text-gray-400">
-                Message <span className="text-gray-600">(optional)</span>
-                <textarea value={note} onChange={e => setNote(e.target.value)} aria-label="Message" rows={2} maxLength={1000}
-                          placeholder="Add a note to go above the summary…"
-                          className="mt-1 w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm px-2.5 py-1.5 rounded
-                                     focus:outline-none focus:border-sky-500 placeholder-gray-600 resize-y" />
-              </label>
-              <div className="flex items-center gap-3">
-                <button onClick={sendEmail} disabled={sending || configured === null}
-                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-medium rounded">
-                  {sending ? 'Sending…' : `Send ${symbol} tear sheet`}
-                </button>
-                <span className="text-[10px] text-gray-500">Sends a short summary with the full PDF attached.</span>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {msg && (
-        <div role={msg.kind === 'err' ? 'alert' : 'status'}
-             className={`mt-2 text-xs rounded px-3 py-2 border ${msg.kind === 'ok'
-               ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30'
-               : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
-          {msg.text}
-        </div>
+      {error && (
+        <div role="alert" className="mt-2 text-xs rounded px-3 py-2 border text-red-400 bg-red-500/10 border-red-500/20">{error}</div>
       )}
     </div>
   )
@@ -973,7 +877,7 @@ export default function TearSheet({ initialSymbol }) {
               <Stat label="Beta" value={fmtNum(snap.beta)} />
               <Stat label="Dividend yield" value={fmtPct(data.valuation.multiples.dividendYield)} />
             </div>
-            <SharePanel key={data.symbol} symbol={data.symbol} />
+            <ExportButtons key={data.symbol} symbol={data.symbol} />
           </div>
 
           {isFund && (
