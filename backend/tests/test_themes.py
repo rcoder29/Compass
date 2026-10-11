@@ -39,7 +39,7 @@ BENCH = {"1D": 0.0, "1W": 0.01, "1M": 0.02, "3M": 0.05, "6M": 0.08, "YTD": 0.1, 
 
 class TestCatalog:
     def test_launch_themes_with_complete_content(self):
-        assert [t["id"] for t in cat.THEMES] == ["ai", "robotics", "quantum", "space", "abundance", "dollar", "cleanenergy", "cyber", "health", "fintech"]
+        assert [t["id"] for t in cat.THEMES] == ["ai", "robotics", "quantum", "space", "abundance", "dollar", "cleanenergy", "cyber", "health", "fintech", "defense", "reshoring"]
         for t in cat.THEMES:
             assert t["name"] and t["tagline"] and t["thesis"] and t["whyNow"] and t["watch"] and t["navId"] and t["color"].startswith("#")
             for block in (t["shortTerm"], t["longTerm"]):
@@ -373,7 +373,7 @@ class TestEndpoints:
         assert j["status"] == "running" and j["progress"]["total"] == len(cat.stock_symbols()) and j["progress"]["done"] == 5
         client.state["missing"] = False
         j = client.get("/api/themes").json()
-        assert j["status"] == "ready" and [t["id"] for t in j["themes"]] == ["ai", "robotics", "quantum", "space", "abundance", "dollar", "cleanenergy", "cyber", "health", "fintech"]
+        assert j["status"] == "ready" and [t["id"] for t in j["themes"]] == ["ai", "robotics", "quantum", "space", "abundance", "dollar", "cleanenergy", "cyber", "health", "fintech", "defense", "reshoring"]
         assert j["themes"][0]["returns"]["3M"] == pytest.approx(0.1) and j["partial"] is None and j["editorialDate"]
         json.dumps(j)
 

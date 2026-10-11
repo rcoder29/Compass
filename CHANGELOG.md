@@ -4,6 +4,14 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Defense Tech and Reshoring & Infrastructure
+
+- **Themes → Defense Tech** (21 companies): the primes (Lockheed Martin, RTX, Northrop Grumman, General Dynamics, L3Harris, Huntington Ingalls, plus BAE Systems and Rheinmetall via ADRs), components and services (TransDigm, HEICO, Curtiss-Wright, BWX, Leidos), Palantir, GE Aerospace and Boeing as other beneficiaries, and the drone and autonomy newcomers (Kratos, AeroVironment, Red Cat, Ondas, Karman).
+- **Themes → Reshoring & Infrastructure** (23): Caterpillar, United Rentals, Vulcan, Martin Marietta, Nucor, Quanta, EMCOR; electrical and automation suppliers (Eaton, Hubbell, Parker-Hannifin, Rockwell), engineers (Jacobs, AECOM) and Steel Dynamics; rail, farm equipment, logistics real estate and CRH; and smaller builders and suppliers (Sterling, Construction Partners, Northwest Pipe, Insteel, Astec).
+- Same standard layout and hand-written, dated commentary with no numeric forecasts. Twelve themes now cover about 200 companies and 250 priced symbols.
+
+---
+
 ## 2026-10-11 — Four more themes
 
 ### Added

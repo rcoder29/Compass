@@ -247,6 +247,8 @@ const NAV_GROUPS = [
       { id: 'themecyber',     label: 'Cybersecurity' },
       { id: 'themehealth',    label: 'Healthcare Innovation' },
       { id: 'themefintech',   label: 'Fintech & Digital Payments' },
+      { id: 'themedefense',   label: 'Defense Tech' },
+      { id: 'themereshoring', label: 'Reshoring & Infrastructure' },
     ],
   },
   {
@@ -1124,6 +1126,8 @@ export default function App() {
           {activeTab === 'themecyber'     && <ThemePage key="cyber" themeId="cyber" onNavigate={navigate} />}
           {activeTab === 'themehealth'    && <ThemePage key="health" themeId="health" onNavigate={navigate} />}
           {activeTab === 'themefintech'   && <ThemePage key="fintech" themeId="fintech" onNavigate={navigate} />}
+          {activeTab === 'themedefense'   && <ThemePage key="defense" themeId="defense" onNavigate={navigate} />}
+          {activeTab === 'themereshoring' && <ThemePage key="reshoring" themeId="reshoring" onNavigate={navigate} />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
           {activeTab === 'econregime'      && <EconomyRegime onNavigate={navigate} />}

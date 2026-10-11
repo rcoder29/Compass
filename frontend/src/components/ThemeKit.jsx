@@ -56,7 +56,7 @@ export function ScanProgress({ data }) {
     <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4" role="status">
       <div className="flex justify-between text-xs text-gray-400 mb-2"><span>Reading company fundamentals and analyst targets…</span><span className="tabular-nums">{data.progress.done} / {data.progress.total}</span></div>
       <div className="h-2 bg-gray-800 rounded-full"><div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(data.progress.done / Math.max(data.progress.total, 1)) * 100}%` }} /></div>
-      <p className="text-[11px] text-gray-500 mt-2">The first load reads about 170 companies and can take a few minutes; it serves every theme page, and after that the data is cached for a day.</p>
+      <p className="text-[11px] text-gray-500 mt-2">The first load reads about 200 companies and can take a few minutes; it serves every theme page, and after that the data is cached for a day.</p>
     </div>
   )
 }

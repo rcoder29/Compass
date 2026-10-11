@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph Frontend["Frontend — localhost:5173"]
         App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
-        Components["~110 component files\n(105 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
+        Components["~110 component files\n(107 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -289,7 +289,7 @@ Design notes:
 - *Scenario themes carry an `impact` block and an `atrisk` role.* AI Abundance adds hand-written jobs / markets / winners / scenarios content, rendered as tabs, and companies a theme could undercut. Those are displayed with live data but excluded from the basket, outlook, series, setup ranking and candidates (tested), so a disrupted business never reads as a recommendation.
 - *Funds and per-theme labels.* Catalog entries have a `kind` (stock or fund) and a theme can relabel the generic roles. Funds (the Dollar Regime Shift theme is mostly funds) are priced but never fetched for fundamentals, get no setup score, and are excluded from rankings and candidates; the editorial `impact` block is a list of typed sections (lists, cards, ranked, scenarios) rendered generically, so a theme chooses its own tabs.
 - *Polling can't re-download prices.* A partial result (fundamentals still loading) is cached for two minutes (`themes:partial`) so the page's polling reuses it instead of re-downloading ~140 price histories, which is what used to trip Yahoo's rate limit.
-- *Scale.* Ten themes, ~170 companies and ~215 priced symbols. Prices are downloaded in chunks of 60 (one bulk request invites rate limiting), and the single background fundamentals scan covers every theme, so adding a theme only fetches the companies not already cached.
+- *Scale.* Twelve themes, ~200 companies and ~250 priced symbols. Prices are downloaded in chunks of 60 (one bulk request invites rate limiting), and the single background fundamentals scan covers every theme, so adding a theme only fetches the companies not already cached.
 - *Degrades instead of failing.* If Yahoo refuses fundamentals, the pages render prices and performance with a note and retry after the cooldown; a partial result is never cached.
 
 ## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing / Advisor)
@@ -313,7 +313,7 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-105 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
+107 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
 
 ```
 Home
@@ -333,7 +333,7 @@ Economy  (6)
 ├── YieldCurve.jsx, FedWatch.jsx, MacroCalendar.jsx
 └── MacroKit.jsx               Shared: useApi hook, formatters, TimeChart (SVG, recession bands, hover), Sparkline
 
-Themes  (10)
+Themes  (12)
 ├── ThemesOverview.jsx         Cards, side-by-side returns, leaders and laggards
 ├── ThemePage.jsx              One data-driven page per theme: basket vs SPY, outlook, scenarios, value chain, company table, candidates
 └── ThemeKit.jsx               Shared return cells, setup pill, scan progress, partial-data note

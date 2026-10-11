@@ -10,6 +10,13 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Themes: Defense Tech & Reshoring', tabIds: [
+    { id: 'themedefense', label: 'Defense Tech' }, { id: 'themereshoring', label: 'Reshoring & Infrastructure' },
+  ] },
+  { type: 'bullets', items: [
+    'Two new theme pages. Defense Tech covers the prime contractors, missiles and air defense, shipbuilding, components and software, and the newer drone and autonomy companies. Reshoring & Infrastructure covers the contractors, materials, equipment and electrical suppliers behind bringing production and infrastructure home.',
+    'Both separate established leaders and suppliers from small, speculative names, with performance against SPY, outlook, value chain, a company table with a setup score, candidates and ETFs.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Themes: Clean Energy, Cybersecurity, Healthcare & Fintech', tabIds: [
     { id: 'themecleanenergy', label: 'Clean Energy & Nuclear' }, { id: 'themecyber', label: 'Cybersecurity' },
     { id: 'themehealth', label: 'Healthcare Innovation' }, { id: 'themefintech', label: 'Fintech & Digital Payments' },

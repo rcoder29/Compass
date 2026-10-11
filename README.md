@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Compass (originally Stock Monitor, and still in a `stockmonitor/` folder in older checkouts) started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **105 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **93 API routers / ~185 endpoints**, with **916 backend and 292 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **107 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **93 API routers / ~185 endpoints**, with **916 backend and 292 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -53,7 +53,7 @@ A US sector-ETF strategy toolkit on the eleven SPDR sector funds against SPY (to
 | **Sector Backtest** | Month-end rotation into the top-N sectors (only data known at the time), optional defensive switch below SPY's 10-month average, trading costs, versus SPY and equal-weight sectors. |
 
 ### Themes
-Thematic investing: companies grouped by a long-term force instead of a sector. One data-driven page per theme (AI, Robotics, Quantum, Space, AI Abundance, Dollar Regime Shift, Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation, Fintech & Digital Payments) plus an overview; adding a theme is a catalog entry.
+Thematic investing: companies grouped by a long-term force instead of a sector. One data-driven page per theme (AI, Robotics, Quantum, Space, AI Abundance, Dollar Regime Shift, Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation, Fintech & Digital Payments, Defense Tech, Reshoring & Infrastructure) plus an overview; adding a theme is a catalog entry.
 
 | Feature | Description |
 |---|---|
@@ -62,6 +62,8 @@ Thematic investing: companies grouped by a long-term force instead of a sector. 
 | **Cybersecurity** | Endpoint, network, identity, cloud, data-protection and vulnerability vendors, plus the big-tech bundlers; leaders vs young unprofitable platforms. |
 | **Healthcare Innovation** | Obesity and diabetes drugs, gene editing, tools and manufacturing suppliers, devices and robotic surgery, AI drug discovery; large drug makers vs binary-outcome biotechs. |
 | **Fintech & Digital Payments** | Payment networks, processors and core software, wallets and merchant tools, digital banks and lenders, brokerage and crypto; the quality end vs the credit- and crypto-cyclical end. |
+| **Defense Tech** | Prime contractors, missiles and air defense, naval and shipbuilding, aerospace components and electronics, defense software, and the drone and autonomy newcomers (including European names via ADRs); steady backlog-backed earnings vs fast-growing, unproven systems. |
+| **Reshoring & Infrastructure** | Contractors and engineers, aggregates and steel, heavy equipment and rental, electrical and automation suppliers, rail and logistics, and smaller regional builders: the companies that build the factories, grids and roads behind bringing production home. |
 | **Dollar Regime Shift** | A scenario theme about a world less reliant on the US dollar as reserve currency. Mostly funds, not stocks: gold and miners, country funds (Europe, Japan, Korea, Taiwan, India, Brazil, Mexico, South Africa, Saudi Arabia, China), commodity producers, US multinationals that earn abroad, and, on the other side, long Treasuries and the dollar. Groups are renamed for the theme. "What it could mean" has tabs for US markets, global markets, which markets benefit, a reality check (why the dollar's role is sticky), how to position (resilience-first, not an allocation), scenarios with positioning, and signposts to watch. Funds show live returns but no company score. |
 | **AI Abundance** | A scenario theme: what if AI and robots make intelligence, labor and energy cheap and plentiful? The usual theme page plus a "What it could mean" section (tabs: Jobs, Markets, Who is best set up, Scenarios) and an "At risk of disruption" group (outsourcing, staffing, call centers, homework help) that is displayed with live prices but excluded from the basket, analyst outlook, setup ranking and candidates. |
 | **Artificial Intelligence · Robotics · Quantum Computing · Space Exploration** | Each page: thesis and why-now; an equal-weight basket vs SPY (12-month chart, 1M-5Y returns, volatility, drawdown); a near-term outlook (analyst price-target upside, share at Buy, catalysts and risks) and a long-term one (growth, profitability, drivers and risks); compounding scenarios beside the basket's own record; a value-chain map showing who else benefits; a sortable company table by role (core leaders, picks & shovels, other beneficiaries, emerging & speculative) with per-name reasoning; the top candidates to research; and theme ETFs. |

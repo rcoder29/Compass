@@ -2,7 +2,7 @@ import { usePolledApi, PageHeader, Loading, ErrorBox, Caveats, Card, fmtPct, sig
 import { RETURN_COLS, RetCell, MiniSeries, ScanProgress, PartialNote, Disclaimer } from './ThemeKit'
 
 const NAV = { ai: 'themeai', robotics: 'themerobotics', quantum: 'themequantum', space: 'themespace', abundance: 'themeabundance', dollar: 'themedollar',
-  cleanenergy: 'themecleanenergy', cyber: 'themecyber', health: 'themehealth', fintech: 'themefintech' }
+  cleanenergy: 'themecleanenergy', cyber: 'themecyber', health: 'themehealth', fintech: 'themefintech', defense: 'themedefense', reshoring: 'themereshoring' }
 
 export default function ThemesOverview({ onNavigate }) {
   const { data, error } = usePolledApi('/api/themes')
