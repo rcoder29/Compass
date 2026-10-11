@@ -139,11 +139,11 @@ _jobs: dict[str, dict] = {}
 _jobs_lock = threading.Lock()
 
 
-def _run(job_key: str, symbols: list[str]):
+def _run(job_key: str, symbols: list[str], fetch=None):
     job = _jobs[job_key]
     try:
         with ThreadPoolExecutor(max_workers=_WORKERS) as pool:
-            for _ in pool.map(fetch_metrics, symbols):
+            for _ in pool.map(fetch or fetch_metrics, symbols):      # looked up at call time so tests can patch fetch_metrics
                 job["done"] += 1
     except Exception as exc:
         job["error"] = str(exc)
@@ -153,15 +153,15 @@ def _run(job_key: str, symbols: list[str]):
         job["running"] = False
 
 
-def start_scan(job_key: str, symbols: list[str]) -> dict:
-    """Start (or join) a background scan of `symbols`; returns its progress dict."""
+def start_scan(job_key: str, symbols: list[str], fetch=None) -> dict:
+    """Start (or join) a background scan of `symbols` with `fetch` (default: this module's per-symbol Yahoo metrics); returns its progress dict."""
     with _jobs_lock:
         job = _jobs.get(job_key)
         if job and job["running"]:
             return job
         job = {"running": True, "done": 0, "total": len(symbols), "started": time.time(), "finished": None, "error": None, "attempt": 1}
         _jobs[job_key] = job
-        threading.Thread(target=_run, args=(job_key, symbols), daemon=True).start()
+        threading.Thread(target=_run, args=(job_key, symbols, fetch), daemon=True).start()
         return job
 
 

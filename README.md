@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Compass (originally Stock Monitor, and still in a `stockmonitor/` folder in older checkouts) started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **107 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **93 API routers / ~185 endpoints**, with **916 backend and 292 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **108 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **987 backend and 305 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -25,6 +25,7 @@ Today that is **107 views in 13 sidebar groups** (plus a Home dashboard, an in-a
 |---|---|
 | **Overview** | Multi-timeframe performance tables for major indices, sector ETFs, and the Magnificent 7. Top-10 gainers/losers. Global news sidebar. |
 | **Analyst Picks** | Sell-side analyst upgrades/downgrades (firm, prior/new rating, price target) + AI Growth Watch List across 9 AI stack layers. |
+| **Short Interest** | The 100 most heavily shorted US stocks ranked by short interest as a share of float (FINRA, bi-monthly), with shares short and change vs the prior period, days to cover, the borrow fee, rebate and shares available (Interactive Brokers' public stock-loan table), and what each company's bonds say: average yield, coupon and spread over Treasuries from the corporate-bond ETFs' SEC N-PORT holdings, or, when none are held, the interest actually paid (interest expense / debt) and interest cover. An **equity vs credit** read flags where short sellers are more bearish than lenders (spread under 400 bps), partly confirmed (400-700) or credit confirms (700+ or a bond in default). Filters by market cap, displacement, sector and borrow fee; CSV export. |
 | **Breadth** | Large-cap market breadth: above-50/200MA %, A/D ratio, H/L ratio, put/call ratio, VIX sparkline, 60-day A/D line chart. |
 | **Index Heatmap** | Constituent heatmap for any index or ETF. Search any ticker dynamically or use quick-access buttons (DIA, QQQ, SPY, ARKK). Tiles sized by live market-cap weight, coloured by 1D return. Market-cap-weighted index return + top contributor/drag summary. |
 | **Holdings Performance** | Returns for every holding of an index or ETF over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD with a pinned benchmark row, summary stats (average, median, % up, % beating the benchmark), sector and text filters, an annualised view of the multi-year columns, CSV export and click-through charts. Full holdings for the S&P 500, Nasdaq-100, Dow 30, their ETFs (SPY, QQQ, DIA…) and the 11 sector SPDRs; other ETFs show Yahoo's top 10, flagged as partial. |
@@ -242,8 +243,8 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 ### Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 916 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 292 tests (Vitest + Testing Library)
+cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 987 tests, ~10 s, no network, isolated database
+cd frontend && npm test                # 305 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/compass.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -408,6 +409,8 @@ stockmonitor/
 │   ├── economy_regime.py    Growth/inflation composites, quadrant, recession-risk score, cycle phase, history labels
 │   ├── economy_studies.py   Episode detection and forward-return studies (publication-lag-aware, baseline-relative)
 │   ├── market_history.py    Long monthly/daily price history (Ticker.history, cached) for studies and sectors
+│   ├── short_interest.py    Short-interest maths: FINRA/IBKR parsing, float ranking, issuer-name matching, bond summaries, interest-paid proxy, equity-vs-credit displacement
+│   ├── short_interest_data.py  FINRA file discovery, IBKR FTP borrow table, Yahoo float/debt, bond-ETF index
 │   ├── yahoo_limits.py      Shared Yahoo 429 back-off (pauses all workers, grows with consecutive hits)
 │   ├── themes_catalog.py    Curated theme content: thesis, value chain, tagged companies, catalysts and risks (no numeric forecasts)
 │   ├── themes.py            Basket returns/series, analyst-implied outlook, scenarios, setup score (pure)
@@ -499,6 +502,7 @@ stockmonitor/
 │   │   ├── index_constituents.py        Markets → Index Heatmap + generic ETF search/holdings
 │   │   ├── tax_advisor.py               Portfolio → Tax Advisor (AI, state-aware)
 │   │   ├── short_squeeze_scanner.py     Markets → Short Squeeze
+│   │   ├── short_interest.py            Markets → Short Interest (staged build with progress)
 │   │   ├── ipo_lockup_calendar.py       Markets → IPO & Lockups (live EDGAR-sourced)
 │   │   ├── fed_watch.py                 Markets → Fed Watch (FOMC cut/hold/hike odds)
 │   │   ├── ai_morning_briefing.py       AI Tools → Morning Briefing
@@ -536,7 +540,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (916 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (987 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real compass.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -654,6 +658,7 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 | Price Projection | 2 hr |
 | Tear Sheet | 1 hr (assembled) · 24 hr (10-year SEC history) · 30 days (SEC revenue-by-stream facts, per filing — filings never change) |
 | Holdings Performance | 15 min (table) · 26 hr (long-history anchor prices, shared across indexes) · 24 hr (index membership) |
+| Short Interest | FINRA file 6 hr · IBKR borrow table 1 hr · Yahoo float and debt 24 hr per symbol · bond index 12 hr · assembled list 15 min per (limit, market-cap) setting |
 | Themes | 15 min assembled (prices) · fundamentals/analyst data 24 hr (shared `hb:{symbol}` with the 100-Bagger Finder) |
 | 100-Bagger metrics | 24 hr per symbol (`hb:{symbol}`), index membership 24 hr (`hb_u:{id}`); scoring recomputed on every request |
 | Economy indicators / regime | 30 min (computed tables) · 6 hr (the FRED series behind them) |

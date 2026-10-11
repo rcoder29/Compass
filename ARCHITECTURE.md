@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph Frontend["Frontend — localhost:5173"]
         App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
-        Components["~110 component files\n(107 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
+        Components["~110 component files\n(108 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -292,6 +292,30 @@ Design notes:
 - *Scale.* Twelve themes, ~200 companies and ~250 priced symbols. Prices are downloaded in chunks of 60 (one bulk request invites rate limiting), and the single background fundamentals scan covers every theme, so adding a theme only fetches the companies not already cached.
 - *Degrades instead of failing.* If Yahoo refuses fundamentals, the pages render prices and performance with a note and retry after the cooldown; a partial result is never cached.
 
+## Data Flow — Short Interest
+
+```mermaid
+flowchart LR
+    FINRA["FINRA bi-monthly file\n22k symbols"] --> SEL["select_candidates\n~560 liquid stocks"]
+    SEL --> YF["Yahoo float + market cap\n(background scan, 429 back-off)"]
+    YF --> RANK["rank by short % of float\ntop 100"]
+    RANK --> CR["Yahoo income statement\ninterest expense + EBIT"]
+    IBKR["IBKR stock-loan FTP\nfee / rebate / available"] --> ROWS
+    NPORT["7 bond ETFs' N-PORT\n(Corporate Bonds feature)"] --> BI["bond index\nprice, YTM, spread vs UST"]
+    BI --> ROWS["build_rows\nname-match bonds, proxy,\ndisplacement"]
+    CR --> ROWS
+    RANK --> ROWS
+    ROWS --> API["/api/short-interest"]
+```
+
+Design notes:
+
+- *Staged and resumable.* The first request runs three background scans in order (float data for ~560 candidates, debt statements for the top 100, the bond-fund filings). Each reports `stage` and progress, reuses the shared scanner and Yahoo back-off, and caches per symbol, so a rate-limited run simply resumes.
+- *Candidates, then ranking.* Share of float needs float, which only Yahoo has, so FINRA is used to pick the liquid candidates (largest short positions plus highest days-to-cover, so small-float names aren't missed) and the true ranking is done after the lookup.
+- *Bond matching is conservative.* Issuers are matched to companies by normalised name (corporate suffixes stripped); exact beats prefix, a prefix needs two words or eight letters, and every match shows the issuer name used. A bond held by several funds merges by CUSIP.
+- *The interest-paid proxy has to earn its place.* It stands in for a spread only when the implied rate is 3%+ and the debt is not trivial relative to market cap; near-zero-coupon convertibles said nothing about credit and produced false "equity ahead of credit" labels, so those names now show "no credit read".
+- *Displacement is a rule, not a model:* spread under 400 bps = equity ahead of credit, 400-700 = partly confirmed, 700+ or a bond flagged in default = credit confirms; the percentile gap between short interest and spread is shown for context.
+
 ## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing / Advisor)
 
 ```mermaid
@@ -313,17 +337,18 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-107 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
+108 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
 
 ```
 Home
 ├── HomeDashboard.jsx          Aggregated P&L, market pulse, movers, earnings, alerts, "What's New"
 └── CommandPalette.jsx         ⌘K fuzzy search across every view
 
-Markets  (11 views)
+Markets  (12 views)
 ├── MarketSummary.jsx          Overview: indices, sectors, Mag7, movers, news
 ├── IndexHeatmap.jsx           Constituent heatmap with dynamic ETF search
 ├── HoldingsPerformance.jsx    Per-holding returns over 1D…10Y/LTD, ranked by YTD
+├── ShortInterest.jsx          Top-100 short interest with borrow cost, bond read and equity-vs-credit displacement
 └── RedditTrending, ShortSqueeze, IpoCalendar, InsiderFeed, CryptoDashboard, MarketSentimentDashboard …
 
 Economy  (6)
@@ -433,6 +458,11 @@ Every key and TTL below was extracted from the code (`grep cache_get`), so it is
 | `index:constituents:{index}`, `etf:holdings:{etf}` | 15 min | `routers/index_constituents.py` |
 | `themes:partial` | 2 min | `routers/themes.py` → the assembled result while fundamentals are still loading (reused by polling; never replaces `themes:built`) |
 | `themes:built` | 15 min | `routers/themes.py` → all four themes assembled (prices, baskets, members); not cached when fundamentals are partial |
+| `si:finra` | 6 hr | `short_interest_data.py` → FINRA settlement date and the ~560 liquid candidates (the full 22,000-row file is not stored) |
+| `si:ibkr` | 1 hr | Interactive Brokers stock-loan table (fee, rebate, shares available) for ~20,000 symbols |
+| `si:info:{sym}` · `si:credit:{sym}` | 24 hr | Yahoo float, market cap and debt; latest annual interest expense and EBIT |
+| `si:bondindex` | 12 hr | every bond held by 7 corporate-bond ETFs, priced from N-PORT and spread against Treasuries |
+| `short:built:{limit}:{cap}` | 15 min | `routers/short_interest.py` → the assembled list per setting (not cached while partial) |
 | `hb:{symbol}` · `hb_u:{id}` | 24 hr | `hundred_bagger_data.py` → Yahoo fundamentals and statements for one symbol (failures are not cached); S&P 600/400 membership |
 | `fred:{series}` | 6 hr | `fred_data.py` → one FRED series as {dates, values} |
 | `economy:catalog`, `economy:regime` | 30 min | `routers/economy.py` → indicator table; regime dashboard |
@@ -544,8 +574,8 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 
 | Suite | Size | Notes |
 |---|---|---|
-| Backend (pytest) | 916 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 292 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Backend (pytest) | 987 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 305 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

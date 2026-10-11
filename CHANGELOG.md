@@ -4,6 +4,26 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Short Interest Monitor
+
+### Added
+- **Markets → Short Interest** — the 100 most heavily shorted US stocks, ranked by short interest as a share of float, with a market-cap floor ($100M+ to $5B+).
+  - **Short interest:** FINRA's bi-monthly settlement file (shares short, prior period, average volume, days to cover). The ~560 liquid candidates (largest positions plus highest days-to-cover) are looked up on Yahoo for float and market cap, then ranked.
+  - **Borrow cost:** Interactive Brokers' public stock-loan table: annualised fee (bands: General collateral under 1%, Elevated, Hard to borrow 5%+, Very hard 25%+), rebate and shares available.
+  - **Bonds and interest paid:** the corporate-bond ETFs' latest SEC N-PORT holdings (reusing the Corporate Bonds feature) are indexed by issuer, priced, and spread against the Treasury curve; each company is matched by name and shows average coupon, yield, spread and bond count. Where no fund holds its bonds, the interest actually paid (interest expense / total debt) and interest cover from the income statement are shown.
+  - **Equity vs credit displacement:** a spread under 400 bps next to heavy shorting reads "Equity ahead of credit" (lenders see little default risk; a valuation call, with squeeze risk), 400-700 "Partly confirmed", 700+ or a bond in default "Credit confirms", and no usable read "No bond read". A detail panel shows the explanation, the equity-pessimism vs credit-stress percentiles, borrow detail, interest paid and the bond table.
+- Filters (displacement type, sector, text, borrow fee 5%+), sorting by any column, CSV export, and a three-step progress bar for the first load (float data, debt statements, bond-fund holdings).
+- Live first run: 100 names, 99 with a borrow quote (8 hard to borrow), 11 with real bond spreads (e.g. Xerox, JetBlue, Avis, Kohl's, UWM), 34 with an interest-paid read, 55 with no usable credit read.
+
+### Design decisions found by running it on real data
+- The first version used the implied interest rate as a spread proxy for every company without bonds; near-zero-coupon convertibles and tiny debts produced negative spreads and false "Equity ahead of credit" labels (for example Serve Robotics, Lucid and Groupon). The proxy now counts only when the implied rate is 3%+ and debt is at least 2% of market cap.
+- The shared background scanner (`hundred_bagger_data.start_scan`) now accepts any fetch function, so the stages reuse its progress reporting, cooldown and Yahoo rate-limit back-off.
+
+### Tests
+- Backend +71 (parsing, candidate selection, ranking, borrow bands, name matching, bond index and weighted summaries, proxy rules, displacement thresholds, data layer, staged endpoint); frontend +13. Totals 987 backend, 305 frontend.
+
+---
+
 ## 2026-10-11 — Defense Tech and Reshoring & Infrastructure
 
 - **Themes → Defense Tech** (21 companies): the primes (Lockheed Martin, RTX, Northrop Grumman, General Dynamics, L3Harris, Huntington Ingalls, plus BAE Systems and Rheinmetall via ADRs), components and services (TransDigm, HEICO, Curtiss-Wright, BWX, Leidos), Palantir, GE Aerospace and Boeing as other beneficiaries, and the drone and autonomy newcomers (Kratos, AeroVironment, Red Cat, Ondas, Karman).

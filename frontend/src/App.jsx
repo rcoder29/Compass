@@ -28,6 +28,7 @@ const PriceProjection = lazy(() => import('./components/PriceProjection'))
 const TearSheet = lazy(() => import('./components/TearSheet'))
 const ThemesOverview = lazy(() => import('./components/ThemesOverview'))
 const ThemePage = lazy(() => import('./components/ThemePage'))
+const ShortInterest = lazy(() => import('./components/ShortInterest'))
 const HundredBaggers = lazy(() => import('./components/HundredBaggers'))
 const HoldingsPerformance = lazy(() => import('./components/HoldingsPerformance'))
 const TradeJournal = lazy(() => import('./components/TradeJournal'))
@@ -201,6 +202,7 @@ const NAV_GROUPS = [
       { id: 'breadth',         label: 'Breadth' },
       { id: 'recommendations', label: 'Analyst Picks' },
       { id: 'shortsqueeze',    label: 'Short Squeeze' },
+      { id: 'shortinterest',   label: 'Short Interest' },
       { id: 'ipocalendar',     label: 'IPO & Lockups' },
       { id: 'insiderfeed',     label: 'Insider Trading' },
       { id: 'crypto',          label: 'Crypto' },
@@ -1170,6 +1172,7 @@ export default function App() {
           {activeTab === 'digest'                 && <DigestCenter />}
           {activeTab === 'taxadvisor'            && <TaxAdvisor />}
           {activeTab === 'shortsqueeze'          && <ShortSqueeze />}
+          {activeTab === 'shortinterest'   && <ShortInterest />}
           {activeTab === 'ipocalendar'           && <IpoCalendar />}
           {activeTab === 'fedwatch'              && <FedWatch />}
           {activeTab === 'insiderfeed'           && <InsiderFeed />}

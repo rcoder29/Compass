@@ -10,6 +10,13 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Short Interest Monitor', tabId: 'shortinterest' },
+  { type: 'bullets', items: [
+    'New Markets → Short Interest: the 100 most heavily shorted US stocks, ranked by short interest as a share of float, with shares short, the change since the last report and days to cover.',
+    'Each stock shows its borrow fee, rebate and shares available, and what its bonds say: average yield, coupon and spread over Treasuries, or the interest it actually pays on its debt when no bonds are tracked.',
+    'An "Equity vs credit" badge shows whether lenders agree with the short sellers: Equity ahead of credit, Partly confirmed, Credit confirms, or No bond read. Click a row for the explanation and details.',
+    'Short interest is FINRA\'s bi-monthly data (about a week old); borrow rates are indicative, from Interactive Brokers.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Themes: Defense Tech & Reshoring', tabIds: [
     { id: 'themedefense', label: 'Defense Tech' }, { id: 'themereshoring', label: 'Reshoring & Infrastructure' },
   ] },
