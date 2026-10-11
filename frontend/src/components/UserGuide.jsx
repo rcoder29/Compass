@@ -13,27 +13,25 @@ const GUIDE = [
       { type: 'h3', text: 'First-Time Setup' },
       { type: 'steps', items: [
         'Add tickers to your watchlist using the TICKER input in the top header bar, then click "+ Add" (or press Enter).',
-        'Navigate to Portfolio → Portfolio to log your positions so the app can track P&L and exposure.',
+        'Navigate to My Money → Portfolio to log your positions so the app can track P&L and exposure.',
         'Set price alerts by clicking the bell icon (🔔) on any watchlist row.',
         'Allow browser notifications when prompted — alerts fire even when you switch tabs.',
       ]},
       { type: 'h3', text: 'Navigation' },
-      { type: 'p', text: 'The left sidebar organises all features into 13 groups. All groups start collapsed — click a group header to expand it. Only the group containing your current view opens automatically. Click any item to load that view. Home is pinned above the groups and the User Guide button is pinned below them. On mobile, tap ☰ to open the sidebar drawer.' },
+      { type: 'p', text: 'The left sidebar organises all features into 11 groups, ordered the way you tend to work: your own money first (My Money), then what is happening (Markets, Economy, Sectors & Themes), then finding and researching ideas (Find Ideas, Research, Fixed Income), then specialised areas (Event-Driven, Trading), then planning and the AI assistant. Long groups are split by small captions (for example Watchlist and Portfolio inside My Money, or Sectors and Themes). All groups start collapsed — click a group header to expand it; only the group containing your current view opens automatically. Click any item to load that view. Home is pinned above the groups and the User Guide button is pinned below them. On mobile, tap ☰ to open the sidebar drawer. Press ⌘K (Ctrl+K) to jump to any view by name; results show where each one lives, such as "Event-Driven › SPACs".' },
       { type: 'p', text: 'Hover any item inside a group to reveal a ☆ button on its right — click it to pin that item. Pinned items collect in a "Pinned" section above the groups (with a filled ★ to unpin), so your most-used views are always one click away without expanding anything. Pins are saved locally and start empty.' },
       { type: 'table', headers: ['Group', 'What\'s Inside'], rows: [
-        ['Markets', 'Overview, Sentiment, Reddit Trending, Index Heatmap, Holdings Performance, Breadth, Analyst Picks, Short Squeeze, Short Interest, IPO & Lockups, Insider Trading, Crypto'],
+        ['My Money', 'Watchlist: Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, My News Feed, Smart Alerts; Portfolio: Portfolio, Attribution, Net Exposure, Stress Test, CPPI Allocator'],
+        ['Markets', 'Overview, Sentiment, Breadth, Index Heatmap, Holdings Performance, Reddit Trending, Crypto'],
         ['Economy', 'Regime Dashboard, Indicators, Indicator Studies, Fed Watch, Yield Curve, Macro Calendar'],
-        ['Sectors', 'Scoreboard, Rotation Map, Sector Screener, Cycle Fit, Sector Backtest'],
-        ['Themes', 'Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance, Dollar Regime Shift, Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation, Fintech & Digital Payments, Defense Tech, Reshoring & Infrastructure'],
-        ['Research', 'Tear Sheet, 100-Bagger Finder, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options'],
-        ['Watchlist', 'Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts'],
-        ['News', 'My News Feed'],
-        ['Trading', 'Trade Ideas, Position Sizer, Wheel Tracker, Day Trader'],
-        ['Merger Arb', 'Overview, Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix, Alerts'],
-        ['SPACs', 'Overview, Tracker, Discovery, Deal Analyzer, Portfolio, Alerts, Risk Matrix'],
-        ['Portfolio', 'Portfolio, Options P&L, Tax Lots, Dividend Tracker, Stress Test, Attribution, Trade Journal, CPPI Allocator, Net Exposure'],
-        ['AI Tools', 'Morning Briefing, Digests, Stock Analyzer, Portfolio Review, Financial Advisor, Tax Advisor, AI Chat'],
-        ['Retirement', 'FIRE Calculator, Coast FIRE & Roth, Monte Carlo, Social Security, Early Retirement Health, Roth Conversion Planner, Medicare Estimator, Estate & RMD'],
+        ['Sectors & Themes', 'Sectors: Scoreboard, Rotation Map, Sector Screener, Cycle Fit, Sector Backtest; Themes: Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance, Dollar Regime Shift, Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation, Fintech & Digital Payments, Defense Tech, Reshoring & Infrastructure'],
+        ['Find Ideas', 'Screens: Screener, Range Screener, 100-Bagger Finder, Signals; Market-driven ideas: Analyst Picks, Short Squeeze, Short Interest, Insider Trading, IPO & Lockups, Unusual Options, Trade Ideas'],
+        ['Research', 'Analyze a company: Tear Sheet, Fundamentals, DCF Valuation, Price Projection, Analyst Ratings, Earnings Surprise, Earnings Strategy, Activist Tracker; Compare & test: Chart Compare, Relative Strength, Seasonal Patterns, ETF Overlap, Fund Holdings, Backtester'],
+        ['Fixed Income', 'Corporate Bonds, Convertible Bonds, Treasury Bonds'],
+        ['Event-Driven', 'Merger Arb: Overview, Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix, Alerts; SPACs: Overview, Tracker, Discovery, Deal Analyzer, Portfolio, Alerts, Risk Matrix'],
+        ['Trading', 'Day Trader, Position Sizer, Wheel Tracker, Options P&L, Trade Journal'],
+        ['Planning', 'Retirement: FIRE Calculator, Coast FIRE & Roth, Monte Carlo, Social Security, Early Retirement Health, Roth Conversion Planner, Medicare Estimator, Estate & RMD; Taxes & income: Tax Advisor, Tax Lots, Dividend Tracker'],
+        ['AI Assistant', 'Morning Briefing, Digests, Stock Analyzer, Portfolio Review, Financial Advisor, AI Chat'],
       ]},
       { type: 'h3', text: 'Home & Quick Search' },
       { type: 'p', text: 'Home (pinned at the top of the sidebar) is the app\'s landing page — it opens by default. It shows your portfolio value, day P&L and total P&L, a market pulse strip (SPY/QQQ/DIA + VIX), your biggest portfolio and watchlist movers today, earnings reporting in the next 7 days, active price alerts, a "What\'s New" card highlighting the 3 most recent feature additions, and a "Recently Visited" row of the tabs you use most.' },
@@ -93,7 +91,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: check the Macro Calendar before opening a new position — unexpected CPI or FOMC surprises cause outsized market moves.' },
       { type: 'h3', text: 'Short Interest' },
-      { type: 'p', text: 'The 100 most heavily shorted US stocks, ranked by short interest as a share of the float, with the cost of borrowing each one and what the same company\'s bonds are saying. Found under Markets → Short Interest (Short Squeeze, next to it, scans for squeeze setups).' },
+      { type: 'p', text: 'The 100 most heavily shorted US stocks, ranked by short interest as a share of the float, with the cost of borrowing each one and what the same company\'s bonds are saying. Found under Find Ideas → Short Interest (Short Squeeze, next to it, scans for squeeze setups).' },
       { type: 'table', headers: ['Column', 'What it means'], rows: [
         ['Short % of float', 'Shares sold short (FINRA, bi-monthly) divided by the float from Yahoo Finance. Above 20% is heavy; above 30% is extreme.'],
         ['vs prior', 'Change in shares short since the previous reporting period.'],
@@ -212,7 +210,7 @@ const GUIDE = [
       { type: 'tip', text: 'Tip: combine IPO & Lockup Calendar with the Short Squeeze Scanner. A stock with high short interest and an imminent lockup expiry faces two opposing forces — shorts betting on post-lockup selling vs bulls expecting momentum to continue.' },
       { type: 'tip', text: 'The 180-day lockup is the standard underwriting default, not a disclosed fact per company — actual terms occasionally differ. Day-1 Open is a close proxy for the offer price but can diverge meaningfully on IPOs that pop or drop hard on debut.' },
       { type: 'h3', text: 'Insider Trading Feed' },
-      { type: 'p', text: 'A market-wide scanner of SEC Form 4 filings showing open-market purchases and sales by corporate insiders across ~150 large and mid-cap companies. Found under Markets → Insider Trading.' },
+      { type: 'p', text: 'A market-wide scanner of SEC Form 4 filings showing open-market purchases and sales by corporate insiders across ~150 large and mid-cap companies. Found under Find Ideas → Insider Trading.' },
       { type: 'steps', items: [
         'Select a time window (7d / 14d / 30d / 60d) — the feed shows all filings within that period.',
         'Use the filter tabs to focus: Buys Only (most actionable), C-Suite (highest-conviction insiders), $500k+ (significant dollar size), Cluster Buys (multiple insiders at the same stock).',
@@ -355,7 +353,7 @@ const GUIDE = [
     icon: '◎',
     blocks: [
       { type: 'h3', text: 'Watchlist Heatmap' },
-      { type: 'p', text: 'A treemap of all your watchlist symbols, sized by market cap and coloured by return. Found under Watchlist → Heatmap. The 1D view is instant and live (no extra fetch needed — it uses the same real-time data as the Watchlist table). Extended periods (5D/1M/3M) are fetched on demand and cached for 5 minutes.' },
+      { type: 'p', text: 'A treemap of all your watchlist symbols, sized by market cap and coloured by return. Found under My Money → Heatmap. The 1D view is instant and live (no extra fetch needed — it uses the same real-time data as the Watchlist table). Extended periods (5D/1M/3M) are fetched on demand and cached for 5 minutes.' },
       { type: 'table', headers: ['Control', 'What it does'], rows: [
         ['Period (1D/5D/1M/3M)', '1D is live. Selecting 5D/1M/3M triggers a backend fetch for the selected symbols\' historical returns. The first load takes a few seconds; subsequent loads within 5 minutes are instant.'],
         ['Mkt Cap / Equal sizing', 'Mkt Cap: tile size is proportional to each company\'s market capitalisation — Apple and Microsoft will be the largest tiles. Equal: all tiles the same size, making it easier to compare smaller positions.'],
@@ -371,7 +369,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: use the heatmap at the start of the trading day to immediately see which of your watchlist stocks are moving — red concentration in one area (e.g. all your tech names red) signals sector-wide weakness, while isolated red tiles suggest stock-specific news.' },
       { type: 'h3', text: 'Correlation Matrix' },
-      { type: 'p', text: 'Color-coded grid showing how closely any set of stocks move together over a selected lookback period. Found under Watchlist → Correlation. Helps you spot hidden concentration risk — if most of your positions are highly correlated, a single market shock hits everything at once.' },
+      { type: 'p', text: 'Color-coded grid showing how closely any set of stocks move together over a selected lookback period. Found under My Money → Correlation. Helps you spot hidden concentration risk — if most of your positions are highly correlated, a single market shock hits everything at once.' },
       { type: 'steps', items: [
         'Enter symbols manually or click "⬇ Watchlist" to import all your watchlist symbols.',
         'Choose a lookback period: 1M, 3M, 6M, 1Y, or 2Y. Longer periods smooth out noise; shorter periods reflect recent relationships.',
@@ -417,7 +415,7 @@ const GUIDE = [
         'Triggered alerts show a toast notification bottom-right and are marked in the alert list.',
       ]},
       { type: 'h3', text: 'Price Targets' },
-      { type: 'p', text: 'Set personal price targets with optional deadlines and notes. Found under Watchlist → Price Targets.' },
+      { type: 'p', text: 'Set personal price targets with optional deadlines and notes. Found under My Money → Price Targets.' },
       { type: 'steps', items: [
         'Fill in the symbol, target price, optional deadline date, and a note (e.g. your trade thesis).',
         'Click "+ Add". The target appears as a card showing current vs target price with a progress bar.',
@@ -441,7 +439,7 @@ const GUIDE = [
         ['Expected Move ±%', 'Options-implied expected move (ATM straddle ÷ price) — the market\'s priced-in reaction.'],
       ]},
       { type: 'h3', text: 'Smart Alerts' },
-      { type: 'p', text: 'Condition-based alert rules you scan on demand. Found under Watchlist → Smart Alerts.' },
+      { type: 'p', text: 'Condition-based alert rules you scan on demand. Found under My Money → Smart Alerts.' },
       { type: 'table', headers: ['Alert Type', 'Triggers when'], rows: [
         ['Volume Spike', 'Today\'s volume exceeds N × the 20-day average (configurable multiplier).'],
         ['Gap Up / Gap Down', 'Today\'s open is N% above/below the prior close.'],
@@ -474,7 +472,7 @@ const GUIDE = [
     blocks: [
       { type: 'h3', text: 'Adding Positions' },
       { type: 'steps', items: [
-        'Open Portfolio → Portfolio.',
+        'Open My Money → Portfolio.',
         'Use the "Add Position" form: enter a ticker, number of shares, and your average cost basis.',
         'Click Add. The position appears in all views immediately.',
         'To remove a position, find it in the Table view and click the × button.',
@@ -503,7 +501,7 @@ const GUIDE = [
         ['Sharpe Ratio', 'Return per unit of risk. Above 1.0 is good, above 2.0 is excellent.'],
       ]},
       { type: 'h3', text: 'Options P&L' },
-      { type: 'p', text: 'Track open options positions with live Greeks and P&L. Found under Portfolio → Options P&L.' },
+      { type: 'p', text: 'Track open options positions with live Greeks and P&L. Found under Trading → Options P&L.' },
       { type: 'steps', items: [
         'Add a position: enter Symbol, Type (Call/Put), Strike, Expiry, Quantity (negative for short), and Entry Premium per share.',
         'Click "Refresh P&L" to fetch live mid prices, Delta, Theta, and IV from yfinance.',
@@ -511,7 +509,7 @@ const GUIDE = [
         'DTE badge turns red when fewer than 7 days remain — time to decide: close, roll, or let expire.',
       ]},
       { type: 'h3', text: 'Tax Lot Manager' },
-      { type: 'p', text: 'Track the cost basis of every share lot you own and simulate sales to minimise tax. Found under Portfolio → Tax Lots. Data stored in browser localStorage.' },
+      { type: 'p', text: 'Track the cost basis of every share lot you own and simulate sales to minimise tax. Found under Planning → Tax Lots. Data stored in browser localStorage.' },
       { type: 'steps', items: [
         'Click "+ Add Lot" and enter: ticker, number of shares, cost basis per share, and purchase date. Add notes for context (e.g. "RSU vest", "DRIP purchase").',
         'Each lot shows its holding period in days and whether it qualifies as long-term (≥365 days, lower LTCG rate) or short-term (ordinary income rate).',
@@ -528,7 +526,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: if you hold shares bought in different years with different cost bases, specific lot identification (telling your broker exactly which shares to sell) can save thousands in taxes vs the default FIFO method. Confirm with your broker that specific ID is enabled before trading.' },
       { type: 'h3', text: 'Dividend Tracker' },
-      { type: 'p', text: 'Track dividend income, yield on cost, upcoming ex-dividend dates, and long-term DRIP projections for your income portfolio. Found under Portfolio → Dividend Tracker. Positions are stored in browser localStorage — separate from the main Portfolio, so you can focus on just your dividend stocks.' },
+      { type: 'p', text: 'Track dividend income, yield on cost, upcoming ex-dividend dates, and long-term DRIP projections for your income portfolio. Found under Planning → Dividend Tracker. Positions are stored in browser localStorage — separate from the main Portfolio, so you can focus on just your dividend stocks.' },
       { type: 'steps', items: [
         'Add positions manually using the form: enter a ticker, number of shares, and your average cost per share. Click "+ Add".',
         'Or click "⬇ Import from Portfolio" to automatically pull all positions from the main Portfolio tracker into the Dividend Tracker.',
@@ -564,7 +562,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: Yield on Cost is the key metric for long-term dividend investors. If you bought JNJ at $100 and it now pays $5/year, your YoC is 5% regardless of what the current market yield is. Over time, dividend growth amplifies this further — a stock bought at a 3% yield that grows dividends at 7%/year reaches 6% YoC in 10 years.' },
       { type: 'h3', text: 'Portfolio Stress Test' },
-      { type: 'p', text: 'Estimates how your current portfolio would fare during historical market crises, using each stock\'s beta and sector-specific drawdown adjustments. Found under Portfolio → Stress Test. No additional data fetching needed — it reuses existing portfolio positions and live quotes.' },
+      { type: 'p', text: 'Estimates how your current portfolio would fare during historical market crises, using each stock\'s beta and sector-specific drawdown adjustments. Found under My Money → Stress Test. No additional data fetching needed — it reuses existing portfolio positions and live quotes.' },
       { type: 'steps', items: [
         'Add positions to the main Portfolio first. Stress Test reads them automatically on load.',
         'Select one of four historical crisis scenarios — or use Custom to set your own market drawdown percentage.',
@@ -588,7 +586,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: "P&L at Low" reveals which positions have a large enough cushion to survive a crisis while still keeping you above water. A stock you bought at a 50% discount to its current price might show a stressed P&L that\'s still positive even in a 2008-style crash — and that\'s a position you can hold through a downturn with confidence.' },
       { type: 'h3', text: 'Portfolio Attribution' },
-      { type: 'p', text: 'Shows how much each position has contributed to your total return since purchase — in dollars and as a percentage of your total invested capital. Found under Portfolio → Attribution. No additional data needed; it reads your existing portfolio and live quote prices.' },
+      { type: 'p', text: 'Shows how much each position has contributed to your total return since purchase — in dollars and as a percentage of your total invested capital. Found under My Money → Attribution. No additional data needed; it reads your existing portfolio and live quote prices.' },
       { type: 'steps', items: [
         'The tool loads automatically on opening — no input required.',
         'Switch between By Position (full per-stock sortable table), Waterfall (visual bar chart), and By Sector (sector-level aggregation).',
@@ -604,7 +602,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: a position can have a high P&L % (great stock pick) but low Contribution % (you didn\'t allocate much). Conversely, a modestly performing position with a large allocation contributes more to your total return than a spectacular small bet. Attribution shows you where your returns actually came from — not just which stocks went up.' },
       { type: 'h3', text: 'Trade Journal' },
-      { type: 'p', text: 'Log every trade you execute to track performance over time. Found under Portfolio → Trade Journal.' },
+      { type: 'p', text: 'Log every trade you execute to track performance over time. Found under Trading → Trade Journal.' },
       { type: 'steps', items: [
         'Fill in Symbol, Side (Buy/Sell), Price, Shares, Strategy, Date, and optional Notes.',
         'The journal computes realised P&L by matching buy and sell trades for the same symbol.',
@@ -613,7 +611,7 @@ const GUIDE = [
         'Filter by strategy or search by symbol. Export to CSV with the "↓ CSV" button.',
       ]},
       { type: 'h3', text: 'CPPI Allocator' },
-      { type: 'p', text: 'Constant Proportion Portfolio Insurance — a systematic strategy that dynamically splits capital between a risky asset (e.g. SPY) and a safe asset (cash/bonds) so the portfolio is designed to never fall below a floor value. Found under Portfolio → CPPI Allocator.' },
+      { type: 'p', text: 'Constant Proportion Portfolio Insurance — a systematic strategy that dynamically splits capital between a risky asset (e.g. SPY) and a safe asset (cash/bonds) so the portfolio is designed to never fall below a floor value. Found under My Money → CPPI Allocator.' },
       { type: 'steps', items: [
         'Start a strategy by picking a risky asset symbol, initial capital, floor % (the portion of capital to protect), multiplier, safe-asset annual yield, and a rebalance band %.',
         'On start, exposure is set to multiplier × (portfolio value − floor), clamped between 0% and 100% of the portfolio; the rest sits in the safe asset.',
@@ -625,7 +623,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: a higher multiplier increases upside participation but also increases gap risk — a large overnight drop in the risky asset can push the portfolio below the floor before a rebalance can happen. The backtest\'s "Floor Breached" stat flags this. Multipliers of 3-5 with a floor of 85-95% are typical starting points.' },
       { type: 'h3', text: 'Net Exposure' },
-      { type: 'p', text: 'Rolls Stocks, Options, and CPPI into a single beta-adjusted "how much market risk am I actually carrying right now" number. Found under Portfolio → Net Exposure.' },
+      { type: 'p', text: 'Rolls Stocks, Options, and CPPI into a single beta-adjusted "how much market risk am I actually carrying right now" number. Found under My Money → Net Exposure.' },
       { type: 'steps', items: [
         'Stocks: reuses the Portfolio Risk beta calc — market value × portfolio beta gives a SPY-equivalent dollar exposure.',
         'Options: delta is computed with Black-Scholes from each position\'s strike, expiry, and implied volatility (yfinance doesn\'t reliably supply live Greeks), converted to share-equivalent exposure, then beta-weighted by the underlying.',
@@ -679,7 +677,7 @@ const GUIDE = [
       { type: 'bullets', items: [
         'The first load reads fundamentals for about 200 companies (a few minutes, with a progress bar). It serves all five pages and is cached for a day. If Yahoo is limiting requests you will see prices and performance with a note that analyst data is catching up.',
         'Companies shown as "No data" were delisted, renamed or are not yet trading. The commentary is written by hand and dated; the numbers are live.',
-        'The 100-bagger traits shown in each detail panel are the same score used by Research → 100-Bagger Finder.',
+        'The 100-bagger traits shown in each detail panel are the same score used by Find Ideas → 100-Bagger Finder.',
       ]},
       { type: 'tip', text: 'Tip: read a theme top to bottom: first how much has already happened (basket performance), then what analysts and the numbers say (outlook), then the value chain for the less obvious beneficiaries, and only then the candidates. The best-performing themes are often the most crowded.' },
     ],
@@ -690,7 +688,7 @@ const GUIDE = [
     icon: '⊕',
     blocks: [
       { type: 'h3', text: '100-Bagger Finder' },
-      { type: 'p', text: 'Screens for stocks that share the traits of past 100x compounders. A 100-bagger needs about 26% a year for 20 years (58% for 10, 17% for 30), so the company must start small and keep growing for a very long time. Found under Research → 100-Bagger Finder.' },
+      { type: 'p', text: 'Screens for stocks that share the traits of past 100x compounders. A 100-bagger needs about 26% a year for 20 years (58% for 10, 17% for 30), so the company must start small and keep growing for a very long time. Found under Find Ideas → 100-Bagger Finder.' },
       { type: 'table', headers: ['Trait (weight)', 'What scores well'], rows: [
         ['Room to grow (20)', 'Small market cap. Under about $3B scores highest; above $100B scores zero because 100x would be a $10T+ company.'],
         ['Growth (25)', 'Revenue growth, blending the multi-year compound rate (60%) with the latest year (40%). 35%+ scores 100. Growth above 50% is capped when extrapolating.'],
@@ -716,7 +714,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: Custom mode NLP query examples — "large cap financials with low P/E and high dividend yield", "beaten-down growth stocks with insider buying", "mega cap tech with expanding margins".' },
       { type: 'h3', text: 'Range Screener' },
-      { type: 'p', text: 'Finds names trading sideways between a support and resistance level over the last 30/60/90 days — rather than trending — and shows where the price sits in that range right now, for a range-trading (buy support, sell resistance) approach. Found under Research → Range Screener.' },
+      { type: 'p', text: 'Finds names trading sideways between a support and resistance level over the last 30/60/90 days — rather than trending — and shows where the price sits in that range right now, for a range-trading (buy support, sell resistance) approach. Found under Find Ideas → Range Screener.' },
       { type: 'p', text: 'For each name and window, it detects the high and low of the window, then measures two things: how "range-bound" it is, and how many times price has come back to each edge:' },
       { type: 'table', headers: ['Metric', 'What it means'], rows: [
         ['Score', 'How choppy vs. trending the window was, from an efficiency-ratio calculation (net price change ÷ the sum of every day\'s move). 100 = pure back-and-forth with no net progress; 0 = a steady trend in one direction. It ranks names — a high score isn\'t a guarantee the range holds going forward.'],
@@ -758,13 +756,13 @@ const GUIDE = [
       { type: 'p', text: 'Enter any stock or ETF ticker to see a 1-year-forward price cone (10th/25th/50th/75th/90th percentile bands) built entirely from market-implied inputs, not a forecast of Claude\'s own. Found under Research → Price Projection.' },
       { type: 'table', headers: ['Input', 'What it does'], rows: [
         ['Options-implied volatility', 'ATM implied vol pulled from every available expiration out to ~13 months, interpolated at each monthly horizon — the market\'s own forward-looking volatility, rather than one flat number stretched out with the square-root-of-time rule. Falls back to trailing 1-year realized volatility for symbols with no listed options.'],
-        ['Risk-free rate', 'The current 1-year Treasury yield (Research → Treasury Bonds), net of the security\'s own dividend yield, sets the median path\'s drift — the standard risk-neutral assumption used across options pricing.'],
+        ['Risk-free rate', 'The current 1-year Treasury yield (Fixed Income → Treasury Bonds), net of the security\'s own dividend yield, sets the median path\'s drift — the standard risk-neutral assumption used across options pricing.'],
         ['VIX regime', 'Current VIX vs. its trailing 1-year median scales the volatility input up or down — an elevated-VIX market widens the cone beyond what the single name\'s own options currently price in.'],
-        ['Credit spread (CDS proxy)', 'True single-name CDS data is proprietary (Markit/Bloomberg/ICE) and not available from any free source, so this reuses the issuer\'s own corporate-bond credit spread over Treasuries (Research → Corporate Bonds\' YTM-vs-Treasury calc). A wide spread only pulls the lower percentiles (p10/p25) down further, since credit spreads price default/distress risk — an asymmetric, downside-only effect. Shows "Not available" for issuers with no fund-held bonds (most companies, and all ETFs).'],
+        ['Credit spread (CDS proxy)', 'True single-name CDS data is proprietary (Markit/Bloomberg/ICE) and not available from any free source, so this reuses the issuer\'s own corporate-bond credit spread over Treasuries (Fixed Income → Corporate Bonds\' YTM-vs-Treasury calc). A wide spread only pulls the lower percentiles (p10/p25) down further, since credit spreads price default/distress risk — an asymmetric, downside-only effect. Shows "Not available" for issuers with no fund-held bonds (most companies, and all ETFs).'],
       ]},
       { type: 'tip', text: 'Disclaimer: this is a probabilistic model of what the options, rates, and credit markets currently imply — not a price target, forecast, or investment advice. It assumes those markets are pricing efficiently and that returns are lognormal, both simplifications. The full methodology is restated at the bottom of the page alongside every raw input used.' },
       { type: 'h3', text: 'Technical Signals' },
-      { type: 'p', text: 'Multi-timeframe technical summary for every symbol in your watchlist and portfolio. Found under Research → Signals.' },
+      { type: 'p', text: 'Multi-timeframe technical summary for every symbol in your watchlist and portfolio. Found under Find Ideas → Signals.' },
       { type: 'p', text: 'Each cell shows three indicators stacked:' },
       { type: 'table', headers: ['Indicator', 'How to read'], rows: [
         ['Trend (▲/▼/◆)', '▲ Bullish, ▼ Bearish, ◆ Neutral — based on price vs moving averages.'],
@@ -911,7 +909,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: the N-PORT filing period is typically 60 days before the public can see it (regulatory delay). So a fund\'s December holdings appear in late February. Weight figures show what the fund held at the reporting date, not necessarily today.' },
       { type: 'h3', text: 'Corporate Bonds' },
-      { type: 'p', text: 'Investment-grade and high-yield corporate bond research by issuer, built entirely on free SEC data since there\'s no free per-CUSIP bond pricing API. Found under Research → Corporate Bonds.' },
+      { type: 'p', text: 'Investment-grade and high-yield corporate bond research by issuer, built entirely on free SEC data since there\'s no free per-CUSIP bond pricing API. Found under Fixed Income → Corporate Bonds.' },
       { type: 'steps', items: [
         'Search by ticker or company name to find an issuer\'s bonds.',
         'Bonds are found by scanning the latest N-PORT holdings of 7 major bond ETFs (LQD, VCIT, VCSH, USIG for investment grade; HYG, JNK, USHY for high yield) for matches to the issuer.',
@@ -922,7 +920,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'There\'s no free, live per-CUSIP bond pricing feed, so everything here is either (a) what a tracked bond ETF actually holds as of its last N-PORT filing, or (b) terms and ratings actions pulled straight from the issuer\'s own EDGAR filings — never a live quote. The YTM behind the credit-spread panel has no accrued-interest adjustment, so treat spreads as directional, not exact to the basis point.' },
       { type: 'h3', text: 'Convertible Bonds' },
-      { type: 'p', text: 'Convertible corporate bond research by issuer, mirroring Corporate Bonds. Found under Research → Convertible Bonds.' },
+      { type: 'p', text: 'Convertible corporate bond research by issuer, mirroring Corporate Bonds. Found under Fixed Income → Convertible Bonds.' },
       { type: 'steps', items: [
         'Search by ticker or company name to find an issuer\'s convertible bonds.',
         'Bonds are found by scanning the latest N-PORT holdings of 3 major convertible bond ETFs (ICVT, CWB, FCVT) for matches to the issuer — same approach as Corporate Bonds.',
@@ -933,7 +931,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Conversion price and ratio are a defined part of the US-GAAP XBRL taxonomy — unlike credit ratings, which aren\'t standardized at all — so when an issuer tags them, it\'s real structured data straight from their own filing, not a text-mined guess.' },
       { type: 'h3', text: 'Treasury Bonds' },
-      { type: 'p', text: 'Current U.S. Treasury yields, historical trends, and the full yield curve — a standalone page, separate from Corporate/Convertible Bonds since Treasuries have a genuinely free official source. Found under Research → Treasury Bonds.' },
+      { type: 'p', text: 'Current U.S. Treasury yields, historical trends, and the full yield curve — a standalone page, separate from Corporate/Convertible Bonds since Treasuries have a genuinely free official source. Found under Fixed Income → Treasury Bonds.' },
       { type: 'steps', items: [
         'The Current Rates table shows all 14 tracked maturities (1 Month through 30 Year) with today\'s yield and the 1-day change. Click a row to load that maturity into the Historical Trend chart below.',
         'The Yield Curve chart plots yield against maturity, overlaying Today against ~1 Month Ago and ~1 Year Ago on one chart — hover anywhere to see all three curves\' values at that maturity in a tooltip.',
@@ -953,14 +951,14 @@ const GUIDE = [
       { type: 'tip', text: 'A 13D alone doesn\'t confirm an activist campaign — read the filing (via the EDGAR link) for the actual stated purpose. Item 4 of the form describes the filer\'s intent.' },
       { type: 'h2', text: 'Merger Arb' },
       { type: 'h3', text: 'Overview' },
-      { type: 'p', text: 'Starter page for the Merger Arb group — a launching pad showing active tracked deals and newly filed, not-yet-tracked opportunities in one screen. Found under Merger Arb → Overview (first item in the group).' },
+      { type: 'p', text: 'Starter page for the Merger Arb group — a launching pad showing active tracked deals and newly filed, not-yet-tracked opportunities in one screen. Found under Event-Driven → Overview (first item in the group).' },
       { type: 'steps', items: [
         'The "Active Deals In Progress" table lists every tracked deal sorted by soonest expected close. Click a row to jump straight into the Deal Analyzer with that deal preloaded, or click "Dashboard" to jump to that row on the Deal Dashboard (it scrolls to and briefly highlights it).',
         'The "Upcoming — Newly Filed, Not Yet Tracked" table shows the most recent untracked EDGAR filings from the Opportunity Scanner feed. Click "+ Add" to pre-fill a new deal record, or "Open Scanner" to see the full feed.',
         '"View Risk Matrix" jumps to the aggregate risk/reward view across your whole tracked book.',
       ]},
       { type: 'h3', text: 'Deal Dashboard' },
-      { type: 'p', text: 'Tracks active merger and acquisition deals in your arb universe. Shows live bid-ask spreads, annualised return, days to close, and risk rating for every deal. Found under Merger Arb → Deal Dashboard.' },
+      { type: 'p', text: 'Tracks active merger and acquisition deals in your arb universe. Shows live bid-ask spreads, annualised return, days to close, and risk rating for every deal. Found under Event-Driven → Deal Dashboard.' },
       { type: 'steps', items: [
         'Click "+ Add Deal" to enter a deal manually: provide the target ticker, acquirer, offer price, deal type (cash / stock / mixed), announce date, and expected close date.',
         'Set the regulatory body (DOJ, FTC, EU, CFIUS, etc.) — this feeds directly into the risk scoring model.',
@@ -983,7 +981,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Risk scoring: cash deals start lower-risk than stock or mixed deals. DOJ/FTC review adds more risk than EU or CFIUS. Spreads above 10% or negative annualised returns flag High risk regardless of other factors.' },
       { type: 'h3', text: 'Opportunity Scanner' },
-      { type: 'p', text: 'Discovers new deals from EDGAR before you add them to the Deal Dashboard. Scans a broader set of merger-indicative filings than the Dashboard\'s own EDGAR panel — tender offers, going-private filings, and merger proxies/stock registrations that catch deals earlier in the process. Found under Merger Arb → Opportunity Scanner.' },
+      { type: 'p', text: 'Discovers new deals from EDGAR before you add them to the Deal Dashboard. Scans a broader set of merger-indicative filings than the Dashboard\'s own EDGAR panel — tender offers, going-private filings, and merger proxies/stock registrations that catch deals earlier in the process. Found under Event-Driven → Opportunity Scanner.' },
       { type: 'steps', items: [
         'The scanner pulls SC TO-T, SC 13E-3, DEFM14A, PREM14A, S-4, and 425 filings from the last 60 days on EDGAR full-text search.',
         'Each row shows the filer\'s ticker (parsed from EDGAR\'s display name) with live price and 5-day / 1-month price change for context.',
@@ -992,7 +990,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'EDGAR full-text search doesn\'t expose deal economics (offer price, structure) — only the filing metadata. Use the EDGAR link on each row to read the actual filing before adding a deal.' },
       { type: 'h3', text: 'Deal Analyzer' },
-      { type: 'p', text: 'A risk/reward deep-dive on a single deal: breaks down the risk score into its components and computes the probability of deal completion the market is currently pricing in, plus expected value across a range of close probabilities. Found under Merger Arb → Deal Analyzer.' },
+      { type: 'p', text: 'A risk/reward deep-dive on a single deal: breaks down the risk score into its components and computes the probability of deal completion the market is currently pricing in, plus expected value across a range of close probabilities. Found under Event-Driven → Deal Analyzer.' },
       { type: 'steps', items: [
         'Choose "Tracked Deal" to analyze one of your Deal Dashboard entries, or "Ad-hoc Deal" to analyze a deal without adding it to your tracker first.',
         'The analyzer estimates a "walk-away price" — where the stock would likely trade if the deal fell through — from the pre-announcement trading price when an announce date is given, or a 15% discount to the current price as a fallback. Override it manually if you have a better estimate.',
@@ -1001,7 +999,7 @@ const GUIDE = [
         'The expected-value scenario table shows your return at assumed close probabilities from 50% to 95% — it crosses zero near the market-implied probability.',
       ]},
       { type: 'h3', text: 'Arb Portfolio' },
-      { type: 'p', text: 'Size real positions in your tracked deals and track cost basis, live unrealized P&L, and concentration risk across the book. Found under Merger Arb → Arb Portfolio.' },
+      { type: 'p', text: 'Size real positions in your tracked deals and track cost basis, live unrealized P&L, and concentration risk across the book. Found under Event-Driven → Arb Portfolio.' },
       { type: 'steps', items: [
         'Click "+ Add Position" and select a deal already on your Deal Dashboard, then enter shares, entry price, and entry date.',
         'Each row shows cost basis, live market value, unrealized P&L ($ and %), and the value/gain if the deal closes at the offer price.',
@@ -1009,14 +1007,14 @@ const GUIDE = [
         'Concentration bars show how your capital is spread across deal types (cash / stock / mixed) and regulatory bodies — useful for spotting over-concentration in one regulator or structure.',
       ]},
       { type: 'h3', text: 'Risk Matrix' },
-      { type: 'p', text: 'Visual risk/reward map of your tracked deal universe. Found under Merger Arb → Risk Matrix.' },
+      { type: 'p', text: 'Visual risk/reward map of your tracked deal universe. Found under Event-Driven → Risk Matrix.' },
       { type: 'steps', items: [
         'The scatter plot places each deal by days-to-close (x-axis) and annualized return (y-axis); bubble size reflects deal value and color reflects risk level.',
         'The Regulator × Deal Type grid shows how many deals fall in each combination and their average risk score — cells shade green/yellow/red by average risk.',
         '"Highest Risk Deals" and "Best Annualized Return" panels surface the extremes in your book at a glance.',
       ]},
       { type: 'h3', text: 'Alerts' },
-      { type: 'p', text: 'Merger-arb-specific alert rules for days-to-close, spread thresholds, and status changes on tracked deals. Found under Merger Arb → Alerts. Separate from the general Smart Alerts (Watchlist → Smart Alerts) since these read spread, days to close, and status directly from the Deal Dashboard rather than price history.' },
+      { type: 'p', text: 'Merger-arb-specific alert rules for days-to-close, spread thresholds, and status changes on tracked deals. Found under Event-Driven → Alerts. Separate from the general Smart Alerts (My Money → Smart Alerts) since these read spread, days to close, and status directly from the Deal Dashboard rather than price history.' },
       { type: 'steps', items: [
         'Pick a tracked deal and an alert type, set any parameters, then "+ Add Rule". Click "Scan N Rules" to check them all against live data.',
         'Days to Close Threshold fires when the days remaining to expected close falls at or below your threshold (including overdue).',
@@ -1027,14 +1025,14 @@ const GUIDE = [
       { type: 'h2', text: 'SPACs' },
       { type: 'p', text: 'SPAC arbitrage is a different trade from merger arb: instead of a fixed offer price and deal-completion risk, a SPAC\'s common stock has a floor at its trust value — shareholders can redeem for trust value (plus accrued interest) at a shareholder vote or by the deadline, regardless of the proposed deal. Buying below trust captures that discount as a largely bounded-downside yield, with optional leveraged upside via warrants if you hold through a well-received business combination.' },
       { type: 'h3', text: 'Overview' },
-      { type: 'p', text: 'Starter page for the SPACs group — a launching pad showing tracked SPACs and newly filed, not-yet-tracked opportunities in one screen. Found under SPACs → Overview (first item in the group).' },
+      { type: 'p', text: 'Starter page for the SPACs group — a launching pad showing tracked SPACs and newly filed, not-yet-tracked opportunities in one screen. Found under Event-Driven → Overview (first item in the group).' },
       { type: 'steps', items: [
         'The "Tracked SPACs" table lists every tracked SPAC sorted by soonest redemption deadline. Click a row to jump straight into the Deal Analyzer with that SPAC preloaded, or click "Tracker" to jump to that row on the Tracker (it scrolls to and briefly highlights it).',
         'The "Upcoming — Newly Filed, Not Yet Tracked" table shows the most recent untracked EDGAR filings from the Discovery feed. Click "+ Add" to pre-fill a new SPAC record, or "Open Discovery" to see the full feed.',
         '"View Risk Matrix" jumps to the aggregate yield-vs-deadline view across your whole tracked book.',
       ]},
       { type: 'h3', text: 'Tracker' },
-      { type: 'p', text: 'Tracks SPACs against trust value, redemption deadlines, and warrant pricing. Found under SPACs → Tracker.' },
+      { type: 'p', text: 'Tracks SPACs against trust value, redemption deadlines, and warrant pricing. Found under Event-Driven → Tracker.' },
       { type: 'steps', items: [
         'Click "+ Add SPAC" to enter a SPAC manually: ticker, trust value per share (from the most recent 10-Q/8-K disclosure — defaults to $10.00), redemption deadline, and status.',
         'Add the warrant ticker, strike (commonly $11.50), and ratio (shares received per warrant exercised — commonly 0.5, i.e. one whole share per two warrants) if you want warrant metrics.',
@@ -1050,7 +1048,7 @@ const GUIDE = [
         ['Warrant', 'Warrant ticker and live price, if tracked.'],
       ]},
       { type: 'h3', text: 'Discovery' },
-      { type: 'p', text: 'Scans EDGAR for new SPAC IPO filings and de-SPAC merger announcements. Found under SPACs → Discovery.' },
+      { type: 'p', text: 'Scans EDGAR for new SPAC IPO filings and de-SPAC merger announcements. Found under Event-Driven → Discovery.' },
       { type: 'steps', items: [
         'New SPAC IPOs come from S-1 filings mentioning "blank check"; de-SPAC announcements come from 425 / DEFM14A / S-4 filings mentioning "trust account" — a 60-day window, refreshed every 4 hours.',
         'SPAC filings conventionally list all three tickers together (common, units, warrant) in EDGAR\'s filer name — Discovery auto-parses the common and warrant tickers from that (units ending in U, warrants ending in W).',
@@ -1058,7 +1056,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Keyword matching on full-text search isn\'t perfect — a company can mention "blank check" or "trust account" without being a SPAC. Verify via the EDGAR link before adding.' },
       { type: 'h3', text: 'Deal Analyzer' },
-      { type: 'p', text: 'Discount-to-trust capture yield, warrant economics, and a redeem-vs-hold scenario table for a single SPAC. Found under SPACs → Deal Analyzer.' },
+      { type: 'p', text: 'Discount-to-trust capture yield, warrant economics, and a redeem-vs-hold scenario table for a single SPAC. Found under Event-Driven → Deal Analyzer.' },
       { type: 'steps', items: [
         'Choose "Tracked SPAC" to analyze one from your Tracker, or "Ad-hoc SPAC" to analyze one without adding it first.',
         'Annualized Yield-to-Deadline is the floor case: your return if you buy now and redeem for trust value at the deadline.',
@@ -1066,7 +1064,7 @@ const GUIDE = [
         'The scenario table spans redemption/flat-to-trust through a range of post-deal outcomes (weak aftermarket up to +200% to trust), showing both common and warrant returns — illustrating the asymmetric payoff: bounded downside at trust, leveraged upside via warrants if the business combination does well.',
       ]},
       { type: 'h3', text: 'Portfolio' },
-      { type: 'p', text: 'Size common and warrant positions in tracked SPACs and track cost basis, unrealized P&L, and how much of the book is protected by the trust-value floor. Found under SPACs → Portfolio.' },
+      { type: 'p', text: 'Size common and warrant positions in tracked SPACs and track cost basis, unrealized P&L, and how much of the book is protected by the trust-value floor. Found under Event-Driven → Portfolio.' },
       { type: 'steps', items: [
         'Click "+ Add Position", select a tracked SPAC, then choose Common or Warrant (warrant is only selectable if that SPAC has a warrant ticker set on the Tracker).',
         'Each row shows live cost basis, market value, and unrealized P&L for that position — common and warrant prices are tracked independently.',
@@ -1074,7 +1072,7 @@ const GUIDE = [
         'Warrant positions never show a floor value: warrants carry no redemption right and can go to zero if the deal falls through or the stock never clears the strike.',
       ]},
       { type: 'h3', text: 'Alerts' },
-      { type: 'p', text: 'SPAC-specific alert rules for redemption deadlines, discount/premium thresholds, and deal announcements on tracked SPACs. Found under SPACs → Alerts. Separate from the general Smart Alerts (Watchlist → Smart Alerts) since these read trust value, deadline, and status directly from the SPAC Tracker rather than price history.' },
+      { type: 'p', text: 'SPAC-specific alert rules for redemption deadlines, discount/premium thresholds, and deal announcements on tracked SPACs. Found under Event-Driven → Alerts. Separate from the general Smart Alerts (My Money → Smart Alerts) since these read trust value, deadline, and status directly from the SPAC Tracker rather than price history.' },
       { type: 'steps', items: [
         'Pick a tracked SPAC and an alert type, set any parameters, then "+ Add Rule". Click "Scan N Rules" to check them all against live data.',
         'Deadline Approaching fires when the days remaining to the redemption deadline falls at or below your threshold (including overdue).',
@@ -1083,7 +1081,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Like the general Smart Alerts, this checks whether the condition is true right now each time you scan — it isn\'t a background push notification and doesn\'t track "already seen." Remove a rule once you\'ve acted on it, or leave it to keep confirming the condition on each scan.' },
       { type: 'h3', text: 'Risk Matrix' },
-      { type: 'p', text: 'Visual map of annualized yield vs. deadline timing across your tracked SPAC universe. Found under SPACs → Risk Matrix. SPACs don\'t get a synthetic risk score the way Merger Arb deals do — there\'s no regulatory/deal-type risk model that applies — so this maps the two things that actually drive the arb: how attractive the entry is and how soon the catalyst (deadline or deal) arrives.' },
+      { type: 'p', text: 'Visual map of annualized yield vs. deadline timing across your tracked SPAC universe. Found under Event-Driven → Risk Matrix. SPACs don\'t get a synthetic risk score the way Merger Arb deals do — there\'s no regulatory/deal-type risk model that applies — so this maps the two things that actually drive the arb: how attractive the entry is and how soon the catalyst (deadline or deal) arrives.' },
       { type: 'steps', items: [
         'The scatter plot places each SPAC by days-to-deadline (x-axis) and annualized yield (y-axis); bubble size reflects the magnitude of its discount/premium to trust, and color reflects deal stage (Searching, Deal Announced, Shareholder Vote, Redemption Period, Closing).',
         'The Deal Stage × Deadline Urgency grid buckets your book by how close each SPAC is to its deadline (Urgent <45d, Moderate 45–120d, Distant >120d) crossed with deal stage, showing count and average annualized yield per cell.',
@@ -1255,7 +1253,7 @@ const GUIDE = [
     icon: '✦',
     blocks: [
       { type: 'h3', text: 'Morning Briefing' },
-      { type: 'p', text: 'A daily AI-generated market briefing personalised to your watchlist. Found under AI Tools → Morning Briefing. On load, live snapshot cards show the current price and daily change for S&P 500, Nasdaq, Dow, Russell 2000, VIX, and the 10-year Treasury yield. Click "Generate Morning Briefing" to pull live market data and stream a structured Claude analysis.' },
+      { type: 'p', text: 'A daily AI-generated market briefing personalised to your watchlist. Found under AI Assistant → Morning Briefing. On load, live snapshot cards show the current price and daily change for S&P 500, Nasdaq, Dow, Russell 2000, VIX, and the 10-year Treasury yield. Click "Generate Morning Briefing" to pull live market data and stream a structured Claude analysis.' },
       { type: 'h3', text: 'How to Use' },
       { type: 'steps', items: [
         'The market snapshot cards load automatically — no action required.',
@@ -1282,7 +1280,7 @@ const GUIDE = [
       { type: 'tip', text: 'Tip: generate the briefing before the market opens (pre-market) for an early read on overnight sentiment, or right at the open for the most current data.' },
       { type: 'tip', text: 'Disclaimer: Morning Briefing output is generated by AI and is for informational purposes only — not personalised financial advice. Always verify key data points before acting.' },
       { type: 'h3', text: 'Digests (Daily & Weekly)' },
-      { type: 'p', text: 'A scheduled recap of your markets, portfolio, watchlist, upcoming events, and alerts, delivered to your phone through Telegram — so you get the picture without opening the app. Found under AI Tools → Digests. The daily digest is built to be read before the open; the weekly digest is a Sunday-evening look back at the week and ahead at the next one.' },
+      { type: 'p', text: 'A scheduled recap of your markets, portfolio, watchlist, upcoming events, and alerts, delivered to your phone through Telegram — so you get the picture without opening the app. Found under AI Assistant → Digests. The daily digest is built to be read before the open; the weekly digest is a Sunday-evening look back at the week and ahead at the next one.' },
       { type: 'h3', text: 'Setting Up Delivery' },
       { type: 'steps', items: [
         'In Telegram, message @BotFather, send /newbot, and copy the bot token it gives you.',
@@ -1309,7 +1307,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: the first digest after a while can take up to a minute because it looks up earnings dates for every holding and watchlist symbol; those are cached, so later ones take a few seconds.' },
       { type: 'h3', text: 'AI Stock Analyzer' },
-      { type: 'p', text: 'Deep-dive single-stock research report powered by Claude. Enter any ticker to get a 7-section analysis: business overview, competitive moat, financial snapshot, valuation, bull case, bear case, and a clear verdict. Found under AI Tools → Stock Analyzer.' },
+      { type: 'p', text: 'Deep-dive single-stock research report powered by Claude. Enter any ticker to get a 7-section analysis: business overview, competitive moat, financial snapshot, valuation, bull case, bear case, and a clear verdict. Found under AI Assistant → Stock Analyzer.' },
       { type: 'steps', items: [
         'Type a ticker in the input field (e.g. AAPL, NVDA, META) and click "Analyze →" or press Enter.',
         'The backend fetches comprehensive data from Yahoo Finance (price, fundamentals, margins, valuation multiples, technicals, analyst consensus) and caches it for 15 minutes.',
@@ -1330,9 +1328,9 @@ const GUIDE = [
       { type: 'tip', text: 'Tip: the Stock Analyzer works best for US large/mid-cap stocks with full Yahoo Finance coverage. ETFs and very small companies may have incomplete fundamental data (missing P/E, margins, etc.) — the AI will note what data is unavailable.' },
       { type: 'tip', text: 'Disclaimer: AI Stock Analyzer output is generated by Claude claude-sonnet-4-6 and is for informational and educational purposes only — not personalised investment advice. Always do your own due diligence before investing.' },
       { type: 'h3', text: 'AI Portfolio Review' },
-      { type: 'p', text: 'Claude analyzes your entire portfolio and streams a 6-section personalized review covering concentration risk, sector exposure, valuation, and specific rebalancing recommendations. Found under AI Tools → Portfolio Review.' },
+      { type: 'p', text: 'Claude analyzes your entire portfolio and streams a 6-section personalized review covering concentration risk, sector exposure, valuation, and specific rebalancing recommendations. Found under AI Assistant → Portfolio Review.' },
       { type: 'steps', items: [
-        'Add positions in Portfolio → Portfolio first. The review reads your holdings directly from the database.',
+        'Add positions in My Money → Portfolio first. The review reads your holdings directly from the database.',
         'Click "Generate AI Review" on the Portfolio Review screen. The backend fetches live quotes for all your positions, computes weights, P&L, and sector breakdown, then streams the analysis.',
         'The preview table shows all your holdings sorted by invested amount with estimated portfolio weights.',
         'Click "■ Stop Generating" to interrupt the stream at any time.',
@@ -1379,7 +1377,7 @@ const GUIDE = [
       ]},
       { type: 'p', text: 'The generated plan includes: recommended asset allocation with percentages, specific ETF/fund suggestions by asset class, rationale based on your inputs, tax considerations by account type, and a projected growth narrative.' },
       { type: 'h3', text: 'Tax Advisor' },
-      { type: 'p', text: 'AI-powered tax optimisation tool for Married Filing Jointly (MFJ) households. Enter your financial profile and Claude generates a personalised, dollar-quantified tax-saving plan covering federal and state taxes. Found under AI Tools → Tax Advisor.' },
+      { type: 'p', text: 'AI-powered tax optimisation tool for Married Filing Jointly (MFJ) households. Enter your financial profile and Claude generates a personalised, dollar-quantified tax-saving plan covering federal and state taxes. Found under Planning → Tax Advisor.' },
       { type: 'h3', text: 'Input Sections' },
       { type: 'table', headers: ['Section', 'Fields'], rows: [
         ['Location & Filing', 'State of residence (all 50 states + DC), qualifying children, spouses aged 50+, self-employed checkbox, employer health insurance, HSA-eligible plan.'],
@@ -1409,7 +1407,7 @@ const GUIDE = [
     blocks: [
       { type: 'p', text: 'The News section delivers a personalised news feed built from topics you choose. Unlike the per-symbol news in the chart modal, this feed aggregates articles across your whole area of interest in one place.' },
       { type: 'h3', text: 'My News Feed' },
-      { type: 'p', text: 'Found under News → My News Feed. Select any combination of preset market topics and custom ticker symbols. Your selections are saved in browser localStorage and pre-loaded on every visit.' },
+      { type: 'p', text: 'Found under My Money → My News Feed. Select any combination of preset market topics and custom ticker symbols. Your selections are saved in browser localStorage and pre-loaded on every visit.' },
       { type: 'h3', text: 'Preset Topics' },
       { type: 'table', headers: ['Topic', 'Data source'], rows: [
         ['S&P 500', '^GSPC — S&P 500 index news'],
@@ -1575,7 +1573,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: coordinate Roth conversions with the ACA Early Retirement Health calculator. Converting too much in a year raises your MAGI and reduces your ACA subsidy — find the sweet spot between conversion benefit and subsidy cost.' },
       { type: 'h3', text: 'Medicare Estimator' },
-      { type: 'p', text: 'Estimates your monthly and annual Medicare premium costs including IRMAA income-based surcharges. Found under Retirement → Medicare Estimator. Uses 2025 CMS figures.' },
+      { type: 'p', text: 'Estimates your monthly and annual Medicare premium costs including IRMAA income-based surcharges. Found under Planning → Medicare Estimator. Uses 2025 CMS figures.' },
       { type: 'bullets', items: [
         'Enter your Modified AGI (MAGI) — Medicare uses income from 2 years prior. For example, if enrolling in 2026, Medicare looks at your 2024 MAGI.',
         'Select "Just me" or "Both spouses" to scale premiums.',
@@ -1592,7 +1590,7 @@ const GUIDE = [
       ]},
       { type: 'tip', text: 'Tip: IRMAA thresholds are adjusted annually for inflation. A Roth conversion in a high-income year can push your MAGI above an IRMAA tier — use the Roth Conversion Planner to model the combined impact of conversion tax plus IRMAA surcharge.' },
       { type: 'h3', text: 'Estate & RMD Projector' },
-      { type: 'p', text: 'Projects your Required Minimum Distributions (RMDs) from Traditional IRA/401(k) accounts through life expectancy, and models the heritable estate value at a target age. Found under Retirement → Estate & RMD.' },
+      { type: 'p', text: 'Projects your Required Minimum Distributions (RMDs) from Traditional IRA/401(k) accounts through life expectancy, and models the heritable estate value at a target age. Found under Planning → Estate & RMD.' },
       { type: 'steps', items: [
         'Enter your current age, Traditional IRA/401(k) balance, Roth IRA balance, and taxable account balance.',
         'Set Social Security income, any pension, expected portfolio return, inflation rate, and annual spending rate.',
@@ -1662,9 +1660,9 @@ const GUIDE = [
       { type: 'steps', items: [
         'Markets → Overview: scan index futures and sector performance.',
         'Markets → Breadth: check VIX and A/D ratio for overall risk-on/risk-off.',
-        'Sectors → Scoreboard: sort by 1D or 1W to see which sectors are leading or lagging today.',
+        'Sectors & Themes → Scoreboard: sort by 1D or 1W to see which sectors are leading or lagging today.',
         'Watchlist: review overnight moves and earnings badges.',
-        'Watchlist → Smart Alerts: click Scan to see if any rules triggered overnight.',
+        'My Money → Smart Alerts: click Scan to see if any rules triggered overnight.',
       ]},
       { type: 'h3', text: 'Evaluating a New Stock (10 minutes)' },
       { type: 'steps', items: [
@@ -1686,11 +1684,11 @@ const GUIDE = [
       ]},
       { type: 'h3', text: 'Pre-Earnings Positioning' },
       { type: 'steps', items: [
-        'Watchlist → Earnings+: check the Beat Rate and Expected Move for the symbol.',
+        'My Money → Earnings+: check the Beat Rate and Expected Move for the symbol.',
         'Chart → Options tab: review the ATM straddle price to verify the expected move.',
         'Chart → Strategies tab: see AI-suggested options plays for the event.',
         'Trading → Position Sizer: calculate position size based on your risk budget.',
-        'Set a Smart Alert (Watchlist → Smart Alerts) for Earnings Proximity so you don\'t miss the report date.',
+        'Set a Smart Alert (My Money → Smart Alerts) for Earnings Proximity so you don\'t miss the report date.',
       ]},
     ],
   },

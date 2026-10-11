@@ -14,11 +14,13 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Compass (originally Stock Monitor, and still in a `stockmonitor/` folder in older checkouts) started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **108 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **1055 backend and 320 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **108 views in 11 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **1055 backend and 333 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
 ## Feature Overview
+
+**How the sidebar is organised.** The left navigation has eleven groups in the order you tend to work: **My Money** (Watchlist and Portfolio), **Markets**, **Economy**, **Sectors & Themes**, **Find Ideas** (screens and market-driven ideas), **Research** (analyze a company; compare and test), **Fixed Income**, **Event-Driven** (Merger Arb and SPACs), **Trading**, **Planning** (Retirement; taxes and income) and **AI Assistant**. Long groups carry small captions. The feature sections below are grouped by topic and mention where each view lives.
 
 ### Markets
 | Feature | Description |
@@ -218,7 +220,7 @@ The backend reads `backend/.env` on startup — copy `backend/.env.example` to `
 |---|---|
 | `ANTHROPIC_API_KEY` | Enables the AI features: AI Chat, Trade Ideas, News Sentiment, Earnings Summaries, Financial Advisor, NLP Screener, Stock Analyzer, Portfolio Review, Tax Advisor, Morning Briefing and the digest's AI summary. Everything else works without it. |
 | `GEMINI_API_KEY` | Optional: AI Chat uses Gemini (`gemini-2.0-flash`) instead of Claude when set. |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Delivery channel for scheduled digests (AI Tools → Digests walks through the 2-minute bot setup). |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Delivery channel for scheduled digests (AI Assistant → Digests walks through the 2-minute bot setup). |
 | `DIGEST_SCHEDULER=0` | Turns the background digest scheduler off. |
 
 ```
@@ -245,7 +247,7 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 
 ```bash
 cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 1055 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 320 tests (Vitest + Testing Library)
+cd frontend && npm test                # 333 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/compass.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -426,14 +428,14 @@ stockmonitor/
 │   ├── digest_service.py    Settings, due-time + catch-up logic, at-most-once claiming,
 │   │                        retries, audit log, and the background scheduler thread
 │   ├── routers/             Feature areas extracted out of main.py as FastAPI APIRouters
-│   │   ├── corporate_bonds.py    Research → Corporate Bonds
-│   │   ├── convertible_bonds.py  Research → Convertible Bonds
-│   │   ├── treasury.py           Research → Treasury Bonds
+│   │   ├── corporate_bonds.py    Fixed Income → Corporate Bonds
+│   │   ├── convertible_bonds.py  Fixed Income → Convertible Bonds
+│   │   ├── treasury.py           Fixed Income → Treasury Bonds
 │   │   ├── merger_arb.py         Merger Arb (deals, positions, alerts, opportunity scan)
 │   │   ├── spacs.py              SPACs (deals, positions, alerts, discovery)
 │   │   ├── fund_holdings.py      Research → Fund Holdings (EDGAR N-PORT explorer)
-│   │   ├── cppi.py               Portfolio → CPPI Allocator
-│   │   ├── net_exposure.py       Portfolio → Net Exposure — imports from cppi.py/merger_arb.py/
+│   │   ├── cppi.py               My Money → CPPI Allocator
+│   │   ├── net_exposure.py       My Money → Net Exposure — imports from cppi.py/merger_arb.py/
 │   │   │                          spacs.py at module level, but reaches back into main.py's
 │   │   │                          _compute_portfolio_risk/_fetch_fundamentals/etc. with a
 │   │   │                          function-scoped deferred import (main.py imports this router
@@ -446,12 +448,12 @@ stockmonitor/
 │   │   ├── backtester.py         Backtester (MA Crossover / RSI Reversal / Bollinger Bands)
 │   │   ├── csv_export_import.py  Portfolio/Journal CSV export + portfolio CSV import
 │   │   ├── sec_filings.py        Chart modal → SEC Filings tab
-│   │   ├── unusual_options.py    Markets → Options Unusual Activity scanner
-│   │   ├── portfolio_equity_curve.py  Portfolio → Equity Curve — snapshot endpoint reaches
+│   │   ├── unusual_options.py    Find Ideas → Unusual Options (options-activity scanner)
+│   │   ├── portfolio_equity_curve.py  My Money › Portfolio → Equity Curve — snapshot endpoint reaches
 │   │   │                          back into main.py's _fetch_quote with a function-scoped
 │   │   │                          deferred import (same reason as net_exposure.py above)
 │   │   ├── earnings_play_calculator.py  Chart modal → Earnings tab play calculator
-│   │   ├── nlp_screener.py       Research → Screener (NLP mode) — reaches back into
+│   │   ├── nlp_screener.py       Find Ideas → Screener (NLP mode) — reaches back into
 │   │   │                          main.py's FilterCondition/CustomScreenRequest/
 │   │   │                          run_custom_screener with a function-scoped deferred import
 │   │   ├── watchlist.py          Sidebar watchlist + named sub-lists (CRUD)
@@ -460,77 +462,77 @@ stockmonitor/
 │   │   │                          _fetch_perf_one with a function-scoped deferred import
 │   │   ├── ai_chat.py            AI Chat (general finance assistant, Gemini or Claude)
 │   │   ├── financial_advisor.py  Financial Advisor (CFP-persona investment plan generator)
-│   │   ├── custom_screener.py    Research → Screener (filter-builder mode) — also imported
+│   │   ├── custom_screener.py    Find Ideas → Screener (filter-builder mode) — also imported
 │   │   │                          directly by nlp_screener.py for its NLP mode
-│   │   ├── technical_signals.py  Research → Screener (Signals tab, multi-timeframe)
+│   │   ├── technical_signals.py  Find Ideas → Screener (Signals tab, multi-timeframe)
 │   │   ├── options_strategy_builder.py  Chart modal → Options tab (strategy suggestions)
-│   │   ├── trade_idea_generator.py      Watchlist → trade ideas panel (Claude-generated)
-│   │   ├── portfolio_risk_dashboard.py  Portfolio → Risk view — _compute_portfolio_risk/
+│   │   ├── trade_idea_generator.py      My Money › Watchlist trade-ideas panel and Find Ideas → Trade Ideas (Claude-generated)
+│   │   ├── portfolio_risk_dashboard.py  My Money › Portfolio → Risk view — _compute_portfolio_risk/
 │   │   │                                 _sanitize_nan also consumed directly by net_exposure.py
 │   │   ├── position_sizing.py           Trading → Position Sizer
-│   │   ├── portfolio_optimizer.py       Portfolio → Optimizer (efficient frontier)
-│   │   ├── rich_earnings_calendar.py    Watchlist → Earnings+
-│   │   ├── options_pnl_tracker.py       Portfolio → Options P&L — _live_option_price also
+│   │   ├── portfolio_optimizer.py       My Money › Portfolio → Optimizer (efficient frontier)
+│   │   ├── rich_earnings_calendar.py    My Money → Earnings+
+│   │   ├── options_pnl_tracker.py       Trading → Options P&L — _live_option_price also
 │   │   │                                 consumed directly by net_exposure.py
-│   │   ├── portfolio_xray.py            Portfolio → X-Ray
+│   │   ├── portfolio_xray.py            My Money › Portfolio → X-Ray
 │   │   ├── market_breadth.py            Markets → Breadth
 │   │   ├── fundamental_comparison.py    Research → Chart Compare
-│   │   ├── price_target_tracker.py      Watchlist → Price Targets
+│   │   ├── price_target_tracker.py      My Money → Price Targets
 │   │   ├── earnings_call_summarizer.py  Chart modal → Earnings tab (AI summary)
 │   │   ├── dcf_valuation.py             Research → DCF Valuation
-│   │   ├── yield_curve.py               Markets → Yield Curve
-│   │   ├── ai_stocks.py                 Markets → AI Growth Watch List — _AI_STOCKS also
+│   │   ├── yield_curve.py               Economy → Yield Curve
+│   │   ├── ai_stocks.py                 Find Ideas → Analyst Picks (AI Growth Watch List) — _AI_STOCKS also
 │   │   │                                 imported directly by ai_analyst_actions.py
-│   │   ├── ai_analyst_actions.py        Markets → Analyst Picks (AI upgrades/downgrades)
+│   │   ├── ai_analyst_actions.py        Find Ideas → Analyst Picks (AI upgrades/downgrades)
 │   │   ├── day_trader_scanners.py       Trading → Day Trader (gainers/losers/news)
-│   │   ├── screener.py                  Research → Screener (technical + fundamental presets)
+│   │   ├── screener.py                  Find Ideas → Screener (technical + fundamental presets)
 │   │   ├── options_chain.py             Chart modal → Options tab (full chain)
 │   │   ├── dividends.py                 Dividend info per symbol
-│   │   ├── correlation_matrix.py        Watchlist → Correlation (POST /api/portfolio/correlation;
+│   │   ├── correlation_matrix.py        My Money → Correlation (POST /api/portfolio/correlation;
 │   │   │                                 the market-wide GET variant lives in market_correlation.py)
 │   │   ├── websocket_quotes.py          /ws/quotes — real-time price feed powering the whole app
-│   │   ├── smart_alerts.py              Watchlist → Smart Alerts (rule-based scanner)
+│   │   ├── smart_alerts.py              My Money → Smart Alerts (rule-based scanner)
 │   │   ├── insider_transactions.py      Chart modal → Insider tab (per-symbol)
 │   │   ├── analyst_ratings.py           Chart modal → Analysts tab (per-symbol) — cache key
 │   │   │                                 "analyst:{symbol}" is scoped to this endpoint only
-│   │   ├── insider_trading_feed.py      Markets → Insider Trading (market-wide feed)
+│   │   ├── insider_trading_feed.py      Find Ideas → Insider Trading (market-wide feed)
 │   │   ├── analyst_rating_tracker.py    Research → Analyst Ratings (multi-symbol tracker) —
 │   │   │                                 cache key "analyst_tracker:{symbol}", changed during
 │   │   │                                 extraction to stop colliding with analyst_ratings.py
 │   │   ├── ai_news_sentiment.py         Chart modal → News tab (per-symbol AI sentiment)
-│   │   ├── news_sentiment_engine.py     Watchlist → News Sentiment (multi-symbol batch) —
+│   │   ├── news_sentiment_engine.py     My Money → News Sentiment (multi-symbol batch) —
 │   │   │                                 cache key "news_sentiment:{symbols}", changed during
 │   │   │                                 extraction to stop colliding with ai_news_sentiment.py
-│   │   ├── custom_news_feed.py          News → My News Feed
+│   │   ├── custom_news_feed.py          My Money → My News Feed
 │   │   ├── market_sentiment_dashboard.py  Markets → Sentiment (composite fear/greed score)
 │   │   ├── index_constituents.py        Markets → Index Heatmap + generic ETF search/holdings
-│   │   ├── tax_advisor.py               Portfolio → Tax Advisor (AI, state-aware)
-│   │   ├── short_squeeze_scanner.py     Markets → Short Squeeze
-│   │   ├── short_interest.py            Markets → Short Interest (staged build with progress)
-│   │   ├── ipo_lockup_calendar.py       Markets → IPO & Lockups (live EDGAR-sourced)
-│   │   ├── fed_watch.py                 Markets → Fed Watch (FOMC cut/hold/hike odds)
-│   │   ├── ai_morning_briefing.py       AI Tools → Morning Briefing
-│   │   ├── range_screener.py            Research → Range Screener (30/60/90d support/resistance scan)
+│   │   ├── tax_advisor.py               Planning → Tax Advisor (AI, state-aware)
+│   │   ├── short_squeeze_scanner.py     Find Ideas → Short Squeeze
+│   │   ├── short_interest.py            Find Ideas → Short Interest (staged build with progress)
+│   │   ├── ipo_lockup_calendar.py       Find Ideas → IPO & Lockups (live EDGAR-sourced)
+│   │   ├── fed_watch.py                 Economy → Fed Watch (FOMC cut/hold/hike odds)
+│   │   ├── ai_morning_briefing.py       AI Assistant → Morning Briefing
+│   │   ├── range_screener.py            Find Ideas → Range Screener (30/60/90d support/resistance scan)
 │   │   ├── tear_sheet.py                Research → Tear Sheet (one-page company snapshot + valuation verdict)
 │   │   ├── tear_sheet_share.py          Tear Sheet → PDF download
 │   │   ├── tear_sheet_peers.py          Tear Sheet → Versus peers (lazy-loaded, background scan with progress)
 │   │   ├── holdings_performance.py      Markets → Holdings Performance
-│   │   ├── digest.py                    AI Tools → Digests (settings, preview, send, history)
+│   │   ├── digest.py                    AI Assistant → Digests (settings, preview, send, history)
 │   │   ├── crypto_dashboard.py          Markets → Crypto
-│   │   ├── ai_portfolio_review.py       AI Tools → Portfolio Review — _fetch_quote deferred
+│   │   ├── ai_portfolio_review.py       AI Assistant → Portfolio Review — _fetch_quote deferred
 │   │   ├── economy.py                   Economy → Regime Dashboard, Indicators, Indicator Studies
-│   │   ├── hundred_baggers.py           Research → 100-Bagger Finder
-│   │   ├── themes.py                    Themes → Overview and the four theme pages
-│   │   ├── sectors.py                   Sectors → Scoreboard, Rotation Map, Screener, Cycle Fit, Backtest
-│   │   ├── ai_stock_analyzer.py         AI Tools → Stock Analyzer (snapshot + AI analysis)
-│   │   ├── dividend_tracker.py          Portfolio → Dividend Tracker
-│   │   ├── watchlist_heatmap.py         Watchlist → Heatmap
+│   │   ├── hundred_baggers.py           Find Ideas → 100-Bagger Finder
+│   │   ├── themes.py                    Sectors & Themes › Themes → Overview and every theme page
+│   │   ├── sectors.py                   Sectors & Themes → Scoreboard, Rotation Map, Screener, Cycle Fit, Backtest
+│   │   ├── ai_stock_analyzer.py         AI Assistant → Stock Analyzer (snapshot + AI analysis)
+│   │   ├── dividend_tracker.py          Planning → Dividend Tracker
+│   │   ├── watchlist_heatmap.py         My Money → Heatmap
 │   │   ├── earnings_surprise_tracker.py Research → Earnings Surprise
 │   │   ├── earnings_strategy_analyzer.py Research → Earnings Strategy
 │   │   ├── price_projection.py          Research → Price Projection (1-year cone from options/rates/VIX/credit)
-│   │   ├── price_alerts.py              Watchlist → price/percent/52-week/volume alerts (CRUD)
-│   │   ├── trade_journal.py             Portfolio → Trade Journal (FIFO-matched P&L, win rate by strategy)
-│   │   ├── portfolio_performance.py     Portfolio → Performance vs SPY/QQQ (alpha, tracking error)
+│   │   ├── price_alerts.py              My Money › Watchlist → price/percent/52-week/volume alerts (CRUD)
+│   │   ├── trade_journal.py             Trading → Trade Journal (FIFO-matched P&L, win rate by strategy)
+│   │   ├── portfolio_performance.py     My Money › Portfolio → Performance vs SPY/QQQ (alpha, tracking error)
 │   │   ├── portfolio_risk_data.py       SPY volatility + risk-free estimate for client-side risk maths
 │   │   ├── analyst_history.py           Research → Analyst Ratings (2-year per-symbol history)
 │   │   ├── chart.py                     Chart modal → Chart tab (OHLCV, period-scaled cache)
@@ -538,9 +540,9 @@ stockmonitor/
 │   │   ├── earnings_history.py          Chart modal → Earnings tab (8 quarters EPS/revenue)
 │   │   ├── institutional_ownership.py   Chart modal → Institutional tab
 │   │   ├── premarket_movers.py          Day Trader → pre/post-market movers panel
-│   │   ├── economic_calendar.py         Markets → Macro Calendar (hand-maintained event schedule;
+│   │   ├── economic_calendar.py         Economy → Macro Calendar (hand-maintained event schedule;
 │   │   │                                 needs periodic refreshing — currently runs through Dec 2026)
-│   │   └── market_correlation.py        Markets → Correlation (GET /api/market/correlation;
+│   │   └── market_correlation.py        My Money › Watchlist → Correlation (GET /api/market/correlation;
 │   │                                     distinct from correlation_matrix.py's POST endpoint above)
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
@@ -575,15 +577,15 @@ stockmonitor/
 │           ├── EconomyRegime.jsx        Economy → Regime Dashboard
 │           ├── EconomyIndicators.jsx    Economy → Indicators (+ detail chart)
 │           ├── IndicatorStudies.jsx     Economy → Indicator Studies
-│           ├── ThemesOverview.jsx       Themes → Overview
-│           ├── ThemePage.jsx            Themes → one data-driven page per theme (AI, Robotics, Quantum, Space)
+│           ├── ThemesOverview.jsx       Sectors & Themes › Themes → Overview
+│           ├── ThemePage.jsx            Sectors & Themes › Themes → one data-driven page per theme (AI, Robotics, Quantum, Space)
 │           ├── ThemeKit.jsx             Shared theme pieces: return cells, setup pill, scan progress
-│           ├── HundredBaggers.jsx       Research → 100-Bagger Finder
-│           ├── SectorScoreboard.jsx     Sectors → Scoreboard
-│           ├── SectorRotation.jsx       Sectors → Rotation Map
-│           ├── SectorScreener.jsx       Sectors → Sector Screener
-│           ├── SectorCycleFit.jsx       Sectors → Cycle Fit
-│           ├── SectorBacktest.jsx       Sectors → Sector Backtest
+│           ├── HundredBaggers.jsx       Find Ideas → 100-Bagger Finder
+│           ├── SectorScoreboard.jsx     Sectors & Themes → Scoreboard
+│           ├── SectorRotation.jsx       Sectors & Themes → Rotation Map
+│           ├── SectorScreener.jsx       Sectors & Themes → Sector Screener
+│           ├── SectorCycleFit.jsx       Sectors & Themes → Cycle Fit
+│           ├── SectorBacktest.jsx       Sectors & Themes → Sector Backtest
 │           ├── MacroCalendar.jsx        Economic event calendar
 │           ├── YieldCurve.jsx           Treasury curve + DXY
 │           ├── PriceTargets.jsx         Personal price targets

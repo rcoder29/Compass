@@ -4,6 +4,31 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Sidebar Reorganised (13 groups → 11)
+
+The left navigation had grown in the order features were built, not in the order people use them. It is now arranged by workflow, with sub-headings in the long groups. No view IDs changed, so pins, recents, changelog links and ⌘K search are unaffected.
+
+### New order
+**My Money** (Watchlist and Portfolio) → **Markets** → **Economy** → **Sectors & Themes** → **Find Ideas** → **Research** → **Fixed Income** → **Event-Driven** (Merger Arb and SPACs) → **Trading** → **Planning** (Retirement; taxes and income) → **AI Assistant**.
+
+### What moved
+- **My Money:** the old Watchlist group, the one-item News group, and the portfolio-tracking views (Portfolio, Attribution, Net Exposure, Stress Test, CPPI Allocator).
+- **Find Ideas** (new): Screener, Range Screener, 100-Bagger Finder and Signals (from Research); Analyst Picks, Short Squeeze, Short Interest, Insider Trading, IPO & Lockups (from Markets); Unusual Options (from Research) and Trade Ideas (from Trading).
+- **Research** keeps the 14 views for analyzing and comparing a company, split by captions *Analyze a company* and *Compare & test*.
+- **Fixed Income** (new): Corporate, Convertible and Treasury Bonds, which had been buried among 22 Research items.
+- **Event-Driven:** Merger Arb and SPACs combined, with captions. The ⌘K palette and Home's recent-views chips now show `Event-Driven › SPACs` etc., so the duplicate labels (Overview, Alerts, Portfolio) can be told apart.
+- **Trading:** gains Options P&L and Trade Journal (from Portfolio).
+- **Planning** (new): the eight Retirement views plus Tax Advisor (from AI Tools), Tax Lots and Dividend Tracker (from Portfolio).
+- **Sectors & Themes:** the Sectors and Themes groups combined, with captions.
+- **AI Assistant:** the former AI Tools minus Tax Advisor.
+
+### Implementation
+- `NAV_GROUPS` items may now be `{ heading: '…' }` captions (display only). `navItems()` filters them out and `flattenNav()` builds the ⌘K index, labelling each view `Group › Heading`. The two inline group icons moved into the shared `Icons` object; unused icons were removed.
+- The User Guide's navigation table is generated from the sidebar definition, and about 90 "Found under Group → View" paths in the guide and README were rewritten by mapping each view's old and new location, then the leftovers were checked by hand.
+- Tests: +13 (group order, every view exactly once, no group under three views, headings introduce views, related views grouped, ⌘K labels, sidebar rendering of captions, expand/collapse, pins). Frontend total 333.
+
+---
+
 ## 2026-10-11 — Tear Sheet: Versus Peers
 
 ### Added

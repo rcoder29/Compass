@@ -8,24 +8,22 @@
 
 ## What exists today
 
-The app has grown from 7 tabs to **108 views across 13 sidebar groups**, plus a Home dashboard, an in-app User Guide and an Investor Education module (a layered map of investing concepts, separate from the view count). Nearly everything proposed in the original (2026-05-27) version of this roadmap has since shipped. The groups below are generated from the sidebar definition in `App.jsx`:
+The app has grown from 7 tabs to **108 views across 11 sidebar groups**, plus a Home dashboard, an in-app User Guide and an Investor Education module (a layered map of investing concepts, separate from the view count). Nearly everything proposed in the original (2026-05-27) version of this roadmap has since shipped. The groups below are generated from the sidebar definition in `App.jsx`:
 
 | Group | Views |
 |-------|-------|
 | **Home** | Aggregated dashboard (P&L, market pulse, movers, earnings, alerts, recents, "What's New") + ⌘K command palette |
-| **Markets** | Overview, Sentiment, Reddit Trending, Index Heatmap, Holdings Performance, Breadth, Analyst Picks, Short Squeeze, Short Interest, IPO & Lockups, Insider Trading, Crypto |
+| **My Money** | Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, My News Feed, Smart Alerts, Portfolio, Attribution, Net Exposure, Stress Test, CPPI Allocator |
+| **Markets** | Overview, Sentiment, Breadth, Index Heatmap, Holdings Performance, Reddit Trending, Crypto |
 | **Economy** | Regime Dashboard, Indicators, Indicator Studies, Fed Watch, Yield Curve, Macro Calendar |
-| **Sectors** | Scoreboard, Rotation Map, Sector Screener, Cycle Fit, Sector Backtest |
-| **Themes** | Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance, Dollar Regime Shift, Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation, Fintech & Digital Payments, Defense Tech, Reshoring & Infrastructure |
-| **Research** | Tear Sheet, 100-Bagger Finder, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options |
-| **Watchlist** | Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts |
-| **News** | My News Feed |
-| **Trading** | Trade Ideas, Position Sizer, Wheel Tracker, Day Trader |
-| **Merger Arb** | Overview, Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix, Alerts |
-| **SPACs** | Overview, Tracker, Discovery, Deal Analyzer, Portfolio, Alerts, Risk Matrix |
-| **Portfolio** | Portfolio, Options P&L, Tax Lots, Dividend Tracker, Stress Test, Attribution, Trade Journal, CPPI Allocator, Net Exposure |
-| **AI Tools** | Morning Briefing, Digests, Stock Analyzer, Portfolio Review, Financial Advisor, Tax Advisor, AI Chat |
-| **Retirement** | FIRE Calculator, Coast FIRE & Roth, Monte Carlo, Social Security, Early Retirement Health, Roth Conversion Planner, Medicare Estimator, Estate & RMD |
+| **Sectors & Themes** | Scoreboard, Rotation Map, Sector Screener, Cycle Fit, Sector Backtest, Themes Overview, Artificial Intelligence, Robotics, Quantum Computing, Space Exploration, AI Abundance, Dollar Regime Shift, Clean Energy & Nuclear, Cybersecurity, Healthcare Innovation, Fintech & Digital Payments, Defense Tech, Reshoring & Infrastructure |
+| **Find Ideas** | Screener, Range Screener, 100-Bagger Finder, Signals, Analyst Picks, Short Squeeze, Short Interest, Insider Trading, IPO & Lockups, Unusual Options, Trade Ideas |
+| **Research** | Tear Sheet, Fundamentals, DCF Valuation, Price Projection, Analyst Ratings, Earnings Surprise, Earnings Strategy, Activist Tracker, Chart Compare, Relative Strength, Seasonal Patterns, ETF Overlap, Fund Holdings, Backtester |
+| **Fixed Income** | Corporate Bonds, Convertible Bonds, Treasury Bonds |
+| **Event-Driven** | Overview, Deal Dashboard, Opportunity Scanner, Deal Analyzer, Arb Portfolio, Risk Matrix, Alerts, Overview, Tracker, Discovery, Deal Analyzer, Portfolio, Alerts, Risk Matrix |
+| **Trading** | Day Trader, Position Sizer, Wheel Tracker, Options P&L, Trade Journal |
+| **Planning** | FIRE Calculator, Coast FIRE & Roth, Monte Carlo, Social Security, Early Retirement Health, Roth Conversion Planner, Medicare Estimator, Estate & RMD, Tax Advisor, Tax Lots, Dividend Tracker |
+| **AI Assistant** | Morning Briefing, Digests, Stock Analyzer, Portfolio Review, Financial Advisor, AI Chat |
 | **Help** | User Guide (with changelog), Investor Education |
 
 **Recently added (Oct 2026):** *Economy* and *Sectors* — two new top-level groups. Economy: a rule-based regime dashboard (cycle phase, growth × inflation quadrant, a recession-risk score checked against NBER dates), a 50+ indicator library from FRED with percentiles, trends, signals and long history with recession shading, and 19 indicator studies of what stocks did after a macro condition began. Sectors: a scoreboard of the 11 SPDR sectors over 1D to life-to-date with risk and calendar-year views, a relative-rotation map, a horizon screener (tactical / intermediate / strategic) with adjustable weights, cycle fit by phase and a rules-based rotation backtest. The old Sector Rotation, Sector Momentum and Economic Indicators views were folded into these (old pins and links still resolve). *Tear Sheet* — a one-page company snapshot with a cheap-or-expensive verdict (four valuation models), a 10-year financial track record built from SEC filings, projected 12-month and 5-year returns, analyst ratings, a quarterly **income-flow Sankey** (revenue by product/segment → costs → net income → dividends and buybacks, with the breakdown read from SEC XBRL), and a server-generated PDF. *Holdings Performance* — every holding of the S&P 500, Nasdaq-100, Dow 30, their ETFs or a sector SPDR over 1D to life-to-date, ranked by YTD with a benchmark row and summary stats. *Price Projection* — a 1-year price cone from options, rates, VIX and credit.

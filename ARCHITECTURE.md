@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph Frontend["Frontend — localhost:5173"]
         App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
-        Components["~110 component files\n(108 sidebar views in 13 groups + Home + Help:\nMarkets, Economy, Sectors, Themes, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
+        Components["~110 component files\n(108 sidebar views in 11 groups + Home + Help:\nMy Money, Markets, Economy, Sectors & Themes, Find Ideas,\nResearch, Fixed Income, Event-Driven, Trading, Planning,\nAI Assistant)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -367,19 +367,26 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-108 sidebar views in 13 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
+108 sidebar views in 11 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`): eleven groups in workflow order, with optional `{ heading }` entries that caption sub-sections of a long group (headings are display-only; `navItems()` and `flattenNav()` skip them, and the ⌘K index shows each view as `Group › Heading`). Representative components per group:
 
 ```
 Home
 ├── HomeDashboard.jsx          Aggregated P&L, market pulse, movers, earnings, alerts, "What's New"
 └── CommandPalette.jsx         ⌘K fuzzy search across every view
 
-Markets  (12 views)
+My Money  (13)
+├── StockTable.jsx             Live watchlist with flash animations
+├── RichEarningsCalendar.jsx   Earnings+ (expected move, beat rate, drift)
+├── SmartAlerts.jsx            Condition scanner (volume, RSI, crossovers)
+├── WatchlistHeatmap, CorrelationMatrix, PriceTargets, NewsSentiment, CustomNews (multi-ticker news feed)
+├── PortfolioTracker.jsx       11 internal views: heatmap, table, equity curve, risk, optimizer, X-ray, …
+└── PortfolioStressTest, PortfolioAttribution, CppiAllocator, NetExposure
+
+Markets  (7)
 ├── MarketSummary.jsx          Overview: indices, sectors, Mag7, movers, news
 ├── IndexHeatmap.jsx           Constituent heatmap with dynamic ETF search
 ├── HoldingsPerformance.jsx    Per-holding returns over 1D…10Y/LTD, ranked by YTD
-├── ShortInterest.jsx          Top-100 short interest with borrow cost, bond read and equity-vs-credit displacement
-└── RedditTrending, ShortSqueeze, IpoCalendar, InsiderFeed, CryptoDashboard, MarketSentimentDashboard …
+└── RedditTrending, MarketBreadth, CryptoDashboard, MarketSentimentDashboard
 
 Economy  (6)
 ├── EconomyRegime.jsx          Cycle phase, growth × inflation quadrant, recession-risk score + track record
@@ -388,58 +395,51 @@ Economy  (6)
 ├── YieldCurve.jsx, FedWatch.jsx, MacroCalendar.jsx
 └── MacroKit.jsx               Shared: useApi hook, formatters, TimeChart (SVG, recession bands, hover), Sparkline
 
-Themes  (12)
-├── ThemesOverview.jsx         Cards, side-by-side returns, leaders and laggards
-├── ThemePage.jsx              One data-driven page per theme: basket vs SPY, outlook, scenarios, value chain, company table, candidates
-└── ThemeKit.jsx               Shared return cells, setup pill, scan progress, partial-data note
-
-Sectors  (5)
+Sectors & Themes  (18, two captions: Sectors / Themes)
 ├── SectorScoreboard.jsx       11 SPDR sectors × 11 periods, risk view, calendar years, drill-down to holdings
 ├── SectorRotation.jsx         Relative-rotation graph with trails
 ├── SectorScreener.jsx         Horizon screener with adjustable factor weights and explanations
-└── SectorCycleFit.jsx, SectorBacktest.jsx
+├── SectorCycleFit.jsx, SectorBacktest.jsx
+├── ThemesOverview.jsx         Cards, side-by-side returns, leaders and laggards
+├── ThemePage.jsx              One data-driven page per theme (12 themes): basket vs SPY, outlook, scenarios, value chain, company table, candidates
+└── ThemeKit.jsx               Shared return cells, setup pill, scan progress, partial-data note
 
-Watchlist  (7)
-├── StockTable.jsx             Live watchlist with flash animations
-├── RichEarningsCalendar.jsx   Earnings+ (expected move, beat rate, drift)
-├── SmartAlerts.jsx            Condition scanner (volume, RSI, crossovers)
-└── WatchlistHeatmap, CorrelationMatrix, PriceTargets, NewsSentiment …
+Find Ideas  (11, captions: Screens / Market-driven ideas)
+├── Screener.jsx, RangeScreener.jsx, HundredBaggers.jsx (background scan + progress), TechnicalSignals.jsx
+├── ShortInterest.jsx          Top-100 short interest with borrow cost, bond read and equity-vs-credit displacement
+└── MarketRecommendations (Analyst Picks), ShortSqueeze, InsiderFeed, IpoCalendar, UnusualOptions, TradeIdeas
 
-News  (1)         CustomNews.jsx — multi-ticker news feed
-
-Research  (22)
-├── TearSheet.jsx              Company snapshot, valuation verdict, quarterly income flow (Sankey), PDF
-├── HundredBaggers.jsx         100-bagger trait screen (background scan + progress, factor breakdown)
+Research  (14, captions: Analyze a company / Compare & test)
+├── TearSheet.jsx              Company snapshot, valuation verdict, quarterly income flow (Sankey), peer comparison, PDF
+├── PeerValuation.jsx          Tear Sheet → Versus peers (lazy-loaded body)
 ├── PriceProjection.jsx        1-year price cone from options, rates, VIX and credit
-├── Screener.jsx, RangeScreener.jsx, TechnicalSignals.jsx
-├── Backtester.jsx, DcfCalculator.jsx, FundamentalComparison.jsx, StockComparison.jsx
-└── Bonds (corporate / convertible / treasury), FundHoldingsExplorer, EtfOverlapAnalyzer,
-    ActivistTracker, RelativeStrengthRanker, SeasonalPatterns, earnings & analyst trackers …
+├── DcfCalculator, FundamentalComparison, earnings & analyst trackers, ActivistTracker
+└── StockComparison, RelativeStrengthRanker, SeasonalPatterns, EtfOverlapAnalyzer, FundHoldingsExplorer, Backtester
 
-Trading  (4)
-├── DayTrader.jsx              Trading plan + playbooks + intraday scanner
-├── TradeIdeas.jsx, PositionSizer.jsx
-└── WheelTracker.jsx           Cash-secured put / covered call cycle
+Fixed Income  (3)   CorporateBonds, ConvertibleBonds, TreasuryBonds
 
-Merger Arb  (7)   MergerArbOverview, MergerDealDashboard, MergerOpportunityScanner,
-                  MergerDealAnalyzer, MergerArbPortfolio, MergerRiskMatrix, MergerAlerts
-SPACs       (7)   SpacOverview, SpacTracker, SpacDiscovery, SpacDealAnalyzer,
-                  SpacPortfolio, SpacRiskMatrix, SpacAlerts
+Event-Driven  (14, captions: Merger Arb / SPACs)
+                  Merger Arb: MergerArbOverview, MergerDealDashboard, MergerOpportunityScanner,
+                              MergerDealAnalyzer, MergerArbPortfolio, MergerRiskMatrix, MergerAlerts
+                  SPACs:      SpacOverview, SpacTracker, SpacDiscovery, SpacDealAnalyzer,
+                              SpacPortfolio, SpacRiskMatrix, SpacAlerts
                   (cross-tab drill-in: App.jsx lifts mergerFocusDealId / spacFocusId)
 
-Portfolio  (9)
-├── PortfolioTracker.jsx       11 internal views: heatmap, table, equity curve, risk, optimizer, X-ray, …
-├── OptionsTracker.jsx, TradeJournal.jsx, DividendTracker.jsx, TaxLotManager.jsx
-└── PortfolioStressTest, PortfolioAttribution, CppiAllocator, NetExposure
+Trading  (5)
+├── DayTrader.jsx              Trading plan + playbooks + intraday scanner
+├── WheelTracker.jsx           Cash-secured put / covered call cycle
+└── PositionSizer.jsx, OptionsTracker.jsx (Options P&L), TradeJournal.jsx
 
-AI Tools  (7)
+Planning  (11, captions: Retirement / Taxes & income)
+├── Retirement: FireCalculator, CoastFire, MonteCarlo, SocialSecurity, EarlyRetirementHealth,
+│               RothConversionPlanner, MedicareEstimator, EstateRmdProjector
+└── Taxes & income: TaxAdvisor.jsx, TaxLotManager.jsx, DividendTracker.jsx
+
+AI Assistant  (6)
 ├── AiBot.jsx                  Streaming chat (SSE)
 ├── MorningBriefing.jsx        AI pre-market briefing (SSE)
 ├── DigestCenter.jsx           Daily/weekly digest settings, preview, send, history
-└── FinancialAdvisor, StockAnalyzer, PortfolioReview, TaxAdvisor
-
-Retirement  (8)   FireCalculator, CoastFire, MonteCarlo, SocialSecurity,
-                  EarlyRetirementHealth, RothConversionPlanner, MedicareEstimator, EstateRmdProjector
+└── FinancialAdvisor, StockAnalyzer, PortfolioReview
 
 Help
 ├── UserGuide.jsx                In-app documentation (+ changelog); tests check that every sidebar
@@ -607,7 +607,7 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 | Suite | Size | Notes |
 |---|---|---|
 | Backend (pytest) | 1055 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 320 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Frontend (Vitest + Testing Library) | 333 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Sidebar reorganised' },
+  { type: 'bullets', items: [
+    'The left navigation now has 11 groups in the order you tend to work: My Money, Markets, Economy, Sectors & Themes, Find Ideas, Research, Fixed Income, Event-Driven, Trading, Planning and AI Assistant.',
+    'My Money brings your watchlist, news feed and portfolio together. Find Ideas collects the screeners and market-driven ideas (Short Interest, Short Squeeze, 100-Bagger Finder, Insider Trading). Planning joins Retirement with taxes and income. Merger Arb and SPACs now share Event-Driven.',
+    'Long groups have small captions, and the ⌘K search shows where each view lives. Your pins and recent views are unchanged.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Tear Sheet: Versus Peers', tabId: 'tearsheet' },
   { type: 'bullets', items: [
     'The Tear Sheet now has a "Versus peers" section under the valuation multiples. It compares the stock with companies of similar size in its industry on forward and trailing P/E, EV/EBITDA, price/sales, price/book and FCF yield, plus revenue growth, operating margin and return on equity.',

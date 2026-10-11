@@ -125,11 +125,6 @@ const Icons = {
       <rect x="11" y="1" width="3" height="14" rx="0.5"/>
     </svg>
   ),
-  watchlist: (
-    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
-      <path d="M8 2.5C4.4 2.5 1 5.3 1 8s3.4 5.5 7 5.5S15 10.7 15 8 11.6 2.5 8 2.5zm0 9a3.5 3.5 0 110-7 3.5 3.5 0 010 7zm0-5.5a2 2 0 100 4 2 2 0 000-4z"/>
-    </svg>
-  ),
   portfolio: (
     <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
       <path d="M5.5 2A1.5 1.5 0 004 3.5V4H2a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1h-2v-.5A1.5 1.5 0 0010.5 2h-5zm0 1.5h5V4h-5v-.5z"/>
@@ -145,9 +140,25 @@ const Icons = {
       <path d="M1.5 2v12h13"/><path d="M4.5 10.5l3-3.5 2.5 2 4-5"/>
     </svg>
   ),
-  themes: (
+  event: (
     <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
-      <path d="M8 1l1.8 3.7 4.1.6-3 2.9.7 4.1L8 10.4l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 1z"/>
+      <path d="M2 8h4M10 8h4M6 5l-3 3 3 3M10 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>
+  ),
+  planning: (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
+      <circle cx="8" cy="8" r="6.5" fillOpacity="0" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M8 4.5v3.75l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    </svg>
+  ),
+  ideas: (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
+      <path d="M8 1.5a4.5 4.5 0 00-2.5 8.25V11a.75.75 0 00.75.75h3.5A.75.75 0 0010.5 11V9.75A4.5 4.5 0 008 1.5zM6.5 13h3v.75a1.25 1.25 0 01-1.25 1.25h-.5A1.25 1.25 0 016.5 13.75V13z"/>
+    </svg>
+  ),
+  bonds: (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="M5.5 10.5l5-5M6 6.5h.01M10 9.5h.01"/>
     </svg>
   ),
   sectors: (
@@ -166,14 +177,6 @@ const Icons = {
       <path d="M13 11l.75 2.25L16 14l-2.25.75L13 17l-.75-2.25L10 14l2.25-.75z" opacity="0.5"/>
     </svg>
   ),
-  news: (
-    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
-      <rect x="1" y="2" width="14" height="2" rx="0.5"/>
-      <rect x="1" y="6" width="9" height="1.5" rx="0.5"/>
-      <rect x="1" y="9" width="11" height="1.5" rx="0.5"/>
-      <rect x="1" y="12" width="7" height="1.5" rx="0.5"/>
-    </svg>
-  ),
   chevron: (
     <svg viewBox="0 0 16 16" className="w-3 h-3 shrink-0" fill="currentColor">
       <path d="M4.5 6l3.5 3.5L11.5 6"/>
@@ -188,24 +191,41 @@ const Icons = {
 
 // ── Navigation groups ─────────────────────────────────────────────────────────
 
-const NAV_GROUPS = [
+export const NAV_GROUPS = [
+  {
+    id: 'mymoney',
+    label: 'My Money',
+    icon: Icons.portfolio,
+    items: [
+      { heading: 'Watchlist' },
+      { id: 'watchlist',              label: 'Watchlist' },
+      { id: 'watchlistheatmap',       label: 'Heatmap' },
+      { id: 'correlationmatrix',      label: 'Correlation' },
+      { id: 'pricetargets',           label: 'Price Targets' },
+      { id: 'richearnings',           label: 'Earnings+' },
+      { id: 'newssentiment',          label: 'News Sentiment' },
+      { id: 'customnews',             label: 'My News Feed' },
+      { id: 'smartalerts',            label: 'Smart Alerts' },
+      { heading: 'Portfolio' },
+      { id: 'portfolio',              label: 'Portfolio' },
+      { id: 'attribution',            label: 'Attribution' },
+      { id: 'netexposure',            label: 'Net Exposure' },
+      { id: 'stresstest',             label: 'Stress Test' },
+      { id: 'cppi',                   label: 'CPPI Allocator' },
+    ],
+  },
   {
     id: 'market',
     label: 'Markets',
     icon: Icons.market,
     items: [
-      { id: 'market',          label: 'Overview' },
-      { id: 'sentiment',       label: 'Sentiment' },
-      { id: 'reddittrending',  label: 'Reddit Trending' },
-      { id: 'indexheatmap',    label: 'Index Heatmap' },
-      { id: 'holdingsperf',    label: 'Holdings Performance' },
-      { id: 'breadth',         label: 'Breadth' },
-      { id: 'recommendations', label: 'Analyst Picks' },
-      { id: 'shortsqueeze',    label: 'Short Squeeze' },
-      { id: 'shortinterest',   label: 'Short Interest' },
-      { id: 'ipocalendar',     label: 'IPO & Lockups' },
-      { id: 'insiderfeed',     label: 'Insider Trading' },
-      { id: 'crypto',          label: 'Crypto' },
+      { id: 'market',                 label: 'Overview' },
+      { id: 'sentiment',              label: 'Sentiment' },
+      { id: 'breadth',                label: 'Breadth' },
+      { id: 'indexheatmap',           label: 'Index Heatmap' },
+      { id: 'holdingsperf',           label: 'Holdings Performance' },
+      { id: 'reddittrending',         label: 'Reddit Trending' },
+      { id: 'crypto',                 label: 'Crypto' },
     ],
   },
   {
@@ -213,44 +233,59 @@ const NAV_GROUPS = [
     label: 'Economy',
     icon: Icons.economy,
     items: [
-      { id: 'econregime',     label: 'Regime Dashboard' },
-      { id: 'econindicators', label: 'Indicators' },
-      { id: 'econstudies',    label: 'Indicator Studies' },
-      { id: 'fedwatch',       label: 'Fed Watch' },
-      { id: 'rates',          label: 'Yield Curve' },
-      { id: 'macro',          label: 'Macro Calendar' },
+      { id: 'econregime',             label: 'Regime Dashboard' },
+      { id: 'econindicators',         label: 'Indicators' },
+      { id: 'econstudies',            label: 'Indicator Studies' },
+      { id: 'fedwatch',               label: 'Fed Watch' },
+      { id: 'rates',                  label: 'Yield Curve' },
+      { id: 'macro',                  label: 'Macro Calendar' },
     ],
   },
   {
-    id: 'sectors',
-    label: 'Sectors',
+    id: 'sectorsthemes',
+    label: 'Sectors & Themes',
     icon: Icons.sectors,
     items: [
-      { id: 'sectorboard',    label: 'Scoreboard' },
-      { id: 'sectorrotation', label: 'Rotation Map' },
-      { id: 'sectorscreener', label: 'Sector Screener' },
-      { id: 'sectorcycle',    label: 'Cycle Fit' },
-      { id: 'sectorbacktest', label: 'Sector Backtest' },
+      { heading: 'Sectors' },
+      { id: 'sectorboard',            label: 'Scoreboard' },
+      { id: 'sectorrotation',         label: 'Rotation Map' },
+      { id: 'sectorscreener',         label: 'Sector Screener' },
+      { id: 'sectorcycle',            label: 'Cycle Fit' },
+      { id: 'sectorbacktest',         label: 'Sector Backtest' },
+      { heading: 'Themes' },
+      { id: 'themesoverview',         label: 'Themes Overview' },
+      { id: 'themeai',                label: 'Artificial Intelligence' },
+      { id: 'themerobotics',          label: 'Robotics' },
+      { id: 'themequantum',           label: 'Quantum Computing' },
+      { id: 'themespace',             label: 'Space Exploration' },
+      { id: 'themeabundance',         label: 'AI Abundance' },
+      { id: 'themedollar',            label: 'Dollar Regime Shift' },
+      { id: 'themecleanenergy',       label: 'Clean Energy & Nuclear' },
+      { id: 'themecyber',             label: 'Cybersecurity' },
+      { id: 'themehealth',            label: 'Healthcare Innovation' },
+      { id: 'themefintech',           label: 'Fintech & Digital Payments' },
+      { id: 'themedefense',           label: 'Defense Tech' },
+      { id: 'themereshoring',         label: 'Reshoring & Infrastructure' },
     ],
   },
   {
-    id: 'themes',
-    label: 'Themes',
-    icon: Icons.themes,
+    id: 'ideas',
+    label: 'Find Ideas',
+    icon: Icons.ideas,
     items: [
-      { id: 'themesoverview', label: 'Themes Overview' },
-      { id: 'themeai',        label: 'Artificial Intelligence' },
-      { id: 'themerobotics',  label: 'Robotics' },
-      { id: 'themequantum',   label: 'Quantum Computing' },
-      { id: 'themespace',     label: 'Space Exploration' },
-      { id: 'themeabundance', label: 'AI Abundance' },
-      { id: 'themedollar',     label: 'Dollar Regime Shift' },
-      { id: 'themecleanenergy', label: 'Clean Energy & Nuclear' },
-      { id: 'themecyber',     label: 'Cybersecurity' },
-      { id: 'themehealth',    label: 'Healthcare Innovation' },
-      { id: 'themefintech',   label: 'Fintech & Digital Payments' },
-      { id: 'themedefense',   label: 'Defense Tech' },
-      { id: 'themereshoring', label: 'Reshoring & Infrastructure' },
+      { heading: 'Screens' },
+      { id: 'screener',               label: 'Screener' },
+      { id: 'rangescreener',          label: 'Range Screener' },
+      { id: 'hundredbaggers',         label: '100-Bagger Finder' },
+      { id: 'signals',                label: 'Signals' },
+      { heading: 'Market-driven ideas' },
+      { id: 'recommendations',        label: 'Analyst Picks' },
+      { id: 'shortsqueeze',           label: 'Short Squeeze' },
+      { id: 'shortinterest',          label: 'Short Interest' },
+      { id: 'insiderfeed',            label: 'Insider Trading' },
+      { id: 'ipocalendar',            label: 'IPO & Lockups' },
+      { id: 'uoa',                    label: 'Unusual Options' },
+      { id: 'tradeideas',             label: 'Trade Ideas' },
     ],
   },
   {
@@ -258,50 +293,55 @@ const NAV_GROUPS = [
     label: 'Research',
     icon: Icons.research,
     items: [
-      { id: 'tearsheet',    label: 'Tear Sheet' },
-      { id: 'hundredbaggers', label: '100-Bagger Finder' },
-      { id: 'screener',     label: 'Screener' },
-      { id: 'rangescreener', label: 'Range Screener' },
-      { id: 'priceprojection', label: 'Price Projection' },
-      { id: 'fundamentals', label: 'Fundamentals' },
-      { id: 'dcf',          label: 'DCF Valuation' },
-      { id: 'compare',      label: 'Chart Compare' },
-      { id: 'backtest',         label: 'Backtester' },
-      { id: 'earningssurprise',    label: 'Earnings Surprise' },
-      { id: 'earningstrategy',     label: 'Earnings Strategy' },
-      { id: 'analystratings',      label: 'Analyst Ratings' },
-      { id: 'fundholdings',        label: 'Fund Holdings' },
-      { id: 'corporatebonds',      label: 'Corporate Bonds' },
-      { id: 'convertiblebonds',    label: 'Convertible Bonds' },
-      { id: 'treasurybonds',       label: 'Treasury Bonds' },
-      { id: 'activisttracker',     label: 'Activist Tracker' },
-      { id: 'relativestrengthr',   label: 'Relative Strength' },
-      { id: 'seasonalpatterns',    label: 'Seasonal Patterns' },
-      { id: 'etfoverlap',          label: 'ETF Overlap' },
-      { id: 'signals',             label: 'Signals' },
-      { id: 'uoa',                 label: 'Unusual Options' },
+      { heading: 'Analyze a company' },
+      { id: 'tearsheet',              label: 'Tear Sheet' },
+      { id: 'fundamentals',           label: 'Fundamentals' },
+      { id: 'dcf',                    label: 'DCF Valuation' },
+      { id: 'priceprojection',        label: 'Price Projection' },
+      { id: 'analystratings',         label: 'Analyst Ratings' },
+      { id: 'earningssurprise',       label: 'Earnings Surprise' },
+      { id: 'earningstrategy',        label: 'Earnings Strategy' },
+      { id: 'activisttracker',        label: 'Activist Tracker' },
+      { heading: 'Compare & test' },
+      { id: 'compare',                label: 'Chart Compare' },
+      { id: 'relativestrengthr',      label: 'Relative Strength' },
+      { id: 'seasonalpatterns',       label: 'Seasonal Patterns' },
+      { id: 'etfoverlap',             label: 'ETF Overlap' },
+      { id: 'fundholdings',           label: 'Fund Holdings' },
+      { id: 'backtest',               label: 'Backtester' },
     ],
   },
   {
-    id: 'watchlist',
-    label: 'Watchlist',
-    icon: Icons.watchlist,
+    id: 'fixedincome',
+    label: 'Fixed Income',
+    icon: Icons.bonds,
     items: [
-      { id: 'watchlist',         label: 'Watchlist' },
-      { id: 'watchlistheatmap',  label: 'Heatmap' },
-      { id: 'correlationmatrix', label: 'Correlation' },
-      { id: 'pricetargets',     label: 'Price Targets' },
-      { id: 'richearnings',  label: 'Earnings+' },
-      { id: 'newssentiment', label: 'News Sentiment' },
-      { id: 'smartalerts',   label: 'Smart Alerts' },
+      { id: 'corporatebonds',         label: 'Corporate Bonds' },
+      { id: 'convertiblebonds',       label: 'Convertible Bonds' },
+      { id: 'treasurybonds',          label: 'Treasury Bonds' },
     ],
   },
   {
-    id: 'news',
-    label: 'News',
-    icon: Icons.news,
+    id: 'eventdriven',
+    label: 'Event-Driven',
+    icon: Icons.event,
     items: [
-      { id: 'customnews', label: 'My News Feed' },
+      { heading: 'Merger Arb' },
+      { id: 'mergeroverview',         label: 'Overview' },
+      { id: 'mergerdashboard',        label: 'Deal Dashboard' },
+      { id: 'mergerscanner',          label: 'Opportunity Scanner' },
+      { id: 'mergeranalyzer',         label: 'Deal Analyzer' },
+      { id: 'mergerportfolio',        label: 'Arb Portfolio' },
+      { id: 'mergerrisk',             label: 'Risk Matrix' },
+      { id: 'mergeralerts',           label: 'Alerts' },
+      { heading: 'SPACs' },
+      { id: 'spacoverview',           label: 'Overview' },
+      { id: 'spactracker',            label: 'Tracker' },
+      { id: 'spacdiscovery',          label: 'Discovery' },
+      { id: 'spacanalyzer',           label: 'Deal Analyzer' },
+      { id: 'spacportfolio',          label: 'Portfolio' },
+      { id: 'spacalerts',             label: 'Alerts' },
+      { id: 'spacrisk',               label: 'Risk Matrix' },
     ],
   },
   {
@@ -309,88 +349,19 @@ const NAV_GROUPS = [
     label: 'Trading',
     icon: Icons.trading,
     items: [
-      { id: 'tradeideas',   label: 'Trade Ideas' },
-      { id: 'positionsize', label: 'Position Sizer' },
-      { id: 'wheeltracker', label: 'Wheel Tracker' },
-      { id: 'daytrader',    label: 'Day Trader' },
+      { id: 'daytrader',              label: 'Day Trader' },
+      { id: 'positionsize',           label: 'Position Sizer' },
+      { id: 'wheeltracker',           label: 'Wheel Tracker' },
+      { id: 'optionstracker',         label: 'Options P&L' },
+      { id: 'journal',                label: 'Trade Journal' },
     ],
   },
   {
-    id: 'mergerarb',
-    label: 'Merger Arb',
-    icon: (
-      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
-        <path d="M2 8h4M10 8h4M6 5l-3 3 3 3M10 5l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      </svg>
-    ),
+    id: 'planning',
+    label: 'Planning',
+    icon: Icons.planning,
     items: [
-      { id: 'mergeroverview',   label: 'Overview' },
-      { id: 'mergerdashboard',  label: 'Deal Dashboard' },
-      { id: 'mergerscanner',    label: 'Opportunity Scanner' },
-      { id: 'mergeranalyzer',   label: 'Deal Analyzer' },
-      { id: 'mergerportfolio',  label: 'Arb Portfolio' },
-      { id: 'mergerrisk',       label: 'Risk Matrix' },
-      { id: 'mergeralerts',     label: 'Alerts' },
-    ],
-  },
-  {
-    id: 'spacs',
-    label: 'SPACs',
-    icon: (
-      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
-        <path d="M8 1.5v13M4 5.5l4-4 4 4M4 10.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      </svg>
-    ),
-    items: [
-      { id: 'spacoverview',  label: 'Overview' },
-      { id: 'spactracker',   label: 'Tracker' },
-      { id: 'spacdiscovery', label: 'Discovery' },
-      { id: 'spacanalyzer',  label: 'Deal Analyzer' },
-      { id: 'spacportfolio', label: 'Portfolio' },
-      { id: 'spacalerts',    label: 'Alerts' },
-      { id: 'spacrisk',      label: 'Risk Matrix' },
-    ],
-  },
-  {
-    id: 'portfolio',
-    label: 'Portfolio',
-    icon: Icons.portfolio,
-    items: [
-      { id: 'portfolio',       label: 'Portfolio' },
-      { id: 'optionstracker', label: 'Options P&L' },
-      { id: 'taxlots',        label: 'Tax Lots' },
-      { id: 'dividendtracker',label: 'Dividend Tracker' },
-      { id: 'stresstest',        label: 'Stress Test' },
-      { id: 'attribution',       label: 'Attribution' },
-      { id: 'journal',           label: 'Trade Journal' },
-      { id: 'cppi',               label: 'CPPI Allocator' },
-      { id: 'netexposure',        label: 'Net Exposure' },
-    ],
-  },
-  {
-    id: 'ai',
-    label: 'AI Tools',
-    icon: Icons.ai,
-    items: [
-      { id: 'morningbriefing',  label: 'Morning Briefing' },
-      { id: 'digest',           label: 'Digests' },
-      { id: 'stockanalyzer',    label: 'Stock Analyzer' },
-      { id: 'portfolioreview',  label: 'Portfolio Review' },
-      { id: 'advisor',          label: 'Financial Advisor' },
-      { id: 'taxadvisor',       label: 'Tax Advisor' },
-      { id: 'aibot',            label: 'AI Chat' },
-    ],
-  },
-  {
-    id: 'retirement',
-    label: 'Retirement',
-    icon: (
-      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
-        <circle cx="8" cy="8" r="6.5" fillOpacity="0" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M8 4.5v3.75l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-      </svg>
-    ),
-    items: [
+      { heading: 'Retirement' },
       { id: 'fire',                   label: 'FIRE Calculator' },
       { id: 'coastfire',              label: 'Coast FIRE & Roth' },
       { id: 'montecarlo',             label: 'Monte Carlo' },
@@ -399,15 +370,46 @@ const NAV_GROUPS = [
       { id: 'rothconversionplanner',  label: 'Roth Conversion Planner' },
       { id: 'medicare',               label: 'Medicare Estimator' },
       { id: 'estatermd',              label: 'Estate & RMD' },
+      { heading: 'Taxes & income' },
+      { id: 'taxadvisor',             label: 'Tax Advisor' },
+      { id: 'taxlots',                label: 'Tax Lots' },
+      { id: 'dividendtracker',        label: 'Dividend Tracker' },
+    ],
+  },
+  {
+    id: 'aitools',
+    label: 'AI Assistant',
+    icon: Icons.ai,
+    items: [
+      { id: 'morningbriefing',        label: 'Morning Briefing' },
+      { id: 'digest',                 label: 'Digests' },
+      { id: 'stockanalyzer',          label: 'Stock Analyzer' },
+      { id: 'portfolioreview',        label: 'Portfolio Review' },
+      { id: 'advisor',                label: 'Financial Advisor' },
+      { id: 'aibot',                  label: 'AI Chat' },
     ],
   },
 ]
 
 // Flat, searchable index of every tab — powers the command palette and the
 // Home dashboard's "recently visited" chips.
+// A group's items may include `{ heading }` entries: small captions that split a long group into sub-sections. They are not
+// destinations, so everything that needs real items goes through navItems(), and the palette shows "Group › Heading".
+export const navItems = group => group.items.filter(i => i.id)
+
+export function flattenNav(groups) {
+  return groups.flatMap(g => {
+    let heading = null
+    return g.items.flatMap(i => {
+      if (i.heading) { heading = i.heading; return [] }
+      return [{ id: i.id, label: i.label, group: heading ? `${g.label} › ${heading}` : g.label }]
+    })
+  })
+}
+
 const FLAT_NAV_ITEMS = [
   { id: 'home', label: 'Home', group: 'Home' },
-  ...NAV_GROUPS.flatMap(g => g.items.map(i => ({ id: i.id, label: i.label, group: g.label }))),
+  ...flattenNav(NAV_GROUPS),
   { id: 'guide', label: 'User Guide', group: 'Help' },
   { id: 'learn', label: 'Investor Education', group: 'Help' },
 ]
@@ -491,12 +493,12 @@ function WatchlistBar({ lists, active, onSelect, onCreate, onDelete }) {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeTab, onSelect, pinnedTabs, onTogglePin, className }) {
+export function Sidebar({ activeTab, onSelect, pinnedTabs, onTogglePin, className }) {
   const [expanded, setExpanded] = useState(() => {
     const init = {}
     NAV_GROUPS.forEach(g => { init[g.id] = false })
     // Open only the group that contains the current active tab
-    const activeGroup = NAV_GROUPS.find(g => g.items.some(i => i.id === activeTab))
+    const activeGroup = NAV_GROUPS.find(g => navItems(g).some(i => i.id === activeTab))
     if (activeGroup) init[activeGroup.id] = true
     return init
   })
@@ -560,7 +562,7 @@ function Sidebar({ activeTab, onSelect, pinnedTabs, onTogglePin, className }) {
         {/* Nav groups */}
         <div className="flex-1 py-1">
           {NAV_GROUPS.map(group => {
-            const isGroupActive = group.items.some(i => i.id === activeTab)
+            const isGroupActive = navItems(group).some(i => i.id === activeTab)
             const isOpen = expanded[group.id]
             return (
               <div key={group.id} className="mb-0.5">
@@ -594,6 +596,13 @@ function Sidebar({ activeTab, onSelect, pinnedTabs, onTogglePin, className }) {
                 {isOpen && (
                   <div className="bg-slate-950/40 pb-1">
                     {group.items.map(item => {
+                      if (item.heading) {
+                        return (
+                          <div key={`h-${item.heading}`} className="pl-10 pr-2 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                            {item.heading}
+                          </div>
+                        )
+                      }
                       const isPinned = pinnedTabs.includes(item.id)
                       return (
                         <div key={item.id} className="flex items-center group/item">
