@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PeerValuationBody from './PeerValuation'
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
@@ -697,6 +698,14 @@ function ValuationSection({ d }) {
   )
 }
 
+function PeerSection({ symbol }) {
+  return (
+    <Section id="ts-peers" title="Versus peers" subtitle="Is it cheap or expensive compared with similar companies, and is that earned?">
+      <PeerValuationBody symbol={symbol} />
+    </Section>
+  )
+}
+
 function ProjectedReturnsSection({ d }) {
   const v = d.valuation
   return (
@@ -1028,6 +1037,7 @@ export default function TearSheet({ initialSymbol }) {
           <IncomeFlowSection d={data} />
           <BalanceSheetSection b={data.balanceSheet} />
           <ValuationSection d={data} />
+          <PeerSection key={data.symbol} symbol={data.symbol} />
           <ProjectedReturnsSection d={data} />
           <EstimatesSection d={data} />
           <AnalystsSection d={data} />

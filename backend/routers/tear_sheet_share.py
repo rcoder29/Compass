@@ -12,6 +12,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
 from routers.tear_sheet import load_tear_sheet
+from routers.tear_sheet_peers import cached_peers
 from tear_sheet_pdf import build_pdf
 
 router = APIRouter()
@@ -31,6 +32,9 @@ async def tear_sheet_pdf(symbol: str):
     sheet = await load_tear_sheet(sym)
     if sheet.get("error"):
         raise HTTPException(404, sheet["error"])
+    peers = cached_peers(sym)                       # included only if the page already loaded it; a PDF never triggers peer downloads
+    if peers:
+        sheet = {**sheet, "peers": peers}
     loop = asyncio.get_event_loop()
     pdf = await loop.run_in_executor(None, lambda: build_pdf(sheet))
     return Response(content=pdf, media_type="application/pdf",

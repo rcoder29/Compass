@@ -210,6 +210,36 @@ sequenceDiagram
 - *Valuation verdict.* The median of up to four independent models (historical P/E, PEG = 1, a 10-year FCF DCF, the discounted analyst target), requiring at least two. Foreign ADRs whose statements are in a different currency than the share price skip the per-share models, and banks blank free cash flow, rather than produce a confident wrong answer.
 - *Quarterly income flow.* `sec_revenue_streams.py` reads the 10-Q/10-K XBRL for revenue by product / segment / region and keeps only a set of members that adds up to reported revenue (members overlap, so summing all would double count); Q4 is derived as the fiscal year minus nine months. `income_flow.py` builds the revenue → profit → dividends graph with every node conserving what flows in and out, and **lays it out in the backend** (node rectangles, Bézier link paths) so the web page and the PDF draw identical diagrams from one source of truth.
 
+## Data Flow — Tear Sheet Peer Comparison
+
+```mermaid
+sequenceDiagram
+    participant UI as TearSheet.jsx (Versus peers)
+    participant API as GET /api/tear-sheet/{sym}/peers
+    participant YF as Yahoo (info, Industry/Sector lists)
+    participant Scan as background scanner (429 back-off)
+    participant PV as peer_valuation.py
+
+    UI->>API: loads after the sheet renders (polls while running)
+    API->>YF: subject record (peer:{sym}); its industryKey
+    API->>YF: top companies of the industry (sector if < 5)
+    alt candidate records missing
+        API->>Scan: fetch ~40 records, 4 workers
+        API-->>UI: status running + progress
+    end
+    API->>PV: choose_peers (size bands), compare
+    PV-->>API: metric stats, ranks, read, implied price
+    API-->>UI: ready (cached 6 hr)
+```
+
+Design notes:
+
+- *Lazy and separate.* The comparison loads after the sheet and shares nothing with its cache, so a slow or rate-limited Yahoo can never delay the Tear Sheet; the PDF includes the comparison only if it is already cached.
+- *Peers are chosen, not dumped.* The industry list is the largest companies; `choose_peers` picks the closest in size, widening the band step by step, never using micro-caps for a larger company, and using only the tightest band for a whole-sector fallback. Too few fair peers means "unavailable", not a bad comparison.
+- *Two ranks, one read.* How pricey (average share of peers it is pricier than) and how strong (average share it beats on growth, margin, ROE) combine in a small matrix, so a premium is judged against the fundamentals that might justify it.
+- *Honest guards.* Multiples must be positive and sane; banks and REITs skip the measures that don't apply; price/book feeds the implied price only for financials and real estate; an implied price over 3x away from the market price is flagged as probably not like-for-like.
+- *Transient failures are not data.* A failed lookup (usually rate limiting) is reported as temporary with a retry, and is never cached as "no data".
+
 ## Data Flow — Holdings Performance
 
 ```mermaid
@@ -505,6 +535,8 @@ Every key and TTL below was extracted from the code (`grep cache_get`), so it is
 | `edgar_search:{q}`, `edgar_holdings2:{cik}:{n}` | 12 hr · 6 hr | `routers/fund_holdings.py` |
 | `mf_ticker_map`, `bond_fund:{t}`, `bond_search:{q}`, `bond_ratings_mentions:{t}`, `convert_xbrl:{cik}`, `convert_search:{q}` | 7 days · 24 hr · 6 hr · 24 hr · 24 hr · 6 hr | bond and convertible-bond research |
 | `sec_ticker_name_map` | 24 hr | `edgar_utils.py` → SEC name → ticker map |
+| `peers:list:{industry|sector}:{key}` · `peer:{sym}` | 24 hr | `peer_data.py` → Yahoo's largest companies in an industry/sector; one company's flat comparison record (shared by every stock in that industry) |
+| `peers:built:{sym}` | 6 hr | `routers/tear_sheet_peers.py` → the assembled peer comparison (not cached while partial) |
 | `tearsheet:{sym}` | 1 hr | `routers/tear_sheet.py` → assembled tear sheet (errors are not cached) |
 | `tearsheet_edgar:{sym}` | 24 hr | `routers/tear_sheet.py` → parsed 10-year annual history from SEC `companyfacts` |
 | `sec_rev_rows:{cik}:{accession}`, `sec_rev_labels:{cik}:{accession}` | 30 days | `sec_revenue_streams.py` → parsed revenue-by-dimension facts and member labels for one filing (filings never change) |
@@ -574,8 +606,8 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 
 | Suite | Size | Notes |
 |---|---|---|
-| Backend (pytest) | 987 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 305 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Backend (pytest) | 1055 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 320 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

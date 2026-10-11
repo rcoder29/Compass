@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Compass (originally Stock Monitor, and still in a `stockmonitor/` folder in older checkouts) started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **108 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **987 backend and 305 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **108 views in 13 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **1055 backend and 320 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -103,7 +103,8 @@ Thematic investing: companies grouped by a long-term force instead of a sector. 
 | **Chart Compare** | Normalised return chart for up to 5 stocks over 1M/3M/6M/1Y. Fundamentals side-by-side table. |
 | **Fundamentals** | Side-by-side 21-metric comparison for up to 5 stocks. Best-in-class (green) / worst-in-class (red) highlighting. |
 | **Backtester** | Test MA Crossover, RSI Reversal, or Bollinger Bands strategies on historical data. Returns total return, alpha, max drawdown, Sharpe, win rate, and full trade log. |
-| **Tear Sheet** | One-page company snapshot for deciding whether to invest: business overview, 5-year performance vs. the S&P 500, 10-year revenue/margin/EPS/FCF track record (SEC filings), balance-sheet quality, valuation multiples vs. the company's own 10-year P/E history, consensus estimates and revisions, earnings-beat record, analyst ratings/targets, ownership and insider activity. A Sankey diagram of the latest four quarters shows how revenue splits across income streams (products/segments, from SEC filings) and flows through costs, taxes and net income to dividends and buybacks. Ends in a cheap-or-expensive verdict (median of historical-P/E, PEG, 10-year DCF and discounted analyst-target models), 12-month bear/base/bull and 5-year annualised return scenarios, a six-pillar scorecard, and auto-generated strengths/risks. Download it as a PDF from the page. |
+| **Tear Sheet** | One-page company snapshot for deciding whether to invest: business overview, 5-year performance vs. the S&P 500, 10-year revenue/margin/EPS/FCF track record (SEC filings), balance-sheet quality, valuation multiples vs. the company's own 10-year P/E history, consensus estimates and revisions, earnings-beat record, analyst ratings/targets, ownership and insider activity. A Sankey diagram of the latest four quarters shows how revenue splits across income streams (products/segments, from SEC filings) and flows through costs, taxes and net income to dividends and buybacks. Ends in a cheap-or-expensive verdict (median of historical-P/E, PEG, 10-year DCF and discounted analyst-target models) and a separate **Versus peers** comparison (see below), 12-month bear/base/bull and 5-year annualised return scenarios, a six-pillar scorecard, and auto-generated strengths/risks. Download it as a PDF from the page. |
+| **Tear Sheet → Versus peers** | Loads beneath the valuation multiples. Compares the stock with the companies closest in size in its Yahoo industry (its sector when the industry is thin, only if similarly sized peers exist) on six valuation multiples (forward and trailing P/E, EV/EBITDA, price/sales, price/book, FCF yield) and three quality measures (revenue growth, operating margin, return on equity): the peer median and quartiles, the premium or discount, and the share of peers it is pricier than or better than. An *expensive* rank and a *strong* rank combine into a plain read (premium looks earned, pricier with no clear edge, cheaper despite stronger fundamentals, discount may be deserved…), with a peer-implied price range, a growth-vs-multiple scatter and a peer table. Banks skip EV/EBITDA, FCF yield and price/sales; REITs skip P/E. The PDF includes it when the page has already loaded it. |
 | **DCF Valuation** | Intrinsic value calculator: EPS, growth rate, WACC, terminal growth, margin of safety. Live 10-year projection table. Undervalued / Overvalued / Fairly Valued verdict. |
 | **Unusual Options** | Scans options chains for abnormally high volume vs open interest across watchlist symbols (nearest 3 expiries). Vol/OI ≥ 10× highlighted in amber. |
 
@@ -243,8 +244,8 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 ### Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 987 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 305 tests (Vitest + Testing Library)
+cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 1055 tests, ~10 s, no network, isolated database
+cd frontend && npm test                # 320 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/compass.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -331,7 +332,8 @@ A curated tour — every route below was checked against the code. With the back
 | `GET /api/hundred-baggers?universe=SP600` · `?symbols=A,B` | 100-bagger scores for an index or your own tickers; returns scan progress while data loads, partial results with a retry time if Yahoo rate-limits |
 | `GET /api/hundred-baggers/universes` | Presets, factor weights and the CAGR-by-horizon table |
 | `GET /api/tear-sheet/{symbol}` | Full company tear sheet (profile, performance, 10-year financials, quarterly income flow, valuation verdict, estimates, analysts, ownership) |
-| `GET /api/tear-sheet/{symbol}/pdf` | The tear sheet as a PDF download |
+| `GET /api/tear-sheet/{symbol}/pdf` | The tear sheet as a PDF download (with the peer comparison when it is cached) |
+| `GET /api/tear-sheet/{symbol}/peers` | Peer comparison: metrics vs peer median, ranks, read, peer-implied price, scatter and peer table; returns scan progress while peer data loads |
 | `GET /api/price-projection/{symbol}` | 1-year price cone from options, rates, VIX and credit |
 | `GET /api/screener/technical?scan=golden_cross` | Technical scans |
 | `GET /api/screener/fundamental?preset=quality_growth` | Fundamental presets |
@@ -414,6 +416,8 @@ stockmonitor/
 │   ├── yahoo_limits.py      Shared Yahoo 429 back-off (pauses all workers, grows with consecutive hits)
 │   ├── themes_catalog.py    Curated theme content: thesis, value chain, tagged companies, catalysts and risks (no numeric forecasts)
 │   ├── themes.py            Basket returns/series, analyst-implied outlook, scenarios, setup score (pure)
+│   ├── peer_valuation.py    Peer comparison maths: metric cleaning, peer selection by size band, ranks, read, peer-implied price
+│   ├── peer_data.py         Yahoo industry/sector company lists and per-company comparison records (24 hr cache)
 │   ├── hundred_bagger.py    100-bagger trait scoring (pure): factors, thresholds, caps, flags, 100x arithmetic
 │   ├── hundred_bagger_data.py  S&P 600/400 membership, per-symbol Yahoo fundamentals (24 hr cache), background scanner with rate-limit back-off
 │   ├── sectors.py           Scoreboard, rotation map, horizon screener, cycle fit, backtest
@@ -509,6 +513,7 @@ stockmonitor/
 │   │   ├── range_screener.py            Research → Range Screener (30/60/90d support/resistance scan)
 │   │   ├── tear_sheet.py                Research → Tear Sheet (one-page company snapshot + valuation verdict)
 │   │   ├── tear_sheet_share.py          Tear Sheet → PDF download
+│   │   ├── tear_sheet_peers.py          Tear Sheet → Versus peers (lazy-loaded, background scan with progress)
 │   │   ├── holdings_performance.py      Markets → Holdings Performance
 │   │   ├── digest.py                    AI Tools → Digests (settings, preview, send, history)
 │   │   ├── crypto_dashboard.py          Markets → Crypto
@@ -540,7 +545,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (987 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (1055 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real compass.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -659,6 +664,7 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 | Tear Sheet | 1 hr (assembled) · 24 hr (10-year SEC history) · 30 days (SEC revenue-by-stream facts, per filing — filings never change) |
 | Holdings Performance | 15 min (table) · 26 hr (long-history anchor prices, shared across indexes) · 24 hr (index membership) |
 | Short Interest | FINRA file 6 hr · IBKR borrow table 1 hr · Yahoo float and debt 24 hr per symbol · bond index 12 hr · assembled list 15 min per (limit, market-cap) setting |
+| Tear Sheet peers | company lists 24 hr · per-company records 24 hr (`peer:{sym}`, shared by every stock in an industry) · assembled comparison 6 hr |
 | Themes | 15 min assembled (prices) · fundamentals/analyst data 24 hr (shared `hb:{symbol}` with the 100-Bagger Finder) |
 | 100-Bagger metrics | 24 hr per symbol (`hb:{symbol}`), index membership 24 hr (`hb_u:{id}`); scoring recomputed on every request |
 | Economy indicators / regime | 30 min (computed tables) · 6 hr (the FRED series behind them) |

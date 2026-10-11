@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Tear Sheet: Versus Peers', tabId: 'tearsheet' },
+  { type: 'bullets', items: [
+    'The Tear Sheet now has a "Versus peers" section under the valuation multiples. It compares the stock with companies of similar size in its industry on forward and trailing P/E, EV/EBITDA, price/sales, price/book and FCF yield, plus revenue growth, operating margin and return on equity.',
+    'A plain-English read says whether a premium looks earned by better fundamentals, whether a discount may be deserved, or whether the stock is simply in line. It also shows what the stock would cost at the peers\' multiples, a growth-versus-multiple chart and the peer table.',
+    'If a company has no fairly comparable peers, it says so rather than guessing. The PDF includes the comparison once you have viewed it on the page.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Short Interest Monitor', tabId: 'shortinterest' },
   { type: 'bullets', items: [
     'New Markets → Short Interest: the 100 most heavily shorted US stocks, ranked by short interest as a share of float, with shares short, the change since the last report and days to cover.',

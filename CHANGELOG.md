@@ -4,6 +4,26 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Tear Sheet: Versus Peers
+
+### Added
+- **Research → Tear Sheet → Versus peers**, loaded separately beneath the valuation multiples. It answers "cheap compared to whom?": the stock against the companies closest to it in size in its Yahoo industry (its sector when the industry is thin, and only if similarly sized peers exist).
+  - **Metrics:** six valuation multiples (forward and trailing P/E, EV/EBITDA, price/sales, price/book, FCF yield) and three quality measures (revenue growth, operating margin, return on equity), each with the peer median and 25th-75th percentile range, the premium or discount, and the share of peers it is pricier than or better than.
+  - **A plain read:** an *expensive* rank and a *strong* rank (each an average share of peers) combine into one of twelve reads: Premium looks earned, Pricier than peers with no clear edge, Expensive and weaker than peers, In line (stronger or weaker business), Cheaper despite stronger fundamentals, Cheap but the discount may be deserved, and so on.
+  - **Peer-implied price:** what the stock would cost at the peers' 25th/median/75th-percentile multiples (price-scaled for P/E, P/S, P/B; through enterprise value and net debt for EV/EBITDA), plus a growth-vs-multiple scatter and the peer table.
+  - **Guards:** multiples must be positive and sane; banks skip EV/EBITDA, FCF yield and price/sales and REITs skip P/E; price/book feeds the implied price only for financials and real estate; an implied price more than 3x from the market price is flagged as probably not like-for-like.
+- The PDF includes a "Versus peers" block when the page has already loaded the comparison (a PDF download never triggers peer downloads).
+
+### Found by running it on real data
+- Peer sets: Coca-Cola was compared with micro-caps because the size filter gave up when fewer than six near-sized peers existed. `choose_peers` now widens the size band step by step (a tenth to 20x, a fiftieth to 50x, a two-hundredth to 200x), never uses companies under $300M for a larger stock, and uses only the tightest band for a sector fallback. Xerox (a thin industry) had been compared with Northrop and Honeywell and got a +1,481% implied price; it now says there is nothing fair to compare it with.
+- CRWD's implied price came from price/book, meaningless for software: price/book now feeds the implied price only for financials and real estate. A headline resting on fewer than three multiples says so.
+- A rate-limited lookup used to read as "no market data for this symbol"; it is now reported as temporary with a Try again button and is never cached as missing data.
+
+### Tests
+- Backend +68 (metric cleaning, size-band selection, ranks, the twelve reads, implied prices, sector rules, data layer, endpoint states, PDF block); frontend +15. Totals 1,055 backend and 320 frontend.
+
+---
+
 ## 2026-10-11 — Short Interest Monitor
 
 ### Added

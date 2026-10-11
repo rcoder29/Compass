@@ -71,6 +71,7 @@ function mockFetch(payload, { extra } = {}) {
       const r = await extra(url, opts)
       if (r) return r
     }
+    if (String(url).endsWith('/peers')) return jsonRes({ status: 'unavailable', reason: 'No comparable companies in this test.' })
     return jsonRes(payload)
   })
 }
@@ -135,6 +136,20 @@ describe('TearSheet', () => {
     const card = screen.getByText('Shares outstanding').parentElement
     expect(card).toHaveTextContent('15.20B')
     expect(card).not.toHaveTextContent('$')
+  })
+
+  it('shows a Versus peers section that loads separately from the sheet', async () => {
+    const peerPayload = { status: 'ready', symbol: 'ACME', scopeLabel: 'Software', peerCount: 6, partial: null, headline: 'ACME trades at a 12% premium to the peer median.',
+      verdict: { key: 'inline', label: 'In line with peers', tone: 'neutral', text: 'Valuation and fundamentals both sit near the middle.' }, expensiveRank: 50, qualityRank: 50,
+      metrics: [{ key: 'forwardPE', label: 'P/E (forward)', group: 'valuation', unit: 'x', value: 20, median: 18, p25: 15, p75: 22, premium: 0.11, expensiveness: 60, peers: 6 }],
+      peerImplied: null, scatter: null, subject: { symbol: 'ACME', name: 'Acme', marketCap: 1e10 }, peers: [], note: 'Peers are the closest in size.' }
+    mockFetch(sheet(), { extra: async url => (String(url).endsWith('/peers') ? jsonRes(peerPayload) : null) })
+    render(<TearSheet />)
+    await build()
+    await waitFor(() => screen.getByTestId('verdict-label'))
+    expect(await screen.findByText('Versus peers')).toBeInTheDocument()
+    expect(await screen.findByText('In line with peers')).toBeInTheDocument()
+    expect(global.fetch).toHaveBeenCalledWith('/api/tear-sheet/ACME/peers')
   })
 
   it('renders every major section', async () => {

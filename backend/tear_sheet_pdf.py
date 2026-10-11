@@ -679,6 +679,49 @@ def _valuation(d):
     return out
 
 
+def _fmt_metric(v, unit):
+    if v is None:
+        return DASH
+    return mult(v) if unit == "x" else pct(v)
+
+
+def _peers(d):
+    """Versus-peers block. Present only when the sheet dict carries a finished comparison under 'peers' (the share route adds it when the
+    page has already loaded it); otherwise nothing is drawn."""
+    pr = d.get("peers")
+    if not pr or pr.get("status") not in (None, "ready") or not pr.get("metrics"):
+        return []
+    out = _section("Versus peers", f"{pr.get('peerCount', len(pr.get('peers', [])))} companies closest in size in {pr.get('scopeLabel', 'its industry')}", need=2.4 * inch)
+    verdict = pr["verdict"]
+    tone = {"good": GREEN, "bad": RED}.get(verdict.get("tone"), AMBER)
+    out += [_p(verdict["label"], _style("pv", fontName="Helvetica-Bold", fontSize=10, leading=13, textColor=tone)), _p(pr.get("headline", ""), S_BODY),
+            Spacer(1, 3)]
+    rows = []
+    for m in pr["metrics"]:
+        if m.get("median") is None:
+            continue
+        rel = m.get("premium")
+        rows.append([m["label"], _fmt_metric(m.get("value"), m["unit"]), _fmt_metric(m.get("median"), m["unit"]),
+                     (pct(rel, 0, signed=True), _posneg(None if rel is None else -rel)) if rel is not None else DASH,
+                     DASH if m.get("expensiveness") is None and m.get("quality") is None else
+                     (f"pricier than {m['expensiveness']:.0f}% of peers" if m["group"] == "valuation" else f"better than {m['quality']:.0f}% of peers")])
+    if rows:
+        out.append(_table(["Metric", "This stock", "Peer median", "vs median", "Rank"], rows, widths=[W * 0.24, W * 0.14, W * 0.16, W * 0.14, W * 0.32], right_from=1))
+    imp = pr.get("peerImplied")
+    if imp:
+        out += [Spacer(1, 3), _p(f"At peer-median multiples the stock would trade near {money(imp['mid'])} (range {money(imp['low'])} - {money(imp['high'])}), "
+                                 f"{imp['vsPrice'] * 100:+.0f}% from {money(imp['price'])}. This ignores differences in growth and risk."
+                                 + (" It is more than three times above or below the market price, so the peers are probably not a like-for-like match." if imp.get("farFromPrice") else ""), S_BODY)]
+    peers = pr.get("peers", [])[:8]
+    if peers:
+        out += [Spacer(1, 4), _table(["Peer", "Mkt cap", "P/E (fwd)", "EV/EBITDA", "Rev growth", "Op margin"],
+                                     [[f"{p['symbol']}  {p['name'][:22]}", big(p.get("marketCap")), mult(p.get("forwardPE")), mult(p.get("evToEbitda")),
+                                       pct(p.get("revenueGrowth")), pct(p.get("operatingMargin"))] for p in peers],
+                                     widths=[W * 0.34, W * 0.12, W * 0.13, W * 0.13, W * 0.14, W * 0.14], right_from=1)]
+    out += [Spacer(1, 3), _p(pr.get("note", "") + " Peer sets and multiples differ in accounting; treat this as a reference point, not a verdict.", S_SMALL)]
+    return out
+
+
 def _returns(d):
     v = d["valuation"]
     out = _section("Projected earnings & returns",
@@ -799,7 +842,7 @@ def build_pdf(sheet: dict, compress: bool = True) -> bytes:
     doc.addPageTemplates([PageTemplate(id="main", frames=[frame], onPage=lambda c, dd: _footer(c, dd, symbol, as_of))])
     story = []
     for part in (_header(sheet), _verdict_section(sheet), _takeaways(sheet), _business(sheet), _performance(sheet), _financials(sheet),
-                 _income_flow(sheet), _balance(sheet), _valuation(sheet), _returns(sheet), _estimates(sheet), _analysts(sheet), _ownership(sheet)):
+                 _income_flow(sheet), _balance(sheet), _valuation(sheet), _peers(sheet), _returns(sheet), _estimates(sheet), _analysts(sheet), _ownership(sheet)):
         story += part
     doc.build(story)
     return buf.getvalue()
