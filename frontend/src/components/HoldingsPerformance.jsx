@@ -66,9 +66,9 @@ function toCsv(rows, periods, annualised, annualisedPeriods, asOf) {
 
 const QUICK = [['SP500', 'S&P 500'], ['NASDAQ100', 'Nasdaq-100'], ['DOW30', 'Dow 30']]
 
-export default function HoldingsPerformance() {
+export default function HoldingsPerformance({ initialUniverse = 'SP500' }) {
   const [presets, setPresets] = useState([])
-  const [selected, setSelected] = useState('SP500')
+  const [selected, setSelected] = useState(initialUniverse)
   const [etfInput, setEtfInput] = useState('')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -106,7 +106,7 @@ export default function HoldingsPerformance() {
     }
   }
 
-  useEffect(() => { load('SP500') }, [])                       // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(initialUniverse) }, [])                       // eslint-disable-line react-hooks/exhaustive-deps
 
   const periods = data?.periods || []
   const annPeriods = data?.annualisedPeriods || []

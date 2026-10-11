@@ -10,6 +10,23 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Economy: Regime, Indicators & Studies', tabId: 'econregime' },
+  { type: 'bullets', items: [
+    'New Economy group. Regime Dashboard: the cycle phase, the growth × inflation quadrant and a 0-100 recession-risk score built from ten warning signs, each with its rule, plus the score\'s record around every US recession since 1973.',
+    'Indicators: 50+ macro and micro indicators with decades of history, percentile against their own past, trend and a Supportive / Neutral / Cautionary read for stocks. Click one for the full history with recessions shaded and a plain-English explanation. No API key needed.',
+    'Indicator Studies: what the S&P 500 and sectors did after a condition began (curve inversion, Sahm rule, claims surge, hot inflation, Fed cutting or hiking, wide credit spreads and more), with sample sizes, worst cases and honest small-sample warnings.',
+    'Fed Watch, Yield Curve and Macro Calendar moved here from Markets; the old Economic Indicators view is replaced by Indicators.',
+  ]},
+  { type: 'h3', text: '2026-10-11 — Sectors: Scoreboard, Rotation, Screener & Backtest', tabIds: [
+    { id: 'sectorboard', label: 'Scoreboard' }, { id: 'sectorrotation', label: 'Rotation Map' }, { id: 'sectorscreener', label: 'Sector Screener' },
+    { id: 'sectorcycle', label: 'Cycle Fit' }, { id: 'sectorbacktest', label: 'Sector Backtest' },
+  ] },
+  { type: 'bullets', items: [
+    'New Sectors group for US sector-ETF strategy. Scoreboard: the 11 SPDR sectors over 1 day to life-to-date with risk, calendar-year and relative-strength views; click through to a sector\'s holdings.',
+    'Rotation Map shows which sectors are Leading, Weakening, Lagging or Improving against SPY. Sector Screener ranks them for a 1-3 month, 3-12 month or 1-5+ year horizon with adjustable factor weights and an explanation of every score.',
+    'Cycle Fit shows how each sector has behaved in each stage of the business cycle; Sector Backtest tests a simple rotation rule against SPY with costs.',
+    'Replaces Sector Rotation and Sector Momentum (old bookmarks and pins still work).',
+  ]},
   { type: 'h3', text: '2026-10-11 — Documentation Refresh & User Guide Fix' },
   { type: 'bullets', items: [
     'Fixed a crash in this User Guide: since the changelog "Open feature" links were added, opening the guide threw an error because the navigation handler never reached the section renderer. The guide now renders again and the links work.',

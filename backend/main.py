@@ -33,11 +33,11 @@ from routers import (
     custom_screener, technical_signals, options_strategy_builder,
     trade_idea_generator, portfolio_risk_dashboard,
     position_sizing, portfolio_optimizer, rich_earnings_calendar,
-    options_pnl_tracker, portfolio_xray, sector_momentum, market_breadth,
+    options_pnl_tracker, portfolio_xray, market_breadth,
     fundamental_comparison, price_target_tracker, earnings_call_summarizer,
     dcf_valuation, yield_curve,
     ai_stocks, ai_analyst_actions, day_trader_scanners, screener,
-    options_chain, dividends, correlation_matrix, sector_rotation,
+    options_chain, dividends, correlation_matrix,
     websocket_quotes, smart_alerts,
     insider_transactions, analyst_ratings, insider_trading_feed,
     analyst_rating_tracker,
@@ -45,10 +45,10 @@ from routers import (
     market_sentiment_dashboard,
     index_constituents, tax_advisor, short_squeeze_scanner,
     ipo_lockup_calendar, fed_watch, ai_morning_briefing, crypto_dashboard,
-    ai_portfolio_review, economic_dashboard, ai_stock_analyzer,
+    ai_portfolio_review, ai_stock_analyzer,
     dividend_tracker, watchlist_heatmap, earnings_surprise_tracker,
     earnings_strategy_analyzer, market_correlation, digest, range_screener,
-    price_projection, tear_sheet, tear_sheet_share, holdings_performance,
+    price_projection, tear_sheet, tear_sheet_share, holdings_performance, economy, sectors,
 )
 import digest_service
 
@@ -121,7 +121,6 @@ app.include_router(portfolio_optimizer.router)
 app.include_router(rich_earnings_calendar.router)
 app.include_router(options_pnl_tracker.router)
 app.include_router(portfolio_xray.router)
-app.include_router(sector_momentum.router)
 app.include_router(market_breadth.router)
 app.include_router(fundamental_comparison.router)
 app.include_router(price_target_tracker.router)
@@ -135,7 +134,6 @@ app.include_router(screener.router)
 app.include_router(options_chain.router)
 app.include_router(dividends.router)
 app.include_router(correlation_matrix.router)
-app.include_router(sector_rotation.router)
 app.include_router(websocket_quotes.router)
 app.include_router(smart_alerts.router)
 app.include_router(insider_transactions.router)
@@ -154,7 +152,6 @@ app.include_router(fed_watch.router)
 app.include_router(ai_morning_briefing.router)
 app.include_router(crypto_dashboard.router)
 app.include_router(ai_portfolio_review.router)
-app.include_router(economic_dashboard.router)
 app.include_router(ai_stock_analyzer.router)
 app.include_router(dividend_tracker.router)
 app.include_router(watchlist_heatmap.router)
@@ -167,6 +164,8 @@ app.include_router(price_projection.router)
 app.include_router(tear_sheet.router)
 app.include_router(tear_sheet_share.router)
 app.include_router(holdings_performance.router)
+app.include_router(economy.router)
+app.include_router(sectors.router)
 
 # Initialise DB tables on startup
 init_db()

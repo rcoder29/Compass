@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Stock Monitor started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **88 views in 10 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **92 API routers / ~175 endpoints**, with **571 backend and 208 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **93 views in 12 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **91 API routers / ~180 endpoints**, with **795 backend and 252 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -28,10 +28,29 @@ Today that is **88 views in 10 sidebar groups** (plus a Home dashboard, an in-ap
 | **Breadth** | Large-cap market breadth: above-50/200MA %, A/D ratio, H/L ratio, put/call ratio, VIX sparkline, 60-day A/D line chart. |
 | **Index Heatmap** | Constituent heatmap for any index or ETF. Search any ticker dynamically or use quick-access buttons (DIA, QQQ, SPY, ARKK). Tiles sized by live market-cap weight, coloured by 1D return. Market-cap-weighted index return + top contributor/drag summary. |
 | **Holdings Performance** | Returns for every holding of an index or ETF over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD with a pinned benchmark row, summary stats (average, median, % up, % beating the benchmark), sector and text filters, an annualised view of the multi-year columns, CSV export and click-through charts. Full holdings for the S&P 500, Nasdaq-100, Dow 30, their ETFs (SPY, QQQ, DIA…) and the 11 sector SPDRs; other ETFs show Yahoo's top 10, flagged as partial. |
-| **Sector Rotation** | Performance table and heatmap for 11 GICS sector ETFs across 1D/1W/1M/3M. |
-| **Sector Momentum** | Composite momentum ranking with acceleration signals (▲▲/▲/▼/▼▼) and vs-SPY relative strength toggle. |
-| **Macro Calendar** | Upcoming high-impact economic events: FOMC, CPI, PPI, PCE, NFP, GDP — with urgency badges. |
+
+### Economy
+Macro and micro indicators with decades of history, and what they have meant for stocks. Data is FRED (keyless CSV, full history, revised values).
+
+| Feature | Description |
+|---|---|
+| **Regime Dashboard** | Where the economy sits in the cycle: a rule-based cycle phase (early / mid / late / slowdown / recession risk), the growth × inflation quadrant with a 12-month trail, a 0-100 recession-risk score built from ten warning signs (each with its rule, stress and weight), the score's record around every US recession since 1973, and a strip of key indicators. |
+| **Indicators** | 50+ indicators across growth, labor, inflation, rates, credit, housing, consumers and global markets. Latest value, 3-month and 1-year change, percentile against full history, trend, 2-year sparkline and a Supportive / Neutral / Cautionary signal with the reason. Click for the full history with NBER recessions shaded, warning levels or comfort bands, and plain-English notes on what it is, why it matters and how to read it. |
+| **Indicator Studies** | 19 studies of what the S&P 500 and sectors did after a condition began (curve inversion, Sahm rule, claims surge, hot inflation, Fed cutting or hiking, wide credit spreads, tight conditions, high real yields, low sentiment, dollar or oil spikes…) over 1 month to 3 years against a baseline, by episode, with publication-lag-aware entry, sample sizes, worst cases and thin-sample warnings. |
+| **Fed Watch** | FOMC cut/hold/hike probabilities for upcoming meetings. |
 | **Yield Curve** | Live US Treasury curve (13W/5Y/10Y/30Y), inversion signal, DXY tracking, 60-day 10Y sparkline. |
+| **Macro Calendar** | Upcoming high-impact economic events: FOMC, CPI, PPI, PCE, NFP, GDP — with urgency badges. |
+
+### Sectors
+A US sector-ETF strategy toolkit on the eleven SPDR sector funds against SPY (total returns).
+
+| Feature | Description |
+|---|---|
+| **Scoreboard** | Every sector over 1D…10Y and life-to-date (cumulative, annualised or vs SPY), a risk view (volatility, max drawdown, return per risk, beta, up/down capture), calendar-year grid, leaders/laggards bars, relative-strength changes and trend state; click through to a sector's holdings. |
+| **Rotation Map** | Relative-rotation graph (RS-Ratio × RS-Momentum, weekly, with 4/8-week trails) placing each sector in Leading / Weakening / Lagging / Improving. |
+| **Sector Screener** | Ranks the sectors for a Tactical (1-3 mo), Intermediate (3-12 mo) or Strategic (1-5+ yr) horizon from momentum, trend, rotation, risk-adjusted return, drawdown, seasonality and cycle fit, with adjustable weights and a per-factor explanation of every score (Overweight / Neutral / Underweight). Valuation is intentionally excluded. |
+| **Cycle Fit** | Average monthly excess return of each sector by cycle phase or growth/inflation quadrant since 1999, with months, episodes and hit rate behind every cell. |
+| **Sector Backtest** | Month-end rotation into the top-N sectors (only data known at the time), optional defensive switch below SPY's 10-month average, trading costs, versus SPY and equal-weight sectors. |
 
 ### Watchlist
 | Feature | Description |
@@ -142,7 +161,7 @@ Today that is **88 views in 10 sidebar groups** (plus a Home dashboard, an in-ap
 |---|---|
 | Backend | Python 3.12 + FastAPI + Uvicorn (3.11+ supported) |
 | Market data | yfinance 1.2 (via curl_cffi) + Yahoo Finance APIs |
-| Filings & reference data | SEC EDGAR (submissions, XBRL company facts, N-PORT, full-text search), Treasury.gov yield-curve CSVs, Wikipedia (S&P 500 membership), Nasdaq (Nasdaq-100 list), optional FRED |
+| Filings & reference data | SEC EDGAR (submissions, XBRL company facts, N-PORT, full-text search), Treasury.gov yield-curve CSVs, Wikipedia (S&P 500 membership), Nasdaq (Nasdaq-100 list), FRED (keyless CSV: economic indicators and recession dates) |
 | AI | Anthropic Claude — `claude-sonnet-4-6` for chat, sentiment, trade ideas, earnings summaries, screener NLP and analysis; `claude-haiku-4-5` for the digest's short summary. AI Chat can use Gemini (`gemini-2.0-flash`) when a `GEMINI_API_KEY` is set |
 | Frontend | React 18 + Vite 5 + Tailwind CSS v3, with per-view code splitting (`React.lazy`) |
 | Charts | TradingView Lightweight Charts v5 for price charts; plain SVG for everything else (fan charts, Sankey, bar and range charts) |
@@ -179,7 +198,6 @@ The backend reads `backend/.env` on startup — copy `backend/.env.example` to `
 |---|---|
 | `ANTHROPIC_API_KEY` | Enables the AI features: AI Chat, Trade Ideas, News Sentiment, Earnings Summaries, Financial Advisor, NLP Screener, Stock Analyzer, Portfolio Review, Tax Advisor, Morning Briefing and the digest's AI summary. Everything else works without it. |
 | `GEMINI_API_KEY` | Optional: AI Chat uses Gemini (`gemini-2.0-flash`) instead of Claude when set. |
-| `FRED_API_KEY` | Optional: adds FRED series to Economic Indicators. |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Delivery channel for scheduled digests (AI Tools → Digests walks through the 2-minute bot setup). |
 | `DIGEST_SCHEDULER=0` | Turns the background digest scheduler off. |
 
@@ -239,9 +257,21 @@ A curated tour — every route below was checked against the code. With the back
 | `GET /api/market/breadth` | A/D ratio, MA breadth, VIX, put/call ratio |
 | `GET /api/market/rates` | Treasury yields (13W/5Y/10Y/30Y) + DXY |
 | `GET /api/treasury/current` · `/history` · `/yield-curve` | Treasury.gov par yields, history and curve shape |
-| `GET /api/market/sectors` · `GET /api/sectors/momentum` | Sector ETF performance and momentum scores |
-| `GET /api/market/sentiment` · `/fed-watch` · `/economic` · `/economic-calendar` | Fear/greed composite, FOMC odds, economic indicators and the macro calendar |
+| `GET /api/market/sentiment` · `/fed-watch` · `/economic-calendar` | Fear/greed composite, FOMC odds and the macro calendar |
 | `WS /ws/quotes?symbols=AAPL,MSFT` | Real-time price feed |
+
+### Economy & Sectors
+| Endpoint | Description |
+|---|---|
+| `GET /api/economy/indicators` | The indicator library: latest value, changes, percentile, trend, signal, sparkline, grouped by category |
+| `GET /api/economy/indicator/{id}` | One indicator's full history, NBER recession spans, stats and explanatory text |
+| `GET /api/economy/regime` | Cycle phase, growth/inflation quadrant, recession-risk score and components, track record, 10-year history |
+| `GET /api/economy/studies` · `/studies/{id}` | The list of indicator studies; one study's forward S&P 500 and sector returns |
+| `GET /api/sectors/scoreboard` | Sector ETF returns, excess, risk and calendar years |
+| `GET /api/sectors/rotation` | Relative-rotation graph points with trails |
+| `GET /api/sectors/screener?horizon=intermediate&weights={…}` | Horizon screener; optional JSON factor weights |
+| `GET /api/sectors/cycle-fit?group=phase` | Sector excess return by cycle phase (`phase`) or growth/inflation quadrant (`quadrant`) |
+| `GET /api/sectors/backtest?top_n=3&cost_bps=10&defensive=true` | Rules-based rotation backtest |
 
 ### Index, ETF & Fund Holdings
 | Endpoint | Description |
@@ -351,6 +381,13 @@ stockmonitor/
 │   ├── digest_channels.py   Delivery channels (Telegram; token redacted from all errors)
 │   ├── tear_sheet_pdf.py    Tear Sheet → multi-page PDF (reportlab, vector charts)
 │   ├── income_flow.py       Quarterly income waterfall → Sankey graph + layout (shared by page and PDF)
+│   ├── fred_data.py         Keyless FRED CSV loader (cached 6 hr) + NBER recession spans
+│   ├── economy_catalog.py   The 50+ indicator definitions: FRED id, transform, timing, warning levels, plain-English notes
+│   ├── economy.py           Indicator maths: transforms, percentile, z-score, MAD-based trend, equity signal
+│   ├── economy_regime.py    Growth/inflation composites, quadrant, recession-risk score, cycle phase, history labels
+│   ├── economy_studies.py   Episode detection and forward-return studies (publication-lag-aware, baseline-relative)
+│   ├── market_history.py    Long monthly/daily price history (Ticker.history, cached) for studies and sectors
+│   ├── sectors.py           Scoreboard, rotation map, horizon screener, cycle fit, backtest
 │   ├── holdings_perf.py     Index/ETF universes + multi-period total returns (daily + chunked weekly history)
 │   ├── sec_revenue_streams.py  Revenue by product/segment/region from SEC 10-Q/10-K XBRL (Q4 derived)
 │   ├── digest_service.py    Settings, due-time + catch-up logic, at-most-once claiming,
@@ -403,7 +440,6 @@ stockmonitor/
 │   │   ├── options_pnl_tracker.py       Portfolio → Options P&L — _live_option_price also
 │   │   │                                 consumed directly by net_exposure.py
 │   │   ├── portfolio_xray.py            Portfolio → X-Ray
-│   │   ├── sector_momentum.py           Markets → Sector Momentum
 │   │   ├── market_breadth.py            Markets → Breadth
 │   │   ├── fundamental_comparison.py    Research → Chart Compare
 │   │   ├── price_target_tracker.py      Watchlist → Price Targets
@@ -419,7 +455,6 @@ stockmonitor/
 │   │   ├── dividends.py                 Dividend info per symbol
 │   │   ├── correlation_matrix.py        Watchlist → Correlation (POST /api/portfolio/correlation;
 │   │   │                                 the market-wide GET variant lives in market_correlation.py)
-│   │   ├── sector_rotation.py           Markets → Sector Rotation
 │   │   ├── websocket_quotes.py          /ws/quotes — real-time price feed powering the whole app
 │   │   ├── smart_alerts.py              Watchlist → Smart Alerts (rule-based scanner)
 │   │   ├── insider_transactions.py      Chart modal → Insider tab (per-symbol)
@@ -448,7 +483,8 @@ stockmonitor/
 │   │   ├── digest.py                    AI Tools → Digests (settings, preview, send, history)
 │   │   ├── crypto_dashboard.py          Markets → Crypto
 │   │   ├── ai_portfolio_review.py       AI Tools → Portfolio Review — _fetch_quote deferred
-│   │   ├── economic_dashboard.py        Markets → Economic Indicators (+ optional FRED)
+│   │   ├── economy.py                   Economy → Regime Dashboard, Indicators, Indicator Studies
+│   │   ├── sectors.py                   Sectors → Scoreboard, Rotation Map, Screener, Cycle Fit, Backtest
 │   │   ├── ai_stock_analyzer.py         AI Tools → Stock Analyzer (snapshot + AI analysis)
 │   │   ├── dividend_tracker.py          Portfolio → Dividend Tracker
 │   │   ├── watchlist_heatmap.py         Watchlist → Heatmap
@@ -579,6 +615,9 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 | Price Projection | 2 hr |
 | Tear Sheet | 1 hr (assembled) · 24 hr (10-year SEC history) · 30 days (SEC revenue-by-stream facts, per filing — filings never change) |
 | Holdings Performance | 15 min (table) · 26 hr (long-history anchor prices, shared across indexes) · 24 hr (index membership) |
+| Economy indicators / regime | 30 min (computed tables) · 6 hr (the FRED series behind them) |
+| Indicator Studies, Cycle Fit, Backtest | 6 hr · long price history 24 hr (monthly) / 6 hr (daily) |
+| Sectors Scoreboard, Rotation, Screener | 30 min |
 | Merger Arb / SPAC EDGAR scans | 4 hr |
 
 ---
@@ -589,6 +628,8 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 - **`yfinance.download` is not thread-safe.** It keeps its working state in module-level dictionaries, so two downloads running at once corrupt each other and hang. Code that calls it for large batches (Holdings Performance) serialises the calls behind a lock; do the same in anything new.
 - **Best-effort enrichment:** several features layer optional data on a reliable core and degrade quietly rather than failing — for example the Tear Sheet's revenue-by-income-stream breakdown (read from SEC XBRL filings; companies whose filings don't reconcile to reported revenue show a single revenue node) and its 10-year history (SEC filings, falling back to Yahoo's ~4 years for foreign filers and funds).
 - **Index and ETF coverage:** the S&P 500 list comes from Wikipedia, the Nasdaq-100 from Nasdaq, and the Dow 30 from a list maintained in this app, so it can lag index changes. Yahoo publishes only an ETF's top 10 holdings, so Holdings Performance shows full holdings only for those indexes, their ETFs and the sector SPDRs, and flags every other ETF as partial.
+- **Economy data is revised data.** FRED serves current values, not what was known at each release, so history (and the studies and regime labels built on it) looks cleaner than it did in real time. ICE credit spreads carry only the last three years on FRED, so credit stress uses Moody's Baa spread instead. Indicator Studies delay entry by each series' publication lag and count episodes, not months, to avoid overstating the sample.
+- **Rule-based, not fitted.** The regime, recession-risk score and sector screener are fixed, explainable rules. The recession-score threshold was checked against NBER dates since 1990 (67 of 74 recession months flagged, no false alarms outside the nine months after a recession) and the page shows the score's record. Backtests cover only a few cycles and are labelled as hypothetical.
 - **ANTHROPIC_API_KEY:** Required only for AI-powered features. All market data features work without it.
 - **WebSocket:** Run uvicorn without `--reload` in production to avoid zombie worker processes on Windows.
 - **No authentication:** the API is open and CORS allows any origin — it is built for a single user on a trusted machine. Don't expose it to the internet as-is, and don't add endpoints that send messages or spend money without guardrails.

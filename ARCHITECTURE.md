@@ -13,7 +13,7 @@ flowchart TD
 
     subgraph Frontend["Frontend — localhost:5173"]
         App["App.jsx\n(sidebar nav, lazy-loaded views, WS, polling)"]
-        Components["~110 component files\n(88 sidebar views in 10 groups + Home + Help:\nMarkets, Research, Watchlist, Trading, Merger Arb,\nSPACs, Portfolio, AI Tools, Retirement, …)"]
+        Components["~110 component files\n(93 sidebar views in 12 groups + Home + Help:\nMarkets, Economy, Sectors, Research, Watchlist, Trading,\nMerger Arb, SPACs, Portfolio, AI Tools, Retirement, …)"]
         ChartModal["ChartModal.jsx\n(11-tab chart overlay)"]
         TLCharts["TradingView\nLightweight Charts v5"]
         App --> Components
@@ -23,8 +23,8 @@ flowchart TD
 
     subgraph Backend["Backend — localhost:8000 (FastAPI + Uvicorn)"]
         Core["main.py — permanent core (~550 lines)\n_fetch_quote / _fetch_fundamentals / _fetch_perf_one /\n_fetch_screener_quotes / _fetch_feed + their TTLs,\nhealth check, SPA catchall, FastAPI lifespan"]
-        Routers["backend/routers/ — 92 files\none APIRouter per feature, registered in main.py"]
-        Helpers["Helper modules (backend root)\ndatabase · edgar_utils · digest_* ·\ntear_sheet_pdf · income_flow ·\nholdings_perf · sec_revenue_streams"]
+        Routers["backend/routers/ — 91 files\none APIRouter per feature, registered in main.py"]
+        Helpers["Helper modules (backend root)\ndatabase · edgar_utils · digest_* ·\ntear_sheet_pdf · income_flow ·\nholdings_perf · sec_revenue_streams ·\nfred_data · economy* · market_history · sectors"]
         Scheduler["Digest scheduler thread\n(started by main.py's lifespan)"]
         WS["WebSocket\n/ws/quotes"]
         SSE["SSE endpoints\n/api/ai-chat, /api/financial-plan,\n/api/trade-ideas, /api/ai/morning-briefing, …"]
@@ -49,7 +49,7 @@ flowchart TD
         Treasury["Treasury.gov\nyield-curve CSVs"]
         Lists["Index membership\nWikipedia (S&P 500)\nNasdaq API (Nasdaq-100)"]
         Anthropic["Anthropic API\nclaude-sonnet-4-6 for most AI features;\nclaude-haiku-4-5 for the digest's\nshort AI summary"]
-        Optional["Optional: Gemini (AI Chat),\nFRED (economic series),\nTelegram Bot API (digest delivery)"]
+        Optional["Optional: Gemini (AI Chat),\nTelegram Bot API (digest delivery)"]
     end
 
     Browser -->|HTTP + WebSocket| Frontend
@@ -239,6 +239,34 @@ sequenceDiagram
 
 Why it is shaped this way: 3Y–LTD returns need decades of history for ~500 stocks, so those come from weekly bars in small chunks (a single 500-stock request holds ~150 MB) from which only a few anchor prices per symbol are kept; anchors live in **one shared per-symbol store** so the S&P 500, SPY and a sector ETF reuse each other's downloads. `yfinance.download` is not thread-safe, so every call goes through one lock, and a partial anchor result (rate limiting, a failed chunk) is used for the request but not cached.
 
+## Data Flow — Economy & Sectors
+
+```mermaid
+flowchart LR
+    FRED["FRED CSV\n(keyless, full history)"] --> FD["fred_data.py\nfred:{series} 6 hr"]
+    FD --> EC["economy.py\ntransforms, percentile,\ntrend, signal"]
+    CAT["economy_catalog.py\n50+ indicator definitions"] --> EC
+    EC --> R1["/api/economy/indicators\n/indicator/{id}"]
+    FD --> RG["economy_regime.py\ngrowth + inflation composites,\nrecession-risk score, phase"]
+    CAT --> RG
+    RG --> R2["/api/economy/regime"]
+    FD --> ST["economy_studies.py\nepisodes + forward returns"]
+    YF["yfinance Ticker.history\n(per-symbol, thread-safe)"] --> MH["market_history.py\nmhist / dhist"]
+    MH --> ST
+    ST --> R3["/api/economy/studies/{id}"]
+    MH --> SC["sectors.py\nscoreboard, rotation, screener,\ncycle fit, backtest"]
+    RG -->|"monthly phase labels"| SC
+    SC --> R4["/api/sectors/*"]
+```
+
+Design notes:
+
+- *Two data sources, deliberately separate.* FRED holds the macro series; Yahoo holds prices. Per-symbol `Ticker.history` calls are independent and run in a small thread pool, unlike the batched `yf.download` (not thread-safe, guarded by the Holdings Performance lock).
+- *Everything is a pure function.* `economy*.py` and `sectors.py` take Series and return dicts, so the tests build synthetic economies and markets with known answers (a recession at known months, a sector that trends harder than the rest) and assert the labels, scores and returns that must follow. Routers only fetch, call and cache.
+- *No look-ahead.* Growth and inflation percentiles are expanding-window (a month is ranked only against the past), studies delay entry by the data's publication lag, and the backtest scores each month-end using only data up to that date (tested by corrupting future prices and asserting the scores do not change).
+- *Calibrated, then disclosed.* The recession phase threshold (55) was chosen by checking the score against NBER dates since 1990: Sahm and CFNAI were tried as stand-alone overrides and produced false alarms (1992, 2002, 2010, 2021, 2024), so they contribute only through the composite. The page shows the score's record around each recession.
+- *Honest samples.* Studies count independent episodes (runs of the condition, merged within six months) instead of months, and flag fewer than four as anecdotal; the sector figures begin in 1999 and say so.
+
 ## Data Flow — AI Streaming (Chat / Trade Ideas / Morning Briefing / Advisor)
 
 ```mermaid
@@ -260,20 +288,31 @@ sequenceDiagram
 
 ## Component Map (by Navigation Group)
 
-88 sidebar views in 10 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
+93 sidebar views in 12 groups, plus Home and Help, backed by ~110 component files (`frontend/src/components/`). Every view is loaded with `React.lazy` in `App.jsx`, so each one is its own on-demand chunk and the landing page stays small; `App.jsx` is also the authoritative nav structure (`NAV_GROUPS`). Representative components per group:
 
 ```
 Home
 ├── HomeDashboard.jsx          Aggregated P&L, market pulse, movers, earnings, alerts, "What's New"
 └── CommandPalette.jsx         ⌘K fuzzy search across every view
 
-Markets  (17 views)
+Markets  (11 views)
 ├── MarketSummary.jsx          Overview: indices, sectors, Mag7, movers, news
 ├── IndexHeatmap.jsx           Constituent heatmap with dynamic ETF search
 ├── HoldingsPerformance.jsx    Per-holding returns over 1D…10Y/LTD, ranked by YTD
-├── SectorDashboard.jsx        Sector rotation table + heatmap
-├── YieldCurve.jsx, FedWatch.jsx, MacroCalendar.jsx, EconomicDashboard.jsx
 └── RedditTrending, ShortSqueeze, IpoCalendar, InsiderFeed, CryptoDashboard, MarketSentimentDashboard …
+
+Economy  (6)
+├── EconomyRegime.jsx          Cycle phase, growth × inflation quadrant, recession-risk score + track record
+├── EconomyIndicators.jsx      50+ indicators, filters, detail panel (history chart with recession shading)
+├── IndicatorStudies.jsx       What stocks did after a macro condition began, by episode
+├── YieldCurve.jsx, FedWatch.jsx, MacroCalendar.jsx
+└── MacroKit.jsx               Shared: useApi hook, formatters, TimeChart (SVG, recession bands, hover), Sparkline
+
+Sectors  (5)
+├── SectorScoreboard.jsx       11 SPDR sectors × 11 periods, risk view, calendar years, drill-down to holdings
+├── SectorRotation.jsx         Relative-rotation graph with trails
+├── SectorScreener.jsx         Horizon screener with adjustable factor weights and explanations
+└── SectorCycleFit.jsx, SectorBacktest.jsx
 
 Watchlist  (7)
 ├── StockTable.jsx             Live watchlist with flash animations
@@ -359,9 +398,15 @@ Every key and TTL below was extracted from the code (`grep cache_get`), so it is
 | `news:{symbol}` | 5 min | `routers/news.py` → headlines |
 | `market:rates` | 30 min | `routers/yield_curve.py` → Treasury yields + DXY |
 | `treasury_current`, `treasury_history:…`, `treasury_yield_curve` | 6 hr | `routers/treasury.py` → Treasury.gov par yields; `treasury_csv:{year}` is 6 hr for the current year, 30 days for past years |
-| `market:breadth`, `sectors:momentum`, `market:economic`, `market:fed-watch`, `mkt_sentiment_v1`, `market:short-squeeze`, `reddit_trending_{source}_{limit}` | 30 min | one per Markets view of the same name |
-| `market:sectors`, `sector:{sym}` | 15 min | `routers/sector_rotation.py` |
+| `market:breadth`, `market:fed-watch`, `mkt_sentiment_v1`, `market:short-squeeze`, `reddit_trending_{source}_{limit}` | 30 min | one per Markets view of the same name |
 | `index:constituents:{index}`, `etf:holdings:{etf}` | 15 min | `routers/index_constituents.py` |
+| `fred:{series}` | 6 hr | `fred_data.py` → one FRED series as {dates, values} |
+| `economy:catalog`, `economy:regime` | 30 min | `routers/economy.py` → indicator table; regime dashboard |
+| `economy:detail:{id}` | 30 min | `routers/economy.py` → one indicator's history |
+| `economy:study:{id}` | 6 hr | `routers/economy.py` → one indicator study |
+| `mhist:{symbol}` · `dhist:{symbol}` | 24 hr · 6 hr | `market_history.py` → full monthly / daily adjusted-close history |
+| `sectors:scoreboard`, `sectors:rotation` | 30 min | `routers/sectors.py` |
+| `sectors:cyclefit:{group}`, `sectors:backtest:{n}:{cost}:{def}` | 6 hr | `routers/sectors.py` |
 | `holdperf:{id}` | 15 min | `holdings_perf.py` → assembled holdings-performance table for one index/ETF |
 | `holdperf_anchors:{date}` | 26 hr | `holdings_perf.py` → shared per-symbol long-ago prices (3Y/5Y/10Y/LTD), reused by every universe |
 | `holdperf_u:{id}` | 24 hr | `holdings_perf.py` → index membership (Wikipedia / Nasdaq, or the in-app fallback) |

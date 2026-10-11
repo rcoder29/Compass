@@ -32,8 +32,6 @@ describe('UserGuide', () => {
     const content = document.body.textContent
     expect(content).toContain('Analyst Picks')
     expect(content).toContain('Index Heatmap')
-    expect(content).toContain('Sector Rotation')
-    expect(content).toContain('Sector Momentum')
   })
 
   it('Watchlist section mentions Smart Alerts', () => {
@@ -77,10 +75,14 @@ describe('UserGuide', () => {
     expect(document.body.textContent).toContain('Analyst Picks')
   })
 
-  it('Sector Rotation docs appear in Markets section', () => {
+  it('Economy and Sectors have their own documented sections (and the retired Markets views are gone)', () => {
     render(<UserGuide />)
-    expect(document.body.textContent).toContain('Sector Rotation')
-    expect(document.body.textContent).toContain('Sector Momentum')
+    const text = document.body.textContent
+    for (const label of ['Regime Dashboard', 'Indicator Studies', 'Rotation Map', 'Sector Screener', 'Cycle Fit', 'Sector Backtest']) expect(text).toContain(label)
+    const nav = text.slice(text.indexOf('Group'), text.indexOf('Home & Quick Search'))
+    expect(nav).toMatch(/Economy.*Regime Dashboard/)
+    expect(nav).toMatch(/Sectors.*Scoreboard/)
+    expect(nav).not.toMatch(/Markets[^A-Z]*Overview[^]*?Sector Momentum/)
   })
 
   it('Smart Alerts docs mention condition types', () => {
@@ -159,6 +161,11 @@ describe('UserGuide stays in sync with the app', () => {
   it('only links changelog entries to tabs that exist', () => {
     // every route App.jsx can render (sidebar items plus tabs outside the groups, like Home)
     const ids = new Set([...app.matchAll(/activeTab === '(\w+)'/g)].map(m => m[1]))
+    // plus tabs folded into other views, which App.jsx redirects through NAV_ALIASES (old pins and links keep working)
+    const aliasBlock = app.slice(app.indexOf('const NAV_ALIASES'), app.indexOf('}', app.indexOf('const NAV_ALIASES')))
+    const aliases = [...aliasBlock.matchAll(/^\s*(\w+):\s*'(\w+)'/gm)].map(m => [m[1], m[2]])
+    expect(aliases.length).toBeGreaterThan(0)
+    aliases.forEach(([from, to]) => { expect(ids.has(to)).toBe(true); ids.add(from) })
     expect(ids.size).toBeGreaterThan(80)
     const linked = CHANGELOG_BLOCKS.filter(b => b.type === 'h3').flatMap(b => [b.tabId, ...(b.tabIds || []).map(t => t.id)]).filter(Boolean)
     expect(linked.length).toBeGreaterThan(30)

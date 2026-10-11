@@ -4,6 +4,36 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Economy & Sectors
+
+Two new top-level sidebar groups (Markets is no longer the catch-all for macro and sector views).
+
+### Economy
+- **Regime Dashboard** — cycle phase (early / mid / late / slowdown / recession risk), growth × inflation quadrant with a 12-month trail, a 0-100 recession-risk score from ten warning signs (each shown with its rule, stress and weight), the score's record around every US recession since 1973 and a strip of key indicators. Rule-based and explainable; the recession threshold was calibrated against NBER dates since 1990 (67 of 74 recession months flagged; Sahm and CFNAI were tried as stand-alone overrides and produced false alarms, so they count only through the composite).
+- **Indicators** — 52 indicators (growth, labor, inflation, rates, credit, housing, consumers, global) from keyless FRED with full history. Percentile against the whole history, 10-year z-score, MAD-based trend, and a Supportive / Neutral / Cautionary signal with the reason. Detail panel: history chart with NBER recessions shaded, warning levels and comfort bands, and notes on what it is, why markets care and how to read it.
+- **Indicator Studies** — 19 studies (curve inversion / un-inversion, Sahm rule, claims surge, weak activity, hot inflation, disinflation, Fed cutting / hiking, wide credit spreads, tight conditions, high real yields, low sentiment, weak factory surveys, dollar and oil spikes, permit collapse, rising unemployment, elevated recession risk): S&P 500 forward returns at 1, 3, 6, 12 and 36 months against a baseline, by episode (not by overlapping month), with publication-lag-aware entry, sector response since 1999 and thin-sample flags.
+- Fed Watch, Yield Curve and Macro Calendar moved here from Markets. The old Economic Indicators view (12 FRED series, API key required) is replaced by Indicators and its key-free FRED loader.
+
+### Sectors
+- **Scoreboard** — 11 SPDR sectors × 1D…10Y/LTD (cumulative, annualised or vs SPY), risk view (volatility, max drawdown, return per risk, beta, up/down capture), calendar-year grid, leaders/laggards, relative-strength changes, trend state, and a drill-down to a sector's holdings.
+- **Rotation Map** — weekly relative-rotation graph (RS-Ratio × RS-Momentum) with 4/8-week trails and quadrant lists.
+- **Sector Screener** — Tactical / Intermediate / Strategic presets over momentum, trend, rotation, risk-adjusted return, drawdown, seasonality and cycle fit; adjustable weights; every score explained per factor; Overweight / Neutral / Underweight tiers.
+- **Cycle Fit** — average monthly excess return by cycle phase or growth/inflation quadrant, with months, episodes and hit rate per cell; feeds the screener's cycle factor.
+- **Sector Backtest** — month-end rotation into the top N sectors with no look-ahead, optional defensive switch, trading costs, vs SPY and equal-weight sectors (honest result: roughly SPY-like returns with a shallower drawdown, sensitive to settings).
+- The old Sector Rotation and Sector Momentum views (and their endpoints) are replaced by the Scoreboard. Old pins, recents and guide links to them still resolve through `NAV_ALIASES`.
+
+### Backend
+- New modules: `fred_data.py`, `economy_catalog.py`, `economy.py`, `economy_regime.py`, `economy_studies.py`, `market_history.py`, `sectors.py`; routers `economy.py` and `sectors.py`. Removed the routers for the retired views (`sector_rotation`, `sector_momentum`, `economic_dashboard`) and the unused `FRED_API_KEY` setting.
+
+### Tests
+- Backend 571 → 795 (new: indicator engine, regime model on a synthetic economy with a known recession, studies, sectors engine and endpoints). Frontend 208 → 252 (shared chart kit, all eight pages, and a User Guide check that old nav ids are valid aliases).
+- Fixed along the way: a number formatter that ignored an explicit digits argument (198K showed as "198.0K").
+
+### Documentation
+- README, ARCHITECTURE (new Economy & Sectors data flow, component map, cache keys), PRODUCT_ENHANCEMENTS (views table, follow-ups) and the in-app User Guide (new Economy and Sectors sections, navigation and caching tables) updated.
+
+---
+
 ## 2026-10-11 — Documentation Refresh & User Guide Crash Fix
 
 A full audit of every document against the code. It found stale claims in all of them and one real bug in the in-app User Guide.

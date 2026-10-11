@@ -28,7 +28,6 @@ const TearSheet = lazy(() => import('./components/TearSheet'))
 const HoldingsPerformance = lazy(() => import('./components/HoldingsPerformance'))
 const TradeJournal = lazy(() => import('./components/TradeJournal'))
 const MacroCalendar = lazy(() => import('./components/MacroCalendar'))
-const SectorDashboard = lazy(() => import('./components/SectorDashboard'))
 const StockComparison = lazy(() => import('./components/StockComparison'))
 const Backtester = lazy(() => import('./components/Backtester'))
 const TechnicalSignals = lazy(() => import('./components/TechnicalSignals'))
@@ -38,7 +37,6 @@ const PositionSizer = lazy(() => import('./components/PositionSizer'))
 const RichEarningsCalendar = lazy(() => import('./components/RichEarningsCalendar'))
 const NewsSentiment = lazy(() => import('./components/NewsSentiment'))
 const OptionsTracker = lazy(() => import('./components/OptionsTracker'))
-const SectorMomentum = lazy(() => import('./components/SectorMomentum'))
 const MarketBreadth = lazy(() => import('./components/MarketBreadth'))
 const FundamentalComparison = lazy(() => import('./components/FundamentalComparison'))
 const PriceTargets = lazy(() => import('./components/PriceTargets'))
@@ -68,7 +66,14 @@ const EstateRmdProjector = lazy(() => import('./components/EstateRmdProjector'))
 const InsiderFeed = lazy(() => import('./components/InsiderFeed'))
 const CryptoDashboard = lazy(() => import('./components/CryptoDashboard'))
 const PortfolioReview = lazy(() => import('./components/PortfolioReview'))
-const EconomicDashboard = lazy(() => import('./components/EconomicDashboard'))
+const EconomyRegime = lazy(() => import('./components/EconomyRegime'))
+const EconomyIndicators = lazy(() => import('./components/EconomyIndicators'))
+const IndicatorStudies = lazy(() => import('./components/IndicatorStudies'))
+const SectorScoreboard = lazy(() => import('./components/SectorScoreboard'))
+const SectorRotation = lazy(() => import('./components/SectorRotation'))
+const SectorScreener = lazy(() => import('./components/SectorScreener'))
+const SectorCycleFit = lazy(() => import('./components/SectorCycleFit'))
+const SectorBacktest = lazy(() => import('./components/SectorBacktest'))
 const StockAnalyzer = lazy(() => import('./components/StockAnalyzer'))
 const DividendTracker = lazy(() => import('./components/DividendTracker'))
 const WatchlistHeatmap = lazy(() => import('./components/WatchlistHeatmap'))
@@ -130,6 +135,11 @@ const Icons = {
       <path d="M11.2 10.1a5.5 5.5 0 10-1.1 1.1l3.1 3.1 1.1-1.1-3.1-3.1zm-4.7.9a4 4 0 110-8 4 4 0 010 8z"/>
     </svg>
   ),
+  economy: (
+    <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 2v12h13"/><path d="M4.5 10.5l3-3.5 2.5 2 4-5"/>
+    </svg>
+  ),
   sectors: (
     <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 shrink-0" fill="currentColor">
       <path d="M8 1.5A6.5 6.5 0 1014.5 8H8V1.5zm1.5-.1V6.5H15A6.52 6.52 0 009.5 1.4z"/>
@@ -180,17 +190,36 @@ const NAV_GROUPS = [
       { id: 'indexheatmap',    label: 'Index Heatmap' },
       { id: 'holdingsperf',    label: 'Holdings Performance' },
       { id: 'breadth',         label: 'Breadth' },
-      { id: 'sectors',         label: 'Sector Rotation' },
-      { id: 'sectormomentum',  label: 'Sector Momentum' },
-      { id: 'rates',           label: 'Yield Curve' },
-      { id: 'fedwatch',        label: 'Fed Watch' },
-      { id: 'macro',           label: 'Macro Calendar' },
       { id: 'recommendations', label: 'Analyst Picks' },
       { id: 'shortsqueeze',    label: 'Short Squeeze' },
       { id: 'ipocalendar',     label: 'IPO & Lockups' },
       { id: 'insiderfeed',     label: 'Insider Trading' },
       { id: 'crypto',          label: 'Crypto' },
-      { id: 'economic',        label: 'Economic Indicators' },
+    ],
+  },
+  {
+    id: 'economy',
+    label: 'Economy',
+    icon: Icons.economy,
+    items: [
+      { id: 'econregime',     label: 'Regime Dashboard' },
+      { id: 'econindicators', label: 'Indicators' },
+      { id: 'econstudies',    label: 'Indicator Studies' },
+      { id: 'fedwatch',       label: 'Fed Watch' },
+      { id: 'rates',          label: 'Yield Curve' },
+      { id: 'macro',          label: 'Macro Calendar' },
+    ],
+  },
+  {
+    id: 'sectors',
+    label: 'Sectors',
+    icon: Icons.sectors,
+    items: [
+      { id: 'sectorboard',    label: 'Scoreboard' },
+      { id: 'sectorrotation', label: 'Rotation Map' },
+      { id: 'sectorscreener', label: 'Sector Screener' },
+      { id: 'sectorcycle',    label: 'Cycle Fit' },
+      { id: 'sectorbacktest', label: 'Sector Backtest' },
     ],
   },
   {
@@ -351,6 +380,15 @@ const FLAT_NAV_ITEMS = [
   { id: 'learn', label: 'Investor Education', group: 'Help' },
 ]
 const NAV_INDEX = Object.fromEntries(FLAT_NAV_ITEMS.map(i => [i.id, i]))
+
+// Tabs that were folded into the Economy and Sectors sections. Old pins, recents and guide links still resolve.
+const NAV_ALIASES = {
+  sectors: 'sectorboard',          // Sector Rotation
+  sectormomentum: 'sectorboard',   // Sector Momentum
+  economic: 'econindicators',      // Economic Indicators
+}
+const resolveTab = id => NAV_ALIASES[id] || id
+const cleanTabList = list => [...new Set((Array.isArray(list) ? list : []).map(resolveTab).filter(id => NAV_INDEX[id]))]
 
 // ── Watchlist selector bar ────────────────────────────────────────────────────
 
@@ -619,14 +657,16 @@ export default function App() {
   const [spacFocusId, setSpacFocusId] = useState(null)
   const goToSpac = (tabId, spacId = null) => { setSpacFocusId(spacId); setActiveTab(tabId) }
   const [guideSection, setGuideSection] = useState(null)
+  const [holdingsUniverse, setHoldingsUniverse] = useState('SP500')
   const goToGuideSection = (sectionId) => { setGuideSection(sectionId); setActiveTab('guide') }
 
   // ── Navigation (command palette + recently-visited tracking) ─────────────
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [recentTabs, setRecentTabs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('sm-recent-tabs') || '[]') } catch { return [] }
+    try { return cleanTabList(JSON.parse(localStorage.getItem('sm-recent-tabs') || '[]')) } catch { return [] }
   })
-  const navigate = useCallback((id) => {
+  const navigate = useCallback((rawId) => {
+    const id = resolveTab(rawId)
     setActiveTab(id)
     if (id !== 'home' && id !== 'guide') {
       setRecentTabs(prev => {
@@ -638,8 +678,9 @@ export default function App() {
   }, [])
 
   const [pinnedTabs, setPinnedTabs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('sm-pinned-tabs') || '[]') } catch { return [] }
+    try { return cleanTabList(JSON.parse(localStorage.getItem('sm-pinned-tabs') || '[]')) } catch { return [] }
   })
+  const openHoldings = useCallback((symbol) => { setHoldingsUniverse(symbol); navigate('holdingsperf') }, [navigate])
   const togglePin = useCallback((id) => {
     setPinnedTabs(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -1045,7 +1086,14 @@ export default function App() {
           {activeTab === 'tearsheet' && <TearSheet />}
           {activeTab === 'journal'         && <TradeJournal />}
           {activeTab === 'macro'           && <MacroCalendar />}
-          {activeTab === 'sectors'         && <SectorDashboard />}
+          {activeTab === 'econregime'      && <EconomyRegime onNavigate={navigate} />}
+          {activeTab === 'econindicators'  && <EconomyIndicators />}
+          {activeTab === 'econstudies'     && <IndicatorStudies />}
+          {activeTab === 'sectorboard'     && <SectorScoreboard onOpenHoldings={openHoldings} />}
+          {activeTab === 'sectorrotation'  && <SectorRotation />}
+          {activeTab === 'sectorscreener'  && <SectorScreener />}
+          {activeTab === 'sectorcycle'     && <SectorCycleFit />}
+          {activeTab === 'sectorbacktest'  && <SectorBacktest />}
           {activeTab === 'compare'         && <StockComparison />}
           {activeTab === 'backtest'        && <Backtester />}
           {activeTab === 'aibot'           && <AiBot />}
@@ -1057,10 +1105,9 @@ export default function App() {
           {activeTab === 'richearnings'    && <RichEarningsCalendar symbols={allSymbols} />}
           {activeTab === 'newssentiment'   && <NewsSentiment symbols={watchlist} />}
           {activeTab === 'optionstracker'  && <OptionsTracker />}
-          {activeTab === 'sectormomentum'  && <SectorMomentum />}
           {activeTab === 'breadth'         && <MarketBreadth />}
           {activeTab === 'indexheatmap'   && <IndexHeatmap />}
-          {activeTab === 'holdingsperf'   && <HoldingsPerformance />}
+          {activeTab === 'holdingsperf'   && <HoldingsPerformance key={holdingsUniverse} initialUniverse={holdingsUniverse} />}
           {activeTab === 'rates'           && <YieldCurve />}
           {activeTab === 'fundamentals'    && <FundamentalComparison />}
           {activeTab === 'pricetargets'    && <PriceTargets />}
@@ -1088,7 +1135,6 @@ export default function App() {
           {activeTab === 'estatermd'             && <EstateRmdProjector />}
           {activeTab === 'crypto'               && <CryptoDashboard />}
           {activeTab === 'portfolioreview'      && <PortfolioReview />}
-          {activeTab === 'economic'             && <EconomicDashboard />}
           {activeTab === 'stockanalyzer'        && <StockAnalyzer />}
           {activeTab === 'dividendtracker'      && <DividendTracker />}
           {activeTab === 'watchlistheatmap'    && <WatchlistHeatmap watchlist={watchlist} quotes={quotes} />}
