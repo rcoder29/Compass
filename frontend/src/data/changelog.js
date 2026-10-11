@@ -10,6 +10,11 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Holdings Performance', tabId: 'holdingsperf' },
+  { type: 'bullets', items: [
+    'New Markets → Holdings Performance: pick an index (S&P 500, Nasdaq-100, Dow 30), a sector SPDR (XLK, XLF…) or any ETF ticker and see every holding\'s total return over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD with a benchmark row and Average / Median / % up / % beating-benchmark stats.',
+    'Sort by any period, filter by sector or text, switch the multi-year columns to annualised, export CSV, and click a symbol for its chart. Index ETFs (SPY, QQQ, DIA…) and sector SPDRs show full holdings; other ETFs show Yahoo\'s top 10, flagged as partial.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Tear Sheet: Quarterly Income Flow', tabId: 'tearsheet' },
   { type: 'bullets', items: [
     'New "Where the money goes" section on the Tear Sheet: a Sankey diagram for each of the last four quarters showing revenue split across income streams (iPhone / Services, AWS / advertising, segments or regions — read from the company\'s SEC 10-Q/10-K filings) flowing through cost of revenue, R&D, SG&A, other income, taxes and net income, and out to dividends, buybacks and retained earnings.',

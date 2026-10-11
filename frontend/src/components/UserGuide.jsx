@@ -21,7 +21,7 @@ const GUIDE = [
       { type: 'p', text: 'The left sidebar organises all features into 9 groups. All groups start collapsed — click a group header to expand it. Only the group containing your current view opens automatically. Click any item to load that view. Home is pinned above the groups and the User Guide button is pinned below them. On mobile, tap ☰ to open the sidebar drawer.' },
       { type: 'p', text: 'Hover any item inside a group to reveal a ☆ button on its right — click it to pin that item. Pinned items collect in a "Pinned" section above the groups (with a filled ★ to unpin), so your most-used views are always one click away without expanding anything. Pins are saved locally and start empty.' },
       { type: 'table', headers: ['Group', 'What\'s Inside'], rows: [
-        ['Markets', 'Overview, Sentiment, Index Heatmap, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators'],
+        ['Markets', 'Overview, Sentiment, Index Heatmap, Holdings Performance, Breadth, Sector Rotation, Sector Momentum, Yield Curve, Fed Watch, Macro Calendar, Analyst Picks, Short Squeeze, IPO & Lockups, Insider Trading, Crypto, Economic Indicators'],
         ['Research', 'Tear Sheet, Screener, Range Screener, Price Projection, Fundamentals, DCF Valuation, Chart Compare, Backtester, Earnings Surprise, Earnings Strategy, Analyst Ratings, Fund Holdings, Corporate Bonds, Convertible Bonds, Treasury Bonds, Activist Tracker, Relative Strength, Seasonal Patterns, ETF Overlap, Signals, Unusual Options'],
         ['Watchlist', 'Watchlist, Heatmap, Correlation, Price Targets, Earnings+, News Sentiment, Smart Alerts'],
         ['News', 'My News Feed'],
@@ -144,6 +144,22 @@ const GUIDE = [
         'Click any row to open the full chart modal for that stock.',
       ]},
       { type: 'tip', text: 'Tip: use the Index Heatmap with QQQ or SPY before trading to see which mega-caps are dragging or leading the market. A concentrated red tile on AAPL or NVDA (both >5% weight) can explain broad market weakness even when most stocks are green.' },
+      { type: 'h3', text: 'Holdings Performance' },
+      { type: 'p', text: 'See how every holding of an index or ETF has performed across 1 day, 1 week, 1 month, 3 months, 6 months, year-to-date, 1 year, 3, 5 and 10 years, and life-to-date (since each stock\'s first trade), ranked by YTD return so the year\'s leaders sit on top. Found under Markets → Holdings Performance.' },
+      { type: 'table', headers: ['Control', 'What it does'], rows: [
+        ['S&P 500 / Nasdaq-100 / Dow 30', 'Every constituent of the index. The S&P 500 takes about 30–60 seconds the first time (it downloads decades of price history for ~500 stocks), then loads instantly from cache.'],
+        ['Sector ETFs', 'The 11 Select Sector SPDRs (XLK, XLF, XLV…), shown as their S&P 500 sector members.'],
+        ['Any ETF', 'Type a ticker. Index ETFs like SPY, IVV, VOO, QQQ and DIA show every holding of their index. Other ETFs (ARKK, VTI, IWM…) show only the top 10 holdings Yahoo publishes — flagged on the page, since a complete list isn\'t freely available.'],
+        ['Click a column header', 'Sorts by that period (and again to reverse). Stocks without that much history always sink to the bottom.'],
+        ['Annualise 3Y+', 'Switches the 3Y, 5Y, 10Y and LTD columns from cumulative to per-year returns, which makes a stock with 4 years of history comparable to one with 40.'],
+        ['Sector / Filter', 'Narrow to a sector or search by symbol or name; the Average, Median, % up and % beating-benchmark rows recompute for what is shown.'],
+        ['Export CSV', 'Downloads exactly the rows shown, in the current order and mode.'],
+      ]},
+      { type: 'bullets', items: [
+        'Returns are total returns: dividends are reinvested. The pinned blue row is the benchmark (SPY for the S&P 500, QQQ for the Nasdaq-100, the fund itself for an ETF).',
+        'A dash means the stock hadn\'t been listed that long. Hover an LTD cell to see its start date. Click any symbol to open its chart.',
+      ]},
+      { type: 'tip', text: 'Tip: sort by 1D or 1W to see what is moving now, YTD for the year\'s winners, and then compare against the "% beating SPY" row — in many years only a third of the index beats it.' },
       { type: 'h3', text: 'Fed Watch' },
       { type: 'p', text: 'Tracks FOMC meeting dates and derives rate-change probabilities from 30-day Fed Funds futures (CME ZQ contracts). The target range is fetched live from the 13-week T-bill rate, so it updates automatically when the Fed moves.' },
       { type: 'table', headers: ['Element', 'What it shows'], rows: [

@@ -4,6 +4,30 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Holdings Performance
+
+New Markets → Holdings Performance page: every holding of an index or ETF with its return over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD. The existing Index Heatmap stops at 1Y, covers only the S&P top 100, and gets ETF holdings from Yahoo's top 10.
+
+### New
+- `backend/holdings_perf.py` — universes and return math.
+  - **Universes:** S&P 500 (Wikipedia's constituents table, with GICS sector), Nasdaq-100 (Nasdaq's official list, with market-cap weights), Dow 30 (the in-app list). Index ETFs resolve to their index (SPY/IVV/VOO/SPLG/RSP → S&P 500, QQQ/QQQM → Nasdaq-100, DIA → Dow 30) and the 11 Select Sector SPDRs (XLK, XLF…) to their GICS-sector slice of the S&P 500, which is how those funds are built. Any other ETF falls back to the top 10 holdings Yahoo publishes, flagged partial on the page — there is no free source of complete holdings for arbitrary funds. If a live list fails, the in-app list is used and the page says so.
+  - **Returns:** total returns from dividend-adjusted closes. 1D is the last two closes; 1W is 7 calendar days; 1M–10Y are calendar offsets from the latest close; YTD runs from the prior year-end close (a stock listed this year uses its first close); LTD runs from the first trade's open. Multi-year and LTD periods also get an annualised figure (needs 2.5 years of history, a year for LTD) behind an "Annualise 3Y+" toggle.
+  - **Data:** one daily download covers the short periods; the long ones need decades of history for ~500 stocks, so those come from weekly bars downloaded in chunks of 100 (a single 500-stock request holds ~150 MB), keeping only a few anchor prices per symbol. Anchors are cached for a day in one shared per-symbol store, so SPY after the S&P 500, or a sector ETF after either, only downloads symbols it hasn't seen. Cold S&P 500 build ~32 s; SPY after it ~12 s; a sector ETF or the Nasdaq-100 2-3 s; repeat visits are served from a 15-minute cache.
+- `backend/routers/holdings_performance.py` — `GET /api/holdings-performance?universe=…` and `/universes`.
+- `frontend/src/components/HoldingsPerformance.jsx` — universe buttons, a sector-ETF picker and a free ticker box; a sticky-header table sorted by YTD by default (click any column to sort, missing values always sink to the bottom) with heat-coloured cells scaled per period, a pinned benchmark row, and Average / Median / % up / % beating-benchmark rows that recompute for whatever is filtered; sector and text filters; the annualise toggle; CSV export of exactly the rows shown; click a symbol for its chart.
+
+### Fixed along the way
+- **yfinance deadlock.** `yfinance.download` keeps its working state in module-level dicts, so two downloads running at once — even from different threads — corrupt each other and hang. The first live attempt ran the daily and weekly downloads concurrently and never finished. All downloads now go through one lock (a regression test asserts they never overlap).
+- **Partial results poisoned the cache.** That same overlapping run saved ~20% coverage of long-history prices for a day, so multi-year columns were empty for most stocks. Anchors are now saved only when at least 80% of what was requested came back, and a retry asks only for the missing symbols.
+- **Single-ticker downloads.** Current yfinance returns multi-level columns even for one ticker; the first version assumed flat columns and silently dropped the benchmark and any one-symbol chunk.
+
+### Tests
+- Backend 571 (+101): universe sources (Wikipedia, Nasdaq, fallbacks), alias and sector resolution, return maths checked against hand-computed numbers (including recent listings, annualisation limits, timezones, NaNs), weekly anchors, summary stats, payload assembly and sorting, chunked downloads and the failure modes above, concurrency, caching, and the endpoints. Frontend `HoldingsPerformance.test.jsx` 33/33: sorting and its stability, formatting and heat, benchmark and summary rows, filters, annualise mode, universe switching, errors, partial-ETF notices, overlapping loads under StrictMode, CSV contents and escaping.
+
+### Verified
+- Live: S&P 500 503/503 with data (5Y 491 stocks, 10Y 468; SPY 10Y +328%, YTD +15.1% and AAPL YTD +24.2%, both matching the Tear Sheet's independent figures), SPY, XLK (75 members), QQQ (101 including both Alphabet classes, weights sum to 100), ARKK (top 10, partial), and 404s with a clear message for a stock ticker and for nonsense.
+- Not verified in a browser (layout, sticky columns and the heat colouring were not looked at).
+
 ## 2026-10-11 — Tear Sheet: Quarterly Income Flow
 
 New Tear Sheet section showing how recent quarters' revenue distributes across income streams on its way to net income, dividends and buybacks.

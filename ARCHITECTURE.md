@@ -196,6 +196,7 @@ Home
 Markets
 ├── MarketSummary.jsx          Overview: indices, sectors, Mag7, movers, news
 ├── IndexHeatmap.jsx           Constituent heatmap with dynamic ETF search
+├── HoldingsPerformance.jsx    Per-holding returns over 1D…10Y/LTD, ranked by YTD
 ├── SectorDashboard.jsx        Sector rotation table + heatmap
 ├── YieldCurve.jsx             Treasury curve + DXY
 └── FedWatch.jsx                FOMC cut/hold/hike odds
@@ -272,6 +273,9 @@ flowchart LR
 | `fund:` | 5 min (`_FUND_TTL`, main.py) | Fundamentals (P/E, EPS, beta, …) |
 | `chart:{symbol}:{period}` | 1 min–24 hr, scaled to the period (`routers/chart.py`) | OHLCV bars |
 | `news:` | 5 min (`routers/news.py`) | Headlines |
+| `holdperf:{id}` | 15 min (`holdings_perf.py`) | Assembled holdings-performance table for one index/ETF |
+| `holdperf_anchors:{date}` | 26 hr (`holdings_perf.py`) | Shared per-symbol long-ago prices (3Y/5Y/10Y/LTD) from weekly history, reused by every universe |
+| `holdperf_u:{id}` | 24 hr (`holdings_perf.py`) | Index membership (S&P 500 from Wikipedia, Nasdaq-100 from Nasdaq) |
 | `index:constituents:{index}` | 15 min (`routers/index_constituents.py`) | Index/ETF constituent weights + returns |
 | `earnings:` | 4 hr (`routers/earnings_calendar.py`) | Upcoming earnings dates + EPS estimates |
 | `rich_earn:` | 2 hr (`routers/rich_earnings_calendar.py`) | Expected move, beat-rate history, pre-earnings drift |

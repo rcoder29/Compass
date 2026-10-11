@@ -25,6 +25,7 @@ Stock Monitor started as a simple watchlist with live prices and has grown into 
 | **Analyst Picks** | Sell-side analyst upgrades/downgrades (firm, prior/new rating, price target) + AI Growth Watch List across 9 AI stack layers. |
 | **Breadth** | Large-cap market breadth: above-50/200MA %, A/D ratio, H/L ratio, put/call ratio, VIX sparkline, 60-day A/D line chart. |
 | **Index Heatmap** | Constituent heatmap for any index or ETF. Search any ticker dynamically or use quick-access buttons (DIA, QQQ, SPY, ARKK). Tiles sized by live market-cap weight, coloured by 1D return. Market-cap-weighted index return + top contributor/drag summary. |
+| **Holdings Performance** | Returns for every holding of an index or ETF over 1D, 1W, 1M, 3M, 6M, YTD, 1Y, 3Y, 5Y, 10Y and life-to-date, ranked by YTD with a pinned benchmark row, summary stats (average, median, % up, % beating the benchmark), sector and text filters, an annualised view of the multi-year columns, CSV export and click-through charts. Full holdings for the S&P 500, Nasdaq-100, Dow 30, their ETFs (SPY, QQQ, DIA…) and the 11 sector SPDRs; other ETFs show Yahoo's top 10, flagged as partial. |
 | **Sector Rotation** | Performance table and heatmap for 11 GICS sector ETFs across 1D/1W/1M/3M. |
 | **Sector Momentum** | Composite momentum ranking with acceleration signals (▲▲/▲/▼/▼▼) and vs-SPY relative strength toggle. |
 | **Macro Calendar** | Upcoming high-impact economic events: FOMC, CPI, PPI, PCE, NFP, GDP — with urgency badges. |
@@ -199,6 +200,8 @@ Bypass for a specific commit with `git commit --no-verify` if you hit a false po
 | `GET /api/fundamentals?symbols=AAPL,MSFT` | 21-metric fundamental comparison |
 | `GET /api/tear-sheet/{symbol}` | Full company tear sheet (profile, performance, financials, valuation verdict, estimates, analysts, ownership) |
 | `GET /api/tear-sheet/{symbol}/pdf` | The tear sheet as a PDF download |
+| `GET /api/holdings-performance?universe=SP500` | Per-holding returns over 11 periods for an index, index ETF, sector SPDR, or any ETF's top holdings |
+| `GET /api/holdings-performance/universes` | Preset indexes and sector ETFs for the picker |
 | `GET /api/dcf/{symbol}` | Pre-fill DCF inputs from yfinance |
 | `GET /api/options/{symbol}` | Options chain (nearest expiry) |
 | `GET /api/unusual-options` | Unusual options activity scan |
@@ -257,6 +260,7 @@ stockmonitor/
 │   ├── digest_channels.py   Delivery channels (Telegram; token redacted from all errors)
 │   ├── tear_sheet_pdf.py    Tear Sheet → multi-page PDF (reportlab, vector charts)
 │   ├── income_flow.py       Quarterly income waterfall → Sankey graph + layout (shared by page and PDF)
+│   ├── holdings_perf.py     Index/ETF universes + multi-period total returns (daily + chunked weekly history)
 │   ├── sec_revenue_streams.py  Revenue by product/segment/region from SEC 10-Q/10-K XBRL (Q4 derived)
 │   ├── digest_service.py    Settings, due-time + catch-up logic, at-most-once claiming,
 │   │                        retries, audit log, and the background scheduler thread
@@ -350,6 +354,7 @@ stockmonitor/
 │   │   ├── range_screener.py            Research → Range Screener (30/60/90d support/resistance scan)
 │   │   ├── tear_sheet.py                Research → Tear Sheet (one-page company snapshot + valuation verdict)
 │   │   ├── tear_sheet_share.py          Tear Sheet → PDF download
+│   │   ├── holdings_performance.py      Markets → Holdings Performance
 │   │   ├── digest.py                    AI Tools → Digests (settings, preview, send, history)
 │   │   ├── crypto_dashboard.py          Markets → Crypto
 │   │   ├── ai_portfolio_review.py       AI Tools → Portfolio Review — _fetch_quote deferred
@@ -364,7 +369,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (470 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (571 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real stockmonitor.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -386,6 +391,7 @@ stockmonitor/
 │           ├── MarketRecommendations.jsx Analyst picks + AI Growth Watch List
 │           ├── MarketBreadth.jsx        Breadth dashboard
 │           ├── IndexHeatmap.jsx         Index/ETF constituent heatmap with dynamic search
+│           ├── HoldingsPerformance.jsx  Holdings returns by period, ranked by YTD
 │           ├── SectorDashboard.jsx      Sector rotation table + heatmap
 │           ├── SectorMomentum.jsx       Sector momentum ranker
 │           ├── MacroCalendar.jsx        Economic event calendar

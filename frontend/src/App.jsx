@@ -25,6 +25,7 @@ const Screener = lazy(() => import('./components/Screener'))
 const RangeScreener = lazy(() => import('./components/RangeScreener'))
 const PriceProjection = lazy(() => import('./components/PriceProjection'))
 const TearSheet = lazy(() => import('./components/TearSheet'))
+const HoldingsPerformance = lazy(() => import('./components/HoldingsPerformance'))
 const TradeJournal = lazy(() => import('./components/TradeJournal'))
 const MacroCalendar = lazy(() => import('./components/MacroCalendar'))
 const SectorDashboard = lazy(() => import('./components/SectorDashboard'))
@@ -177,6 +178,7 @@ const NAV_GROUPS = [
       { id: 'sentiment',       label: 'Sentiment' },
       { id: 'reddittrending',  label: 'Reddit Trending' },
       { id: 'indexheatmap',    label: 'Index Heatmap' },
+      { id: 'holdingsperf',    label: 'Holdings Performance' },
       { id: 'breadth',         label: 'Breadth' },
       { id: 'sectors',         label: 'Sector Rotation' },
       { id: 'sectormomentum',  label: 'Sector Momentum' },
@@ -1058,6 +1060,7 @@ export default function App() {
           {activeTab === 'sectormomentum'  && <SectorMomentum />}
           {activeTab === 'breadth'         && <MarketBreadth />}
           {activeTab === 'indexheatmap'   && <IndexHeatmap />}
+          {activeTab === 'holdingsperf'   && <HoldingsPerformance />}
           {activeTab === 'rates'           && <YieldCurve />}
           {activeTab === 'fundamentals'    && <FundamentalComparison />}
           {activeTab === 'pricetargets'    && <PriceTargets />}
