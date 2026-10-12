@@ -4,6 +4,23 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-11 — Market Regime on Home and in the Digest
+
+### Added
+- **Home → Market Regime card.** Cycle phase, growth/inflation quadrant and the 0-100 recession-risk score, with chips for an inverted yield curve, flashing warning signs and what changed since an earlier day (a new phase, or recession risk moving 5+ points). Beneath it: sectors leading and lagging SPY over three months, the strongest and weakest themes, and the most-shorted stocks with their borrow fees and a dot for whether bonds agree with the shorts. Each block links to its page.
+- **Digest → "Market regime" section** (daily and weekly, right after Markets): the same summary as text/HTML, with the changes line, flashing warning signs, sector and theme leaders and laggards, and the most-shorted names. Left out when nothing could be loaded; if the fetch fails it is named in the digest's "unavailable" footnote.
+- `GET /api/home/regime` and a shared `regime_summary.py` so Home and the digest cannot disagree.
+
+### Design decisions
+- Never starts a slow job: the economic regime and sector scoreboard are fast or cached, but themes (200 companies) and short interest (a multi-minute, three-stage build) are read from cache only and are absent until those pages have been opened. A failing source is isolated and listed in `errors`.
+- A 21-day per-day history of {phase, recession score} powers the "what changed" chips and digest line.
+- The existing digest tests stub the new fetch so they never touch FRED or Yahoo.
+
+### Tests
+- Backend +30 (summarisers, change detection, history trimming, failure isolation, cache-only loaders, endpoint, digest section and rendering incl. HTML escaping); frontend +10 (card states, navigation, Home integration). Totals 1,085 backend and 343 frontend.
+
+---
+
 ## 2026-10-11 — Sidebar Reorganised (13 groups → 11)
 
 The left navigation had grown in the order features were built, not in the order people use them. It is now arranged by workflow, with sub-headings in the long groups. No view IDs changed, so pins, recents, changelog links and ⌘K search are unaffected.

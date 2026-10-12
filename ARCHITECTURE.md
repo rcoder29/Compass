@@ -93,6 +93,14 @@ sequenceDiagram
 
 `routers/websocket_quotes.py` runs the blocking `_fetch_quote` calls in a thread-pool executor per tick so the async event loop isn't blocked; each quote itself is cached the normal way (`quote:{symbol}`, part of `_MARKET_TTL`), so a busy watchlist doesn't re-fetch from Yahoo every 4 seconds for symbols other tabs already warmed.
 
+## Shared Regime Summary (Home card and digest section)
+
+`regime_summary.py` builds one compact summary of the Economy, Sectors, Themes and Short Interest work for two consumers: `GET /api/home/regime` (Home's `RegimeCard`) and the digest's `regime` section (`digest_builder._regime`, rendered by `digest_render._regime_lines`). Design:
+
+- *Never starts a slow job.* The economic regime (FRED, a few seconds cold) and the sector scoreboard (daily ETF prices) are computed or read from cache; themes and short interest are read from cache only, at any age up to a day, because their first build takes minutes. A part that isn't cached is simply absent, and each source is isolated so one failure is listed in `errors` instead of sinking the summary.
+- *What changed.* A 21-day history of {phase, recession score} lets the summary say "phase Mid-cycle → Late cycle" or "recession risk 20 → 31" against the latest earlier day; moves under 5 points are not reported.
+- *One source of truth.* Home and the digest call the same functions, so the card and the message can't disagree. The digest tests stub the fetch (`_default_regime_fetch`) so they never reach FRED or Yahoo.
+
 ## Data Flow — Daily / Weekly Digest
 
 ```mermaid
@@ -537,6 +545,8 @@ Every key and TTL below was extracted from the code (`grep cache_get`), so it is
 | `sec_ticker_name_map` | 24 hr | `edgar_utils.py` → SEC name → ticker map |
 | `peers:list:{industry|sector}:{key}` · `peer:{sym}` | 24 hr | `peer_data.py` → Yahoo's largest companies in an industry/sector; one company's flat comparison record (shared by every stock in that industry) |
 | `peers:built:{sym}` | 6 hr | `routers/tear_sheet_peers.py` → the assembled peer comparison (not cached while partial) |
+| `home:regime` | 10 min | `routers/home_regime.py` → the regime summary (not cached when every source failed) |
+| `regime:history` | 21 days | `regime_summary.py` → {date: phase, recession score}, used to say what changed since an earlier day |
 | `tearsheet:{sym}` | 1 hr | `routers/tear_sheet.py` → assembled tear sheet (errors are not cached) |
 | `tearsheet_edgar:{sym}` | 24 hr | `routers/tear_sheet.py` → parsed 10-year annual history from SEC `companyfacts` |
 | `sec_rev_rows:{cik}:{accession}`, `sec_rev_labels:{cik}:{accession}` | 30 days | `sec_revenue_streams.py` → parsed revenue-by-dimension facts and member labels for one filing (filings never change) |
@@ -606,8 +616,8 @@ The quarterly income Sankey is laid out in the backend (`income_flow.layout_sank
 
 | Suite | Size | Notes |
 |---|---|---|
-| Backend (pytest) | 1055 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
-| Frontend (Vitest + Testing Library) | 333 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
+| Backend (pytest) | 1085 tests, ~10 s | `backend/tests/`: digest, main, price projection, range screener, tear sheet, tear sheet PDF, income flow, SEC revenue streams, holdings performance, economy indicators/regime/studies, sectors. No network; every test runs against a throwaway SQLite database (see "Test database isolation"). |
+| Frontend (Vitest + Testing Library) | 343 tests | Component tests next to the components. `UserGuide.test.jsx` also enforces **documentation integrity**: every sidebar view must appear in the guide, and every changelog "Open feature" link must target a route `App.jsx` can render. |
 | Lint gate | `ruff check --select F` | Pre-commit hook on staged backend files — catches undefined names left behind by refactors on code paths tests don't exercise. |
 
 Run with `python -m pytest` in `backend/` and `npm test` in `frontend/`.

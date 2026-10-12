@@ -15,6 +15,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import database
+import digest_builder
 import digest_channels
 import digest_service
 from database import (
@@ -37,6 +38,7 @@ def isolated_db(tmp_path, monkeypatch):
     for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    monkeypatch.setattr(digest_builder, "_default_regime_fetch", lambda: None)      # never reach FRED or Yahoo from the digest tests
     yield
 
 

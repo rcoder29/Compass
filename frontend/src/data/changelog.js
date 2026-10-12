@@ -10,6 +10,12 @@
 // without a tabId rather than guessing which of several tabs they mean.
 
 export const CHANGELOG_BLOCKS = [
+  { type: 'h3', text: '2026-10-11 — Market Regime on Home and in the digest' },
+  { type: 'bullets', items: [
+    'Home has a new Market Regime card: the economic cycle phase, the growth-and-inflation quadrant, the recession-risk score, any flashing warning signs, and what changed since an earlier day.',
+    'Below it: the sectors leading and lagging SPY over three months, the strongest and weakest themes, and the most heavily shorted stocks with their borrow fees. Each links to its page.',
+    'The daily and weekly digests have the same information as a new "Market regime" section. Themes and short interest appear once you have opened those pages.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Sidebar reorganised' },
   { type: 'bullets', items: [
     'The left navigation now has 11 groups in the order you tend to work: My Money, Markets, Economy, Sectors & Themes, Find Ideas, Research, Fixed Income, Event-Driven, Trading, Planning and AI Assistant.',

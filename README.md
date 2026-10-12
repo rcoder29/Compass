@@ -14,7 +14,7 @@ A full-featured real-time market intelligence platform for active traders and in
 
 Compass (originally Stock Monitor, and still in a `stockmonitor/` folder in older checkouts) started as a simple watchlist with live prices and has grown into a comprehensive dashboard covering market intelligence, portfolio management, deep-stock research, active trading tools, and AI-powered analysis — all in one dark-themed interface.
 
-Today that is **108 views in 11 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **1055 backend and 333 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
+Today that is **108 views in 11 sidebar groups** (plus a Home dashboard, an in-app User Guide and an Investor Education module), served by **94 API routers / ~185 endpoints**, with **1085 backend and 343 frontend tests**. The complete, always-current endpoint list is the interactive API reference at `http://localhost:8000/docs` once the backend is running.
 
 ---
 
@@ -122,7 +122,7 @@ Thematic investing: companies grouped by a long-term force instead of a sector. 
 | Feature | Description |
 |---|---|
 | **AI Chat** | Streaming Claude conversation for open-ended market questions, strategy discussion, and educational Q&A. |
-| **Digests** | A pre-market daily digest and a weekly recap of markets, portfolio P&L vs. SPY, watchlist movers, upcoming earnings/economic events, and price alerts — delivered to Telegram on a schedule you set, with preview, send-now, history, and an optional AI-written summary. |
+| **Digests** | A pre-market daily digest and a weekly recap of markets, a **market regime** section (cycle phase, recession risk, sector and theme leaders, most-shorted stocks), portfolio P&L vs. SPY, watchlist movers, upcoming earnings/economic events, and price alerts — delivered to Telegram on a schedule you set, with preview, send-now, history, and an optional AI-written summary. |
 | **Financial Advisor** | AI-generated portfolio strategy based on goal, horizon, capital, monthly contribution, risk tolerance, age, account type, and geographic focus. Includes asset allocation chart. |
 
 ### Merger Arb
@@ -162,7 +162,7 @@ Thematic investing: companies grouped by a long-term force instead of a sector. 
 ### Home, Learning & Help
 | Feature | Description |
 |---|---|
-| **Home** | The landing page: portfolio value and P&L, market pulse, biggest movers, upcoming earnings, active alerts, a "What's New" feed linked to the changelog, and a ⌘K command palette that jumps to any tool by name. |
+| **Home** | The landing page: portfolio value and P&L, market pulse, a **Market Regime** card (cycle phase, recession risk and what changed, sectors and themes vs SPY over three months, most-shorted stocks with borrow fees), biggest movers, upcoming earnings, active alerts, a "What's New" feed linked to the changelog, and a ⌘K command palette that jumps to any tool by name. |
 | **Investor Education** | A layered, navigable map of investing concepts (macro, market structure, asset classes, risk, valuation & analysis) with live data snapshots and deep links to the matching tools. |
 | **User Guide** | In-app documentation for every view, plus the full changelog. A test checks that every sidebar view is documented. |
 | **Export PDF** | Header button that saves the current page via the browser's print dialog. The Tear Sheet also has its own server-generated PDF. |
@@ -246,8 +246,8 @@ For a production build, run `npm run build` in `frontend/`: the backend serves t
 ### Tests
 
 ```bash
-cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 1055 tests, ~10 s, no network, isolated database
-cd frontend && npm test                # 333 tests (Vitest + Testing Library)
+cd backend  && pip install -r requirements-dev.txt && python -m pytest   # 1085 tests, ~10 s, no network, isolated database
+cd frontend && npm test                # 343 tests (Vitest + Testing Library)
 ```
 
 The backend suite never touches `backend/compass.db` or the network (see the test notes in the project structure below). The frontend suite includes documentation checks: every sidebar view must be described in the User Guide, and every changelog "Open feature" link must point to a real tab.
@@ -285,6 +285,7 @@ A curated tour — every route below was checked against the code. With the back
 ### Economy & Sectors
 | Endpoint | Description |
 |---|---|
+| `GET /api/home/regime` | Compact regime summary for Home and the digest: phase, quadrant, recession risk, changes since an earlier day, sector/theme leaders and laggards, most shorted (cache-only for themes and short interest; never starts a scan) |
 | `GET /api/economy/indicators` | The indicator library: latest value, changes, percentile, trend, signal, sparkline, grouped by category |
 | `GET /api/economy/indicator/{id}` | One indicator's full history, NBER recession spans, stats and explanatory text |
 | `GET /api/economy/regime` | Cycle phase, growth/inflation quadrant, recession-risk score and components, track record, 10-year history |
@@ -413,6 +414,7 @@ stockmonitor/
 │   ├── economy_regime.py    Growth/inflation composites, quadrant, recession-risk score, cycle phase, history labels
 │   ├── economy_studies.py   Episode detection and forward-return studies (publication-lag-aware, baseline-relative)
 │   ├── market_history.py    Long monthly/daily price history (Ticker.history, cached) for studies and sectors
+│   ├── regime_summary.py    Shared market-regime summary (Home card + digest section): summarisers, per-day history, cache-only loaders
 │   ├── short_interest.py    Short-interest maths: FINRA/IBKR parsing, float ranking, issuer-name matching, bond summaries, interest-paid proxy, equity-vs-credit displacement
 │   ├── short_interest_data.py  FINRA file discovery, IBKR FTP borrow table, Yahoo float/debt, bond-ETF index
 │   ├── yahoo_limits.py      Shared Yahoo 429 back-off (pauses all workers, grows with consecutive hits)
@@ -509,6 +511,7 @@ stockmonitor/
 │   │   ├── tax_advisor.py               Planning → Tax Advisor (AI, state-aware)
 │   │   ├── short_squeeze_scanner.py     Find Ideas → Short Squeeze
 │   │   ├── short_interest.py            Find Ideas → Short Interest (staged build with progress)
+│   │   ├── home_regime.py               Home → Market Regime card
 │   │   ├── ipo_lockup_calendar.py       Find Ideas → IPO & Lockups (live EDGAR-sourced)
 │   │   ├── fed_watch.py                 Economy → Fed Watch (FOMC cut/hold/hike odds)
 │   │   ├── ai_morning_briefing.py       AI Assistant → Morning Briefing
@@ -547,7 +550,7 @@ stockmonitor/
 │   ├── ruff.toml            Lint gate config — see "Lint gate" below
 │   ├── requirements.txt
 │   ├── requirements-dev.txt Dev-only deps (ruff, pytest) — not deployed
-│   ├── tests/               pytest suite (1055 tests). conftest.py's autouse isolated_db
+│   ├── tests/               pytest suite (1085 tests). conftest.py's autouse isolated_db
 │   │                        fixture runs every test against a throwaway SQLite DB, not the
 │   │                        real compass.db — every router reaches the DB only through
 │   │                        db_session()/cache_get()/cache_set(), which resolve SessionLocal
@@ -577,6 +580,7 @@ stockmonitor/
 │           ├── EconomyRegime.jsx        Economy → Regime Dashboard
 │           ├── EconomyIndicators.jsx    Economy → Indicators (+ detail chart)
 │           ├── IndicatorStudies.jsx     Economy → Indicator Studies
+│           ├── RegimeCard.jsx          Home → Market Regime card
 │           ├── ThemesOverview.jsx       Sectors & Themes › Themes → Overview
 │           ├── ThemePage.jsx            Sectors & Themes › Themes → one data-driven page per theme (AI, Robotics, Quantum, Space)
 │           ├── ThemeKit.jsx             Shared theme pieces: return cells, setup pill, scan progress

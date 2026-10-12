@@ -88,7 +88,12 @@ def _default_econ_fetch():
     return get_economic_calendar()
 
 
-def _load_ctx(kind, now, perf_fetch, earnings_fetch, econ_fetch) -> _Ctx:
+def _default_regime_fetch():
+    import regime_summary
+    return regime_summary.load_summary()
+
+
+def _load_ctx(kind, now, perf_fetch, earnings_fetch, econ_fetch, regime_fetch=None) -> _Ctx:
     ctx = _Ctx()
     ctx.kind = kind
     ctx.metric = "1d" if kind == "daily" else "5d"
@@ -96,6 +101,7 @@ def _load_ctx(kind, now, perf_fetch, earnings_fetch, econ_fetch) -> _Ctx:
     ctx.perf = _PerfBook(perf_fetch or _default_perf_fetch)
     ctx.earnings_fetch = earnings_fetch or _default_earnings_fetch
     ctx.econ_fetch = econ_fetch or _default_econ_fetch
+    ctx.regime_fetch = regime_fetch or _default_regime_fetch
 
     # DB timestamps are naive UTC (datetime.utcnow), so compare in naive UTC.
     since = now.astimezone(timezone.utc).replace(tzinfo=None) - timedelta(days=1 if kind == "daily" else 7)
@@ -147,6 +153,15 @@ def _market(ctx):
         "sectors_top": sectors[:3],
         "sectors_bottom": list(reversed(sectors[3:][-3:])),   # worst first; never overlaps the top
     }
+
+
+def _regime(ctx):
+    """The cycle phase, recession risk, sector and theme leaders and most-shorted stocks (the same summary as Home's regime card).
+    Omitted when nothing could be loaded."""
+    r = ctx.regime_fetch()
+    if not r or not (r.get("regime") or r.get("sectors") or r.get("themes") or r.get("shorts")):
+        return None
+    return r
 
 
 def _portfolio(ctx):
@@ -287,19 +302,19 @@ def _targets(ctx):
 
 
 _SECTIONS = [
-    ("market", _market), ("portfolio", _portfolio), ("watchlist", _watchlist),
+    ("market", _market), ("regime", _regime), ("portfolio", _portfolio), ("watchlist", _watchlist),
     ("events", _events), ("alerts", _alerts), ("targets", _targets),
 ]
 
 
 def build_digest(kind: str, now: datetime | None = None, tz_name: str = "America/New_York",
-                 perf_fetch=None, earnings_fetch=None, econ_fetch=None) -> dict:
+                 perf_fetch=None, earnings_fetch=None, econ_fetch=None, regime_fetch=None) -> dict:
     """Collect one digest. `kind` is 'daily' or 'weekly'. The fetch arguments
     exist so tests can run without touching Yahoo."""
     if kind not in ("daily", "weekly"):
         raise ValueError(f"unknown digest kind {kind!r}")
     now = now or datetime.now(timezone.utc)
-    ctx = _load_ctx(kind, now, perf_fetch, earnings_fetch, econ_fetch)
+    ctx = _load_ctx(kind, now, perf_fetch, earnings_fetch, econ_fetch, regime_fetch)
 
     symbols = list(INDEX_SYMS) + ["^VIX", "^TNX"] + list(SECTOR_ETFS) + ctx.watch + sorted(ctx.held)
     symbols += [a["symbol"] for a in ctx.alerts_active if a["type"] == "price"]

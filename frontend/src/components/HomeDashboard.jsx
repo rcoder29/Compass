@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import RegimeCard from './RegimeCard'
 // Dynamically imported (not a static import) so the ~50-entry changelog data
 // isn't bundled into Home's own eager chunk — it loads as a separate small
 // chunk right after first paint instead of growing the landing page's bundle.
@@ -116,6 +117,9 @@ export default function HomeDashboard({ watchlist, quotes, alerts, earnings, por
           color={m?.vix?.label === 'High' ? 'text-red-400' : m?.vix?.label === 'Elevated' ? 'text-amber-400' : 'text-emerald-400'}
           sub={m?.vix?.label ? `${m.vix.label} · ${fmtPct(m.vix['1d'])} today` : null} />
       </div>
+
+      {/* Market regime: cycle phase, recession risk, sector/theme leaders, most-shorted */}
+      <RegimeCard onNavigate={onNavigate} />
 
       {/* What's New */}
       {whatsNew.length > 0 && (

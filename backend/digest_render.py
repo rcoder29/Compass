@@ -59,6 +59,46 @@ def _market_lines(m, f, period):
     return lines
 
 
+def _regime_lines(r, f, period):
+    lines = [f.b("Market regime")]
+    g = r.get("regime")
+    if g:
+        head = f"{f.esc(g['phase']['name'])} · {f.esc(g['quadrant']['name'])}"
+        if g.get("riskScore") is not None:
+            head += f" · recession risk {g['riskScore']:.0f} ({f.esc(g['riskBand'])})"
+        if g.get("curveInverted"):
+            head += " · yield curve inverted"
+        lines.append(head)
+        ch = r.get("changes")
+        if ch:
+            bits = []
+            if ch.get("phaseTo"):
+                bits.append(f"phase {f.esc(ch['phaseFrom'])} → {f.esc(ch['phaseTo'])}")
+            if ch.get("riskTo") is not None:
+                bits.append(f"recession risk {ch['riskFrom']:.0f} → {ch['riskTo']:.0f}")
+            lines.append("Changed since " + f.esc(ch["since"]) + ": " + "; ".join(bits))
+        if g.get("flashing"):
+            lines.append("Warning signs flashing: " + ", ".join(f.esc(n) for n in g["flashing"]))
+    s = r.get("sectors")
+    if s:
+        lines.append("Sectors, 3 months vs SPY: " + ", ".join(f"{f.esc(x['name'])} {_pct(x['excess3m'] * 100, 1)}" for x in s["top"]) +
+                     " | lagging: " + ", ".join(f"{f.esc(x['name'])} {_pct(x['excess3m'] * 100, 1)}" for x in s["bottom"]))
+    t = r.get("themes")
+    if t:
+        lines.append("Themes, 3 months vs SPY: " + ", ".join(f"{f.esc(x['short'])} {_pct(x['vsSpy'] * 100, 1)}" for x in t["top"]) +
+                     " | weakest: " + ", ".join(f"{f.esc(x['short'])} {_pct(x['vsSpy'] * 100, 1)}" for x in t["bottom"]))
+    sh = r.get("shorts")
+    if sh and sh.get("top"):
+        names = ", ".join(f"{f.esc(x['symbol'])} {x['siPctFloat'] * 100:.0f}%" + (f" (borrow {x['fee']:.1f}%)" if x.get("fee") is not None else "") for x in sh["top"][:3])
+        extra = []
+        if sh.get("hardToBorrow") is not None:
+            extra.append(f"{sh['hardToBorrow']} hard to borrow")
+        if sh.get("creditConfirms"):
+            extra.append(f"credit confirms on {sh['creditConfirms']}")
+        lines.append("Most shorted (% of float): " + names + (" · " + ", ".join(extra) if extra else ""))
+    return lines
+
+
 def _portfolio_lines(p, f, period):
     # A morning digest runs before the open, so "today" would be wrong; the 1d
     # figure is the last completed session.
@@ -125,7 +165,7 @@ def _targets_lines(targets, f, period):
 
 
 _RENDERERS = [
-    ("market", _market_lines), ("portfolio", _portfolio_lines), ("watchlist", _watchlist_lines),
+    ("market", _market_lines), ("regime", _regime_lines), ("portfolio", _portfolio_lines), ("watchlist", _watchlist_lines),
     ("events", _events_lines), ("alerts", _alerts_lines), ("targets", _targets_lines),
 ]
 
