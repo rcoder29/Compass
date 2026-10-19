@@ -330,6 +330,23 @@ Design notes:
 - *Scale.* Twelve themes, ~200 companies and ~250 priced symbols. Prices are downloaded in chunks of 60 (one bulk request invites rate limiting), and the single background fundamentals scan covers every theme, so adding a theme only fetches the companies not already cached.
 - *Degrades instead of failing.* If Yahoo refuses fundamentals, the pages render prices and performance with a note and retry after the cooldown; a partial result is never cached.
 
+## Data Flow — Manager Holdings
+
+```mermaid
+flowchart LR
+    SUBS["SEC submissions JSON\n13F-HR and 13F-HR/A list"] --> GRP["group_periods\noriginal + amendments"]
+    GRP --> IT["information table XML\nparse + aggregate by CUSIP"]
+    IT --> MERGE["merge_amendment"]
+    MERGE --> CMP["compare quarters\nnew / added / reduced / exited"]
+    FIGI["OpenFIGI\nCUSIP to ticker"] --> CMP
+    PX["daily prices + SPY"] --> RET["return since quarter end"]
+    CMP --> API["/api/managers/{id}"]
+    RET --> API
+    DB[("manager_disclosures\nsourced statements")] --> API2["/api/managers/damodaran"]
+```
+
+`thirteenf.py` is pure (parse, aggregate, merge, compare, returns), `thirteenf_data.py` does the downloads and caching, `managers_catalog.py` lists the investors, and `routers/manager_holdings.py` serves them. A person with no 13F is a `disclosed` entry: its rows live in `manager_disclosures`, seeded once from `DISCLOSURE_SEEDS` (so deleting a seed stays deleted) and never inferred.
+
 ## Data Flow — Short Interest
 
 ```mermaid

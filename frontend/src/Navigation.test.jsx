@@ -11,8 +11,8 @@ describe('sidebar structure', () => {
   })
 
   it('lists every view exactly once, and every item has a label', () => {
-    expect(ids()).toHaveLength(108)
-    expect(new Set(ids()).size).toBe(108)
+    expect(ids()).toHaveLength(109)
+    expect(new Set(ids()).size).toBe(109)
     NAV_GROUPS.forEach(g => navItems(g).forEach(i => expect(i.label, i.id).toBeTruthy()))
   })
 
@@ -45,7 +45,7 @@ describe('flattenNav (⌘K index and recents)', () => {
   const find = id => flat.find(i => i.id === id)
 
   it('skips headings and includes every view once', () => {
-    expect(flat).toHaveLength(108)
+    expect(flat).toHaveLength(109)
     expect(flat.some(i => i.heading || !i.id)).toBe(false)
   })
 

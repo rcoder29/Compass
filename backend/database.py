@@ -99,6 +99,22 @@ class PortfolioSnapshot(Base):
     created_at  = Column(DateTime, default=datetime.utcnow)
 
 
+class ManagerDisclosure(Base):
+    """A position or rule an investor has stated publicly (for people who file no 13F), with where it was said."""
+    __tablename__ = "manager_disclosures"
+    id           = Column(Integer, primary_key=True, autoincrement=True)
+    manager_id   = Column(String(40), nullable=False, index=True)
+    symbol       = Column(String(20), nullable=True)
+    name         = Column(String(120), nullable=True)
+    action       = Column(String(20), nullable=False)       # owns | bought | added | trimmed | sold | approach | other
+    as_of        = Column(String(10), nullable=True)        # YYYY-MM-DD or YYYY-MM
+    note         = Column(String(600), nullable=True)
+    source_title = Column(String(200), nullable=True)
+    source_url   = Column(String(500), nullable=True)
+    confidence   = Column(String(12), default="user")       # primary | secondary | user
+    created_at   = Column(DateTime, default=datetime.utcnow)
+
+
 class PriceTarget(Base):
     """User-defined price targets per watchlist symbol."""
     __tablename__ = "price_targets"

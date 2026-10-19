@@ -16,6 +16,13 @@ export const CHANGELOG_BLOCKS = [
     'Below it: the sectors leading and lagging SPY over three months, the strongest and weakest themes, and the most heavily shorted stocks with their borrow fees. Each links to its page.',
     'The daily and weekly digests have the same information as a new "Market regime" section. Themes and short interest appear once you have opened those pages.',
   ]},
+  { type: 'h3', text: '2026-10-18 — Manager Holdings', tabId: 'managerholdings' },
+  { type: 'bullets', items: [
+    'New Find Ideas → Manager Holdings follows what well-known investors own. It starts with Berkshire Hathaway and Aswath Damodaran, plus Pershing Square, Duquesne, Baupost, Third Point, Appaloosa, Himalaya, Ruane Cunniff, the Gates Foundation Trust, Soros and Bridgewater.',
+    'Institutions are read from their quarterly SEC 13F filings: the latest holdings with weights, what was bought, added to, reduced or sold out versus the prior quarter, a six-quarter share history for each position, how the disclosed portfolio has done since the quarter ended, and when the next report is due.',
+    'Aswath Damodaran files no 13F, so his tab is a log of positions he has stated publicly, each with a link to where it was said. Add your own entries with a source; nothing is inferred.',
+    'A 13F is up to 45 days old and shows only long US-listed positions, so the page says so up front.',
+  ]},
   { type: 'h3', text: '2026-10-11 — Sidebar reorganised' },
   { type: 'bullets', items: [
     'The left navigation now has 11 groups in the order you tend to work: My Money, Markets, Economy, Sectors & Themes, Find Ideas, Research, Fixed Income, Event-Driven, Trading, Planning and AI Assistant.',

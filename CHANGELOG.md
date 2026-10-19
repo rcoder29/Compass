@@ -4,6 +4,28 @@ A running log of features built and changes made, in reverse-chronological order
 
 ---
 
+## 2026-10-18 — Manager Holdings
+
+### Added
+- **Find Ideas → Manager Holdings.** Follow what well-known investors own. Berkshire Hathaway and Aswath Damodaran to start, plus eleven more 13F filers (Pershing Square, Duquesne, Baupost, Third Point, Appaloosa, Himalaya, Ruane Cunniff, Gates Foundation Trust, Soros, Bridgewater). Add another by adding a row to `managers_catalog.py` with its SEC CIK.
+- **13F managers:** latest quarter's holdings with weight, value and shares; new / added / reduced / unchanged versus the prior quarter and positions sold out; share counts across six quarters; reported value and top-5 concentration over time; value-weighted return since the quarter end and since the filing date against SPY; filing links, amendment handling and the next due date; CSV export.
+- **Aswath Damodaran** files no 13F. His tab is a log of publicly stated positions and rules, each with its source and a label (his own words / reported by others / added by you). Seeded once with his February 2024 post on owning the "Magnificent Seven" and a forum summary of his stated approach; add or remove entries from the page.
+- `GET /api/managers`, `GET /api/managers/{id}`, `POST /api/managers/{id}/disclosures`, `DELETE /api/managers/{id}/disclosures/{row_id}`; new `manager_disclosures` table.
+
+### Design decisions
+- Rows are aggregated by CUSIP: a manager reports one row per sub-account, so Berkshire's 89 rows are 29 positions. Options and bond (principal-amount) rows are kept out of share counts, so a call option is never read as owning the stock.
+- Changes are measured in shares, not value, because share counts are the manager's decisions and values move with the price. Before 2023-01-03 filings report value in thousands; the parser converts by filing date.
+- A "new holdings" amendment (usually a position that had confidential treatment) is merged into its quarter; a restatement replaces it.
+- CUSIPs become tickers through OpenFIGI (free, batched, cached 90 days); a small override map covers foreign issuers it cannot resolve (Chubb). Unresolved names stay in the table without a price rather than being guessed.
+- Filers write the XML differently (default namespace, `ns1:` prefix, none) and some still report values in thousands after the 2023 change (Duquesne), so namespaces are stripped and a median implied share price under $1 triggers a ×1000 correction. Found by running every manager live, not from Berkshire alone.
+- OpenFIGI's keyless limit is 25 requests a minute, so lookups are paced and retried; failures are never cached. Foreign-domiciled issuers (CUSIPs starting with a letter) it cannot map fall back to a Yahoo name search, accepted only when the company name matches exactly after dropping legal suffixes and never when a series number (II, III) differs.
+- "Since quarter end" assumes nothing has been traded since, and the page says it measures the disclosed portfolio, not the manager's return. Damodaran's entries are never inferred or estimated.
+
+### Tests
+- Backend +76 (parsing incl. prefixed namespaces and the units check, aggregation, amendments, quarter comparison, filing grouping, OpenFIGI pacing/429 retry and the name-search fallback, endpoints with stubbed SEC data, disclosure validation and seeding); frontend +12. Totals 1,158 backend and 355 frontend.
+
+---
+
 ## 2026-10-11 — Market Regime on Home and in the Digest
 
 ### Added

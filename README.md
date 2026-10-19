@@ -27,6 +27,7 @@ Today that is **108 views in 11 sidebar groups** (plus a Home dashboard, an in-a
 |---|---|
 | **Overview** | Multi-timeframe performance tables for major indices, sector ETFs, and the Magnificent 7. Top-10 gainers/losers. Global news sidebar. |
 | **Analyst Picks** | Sell-side analyst upgrades/downgrades (firm, prior/new rating, price target) + AI Growth Watch List across 9 AI stack layers. |
+| **Manager Holdings** | Follow what well-known investors own. Institutions (Berkshire Hathaway, Pershing Square, Duquesne, Baupost, Third Point, Appaloosa, Himalaya, Ruane Cunniff, Gates Foundation Trust, Soros, Bridgewater) come from their quarterly SEC 13F filings: weights, changes versus the prior quarter (new, added, reduced, sold out), six-quarter share history, concentration, how the disclosed portfolio has done since the quarter ended versus SPY, and the next due date. Aswath Damodaran files no 13F, so his tab is a log of positions and rules he has stated publicly, each with a source link; add your own entries. |
 | **Short Interest** | The 100 most heavily shorted US stocks ranked by short interest as a share of float (FINRA, bi-monthly), with shares short and change vs the prior period, days to cover, the borrow fee, rebate and shares available (Interactive Brokers' public stock-loan table), and what each company's bonds say: average yield, coupon and spread over Treasuries from the corporate-bond ETFs' SEC N-PORT holdings, or, when none are held, the interest actually paid (interest expense / debt) and interest cover. An **equity vs credit** read flags where short sellers are more bearish than lenders (spread under 400 bps), partly confirmed (400-700) or credit confirms (700+ or a bond in default). Filters by market cap, displacement, sector and borrow fee; CSV export. |
 | **Breadth** | Large-cap market breadth: above-50/200MA %, A/D ratio, H/L ratio, put/call ratio, VIX sparkline, 60-day A/D line chart. |
 | **Index Heatmap** | Constituent heatmap for any index or ETF. Search any ticker dynamically or use quick-access buttons (DIA, QQQ, SPY, ARKK). Tiles sized by live market-cap weight, coloured by 1D return. Market-cap-weighted index return + top contributor/drag summary. |
@@ -512,6 +513,7 @@ stockmonitor/
 │   │   ├── short_squeeze_scanner.py     Find Ideas → Short Squeeze
 │   │   ├── short_interest.py            Find Ideas → Short Interest (staged build with progress)
 │   │   ├── home_regime.py               Home → Market Regime card
+│   │   ├── manager_holdings.py          Find Ideas → Manager Holdings (13F reports + disclosed-investor log)
 │   │   ├── ipo_lockup_calendar.py       Find Ideas → IPO & Lockups (live EDGAR-sourced)
 │   │   ├── fed_watch.py                 Economy → Fed Watch (FOMC cut/hold/hike odds)
 │   │   ├── ai_morning_briefing.py       AI Assistant → Morning Briefing
@@ -670,6 +672,7 @@ Every backend response that costs an external call is cached in SQLite (`cache_e
 | Tear Sheet | 1 hr (assembled) · 24 hr (10-year SEC history) · 30 days (SEC revenue-by-stream facts, per filing — filings never change) |
 | Holdings Performance | 15 min (table) · 26 hr (long-history anchor prices, shared across indexes) · 24 hr (index membership) |
 | Short Interest | FINRA file 6 hr · IBKR borrow table 1 hr · Yahoo float and debt 24 hr per symbol · bond index 12 hr · assembled list 15 min per (limit, market-cap) setting |
+| Manager Holdings | filing lists 6 hr · parsed quarters 90 days (filings never change) · CUSIP→ticker 90 days · assembled report 20 min |
 | Tear Sheet peers | company lists 24 hr · per-company records 24 hr (`peer:{sym}`, shared by every stock in an industry) · assembled comparison 6 hr |
 | Themes | 15 min assembled (prices) · fundamentals/analyst data 24 hr (shared `hb:{symbol}` with the 100-Bagger Finder) |
 | 100-Bagger metrics | 24 hr per symbol (`hb:{symbol}`), index membership 24 hr (`hb_u:{id}`); scoring recomputed on every request |
