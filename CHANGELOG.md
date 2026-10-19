@@ -13,7 +13,7 @@ A running log of features built and changes made, in reverse-chronological order
 - `GET /api/managers`, `GET /api/managers/{id}`, `POST /api/managers/{id}/disclosures`, `DELETE /api/managers/{id}/disclosures/{row_id}`; new `manager_disclosures` table.
 
 ### Follow-up (same day)
-- Added Scion (Michael Burry), Carl Icahn, Elliott and Tiger Global. Ackman is Pershing Square. A report whose next filing is more than 30 days overdue now shows a warning (Scion's latest on record is September 2025).
+- Added Scion (Michael Burry), Carl Icahn, Elliott, Tiger Global, Greenlight (David Einhorn; latest 13F is December 2023) and Dalal Street (Mohnish Pabrai). Ackman is Pershing Square. A report whose next filing is more than 30 days overdue now shows a warning (Scion's latest on record is September 2025).
 
 ### Design decisions
 - Rows are aggregated by CUSIP: a manager reports one row per sub-account, so Berkshire's 89 rows are 29 positions. Options and bond (principal-amount) rows are kept out of share counts, so a call option is never read as owning the stock.
