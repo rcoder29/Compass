@@ -85,6 +85,11 @@ function Report({ d, onChart }) {
         {' '}· next report due by <b className="text-gray-200">{fmtDate(f.nextExpected)}</b>
       </div>
 
+      {f.stale && (
+        <div role="status" className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+          This is the latest filing on record, and the next one is overdue (it was due {fmtDate(f.nextExpected)}). The manager may have stopped filing, so these holdings could be well out of date.
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Reported portfolio" value={fmtUsd(s.totalValue)} sub={s.valueChangePct == null ? null : `${fmtPct(s.valueChangePct)} vs prior quarter`} />
         <Stat label="Positions" value={s.positions} sub={`Top 5 = ${fmtPct(s.top5, { signed: false, digits: 0 })} · top 10 = ${fmtPct(s.top10, { signed: false, digits: 0 })}`} />

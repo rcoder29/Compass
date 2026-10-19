@@ -12,6 +12,9 @@ A running log of features built and changes made, in reverse-chronological order
 - **Aswath Damodaran** files no 13F. His tab is a log of publicly stated positions and rules, each with its source and a label (his own words / reported by others / added by you). Seeded once with his February 2024 post on owning the "Magnificent Seven" and a forum summary of his stated approach; add or remove entries from the page.
 - `GET /api/managers`, `GET /api/managers/{id}`, `POST /api/managers/{id}/disclosures`, `DELETE /api/managers/{id}/disclosures/{row_id}`; new `manager_disclosures` table.
 
+### Follow-up (same day)
+- Added Scion (Michael Burry), Carl Icahn, Elliott and Tiger Global. Ackman is Pershing Square. A report whose next filing is more than 30 days overdue now shows a warning (Scion's latest on record is September 2025).
+
 ### Design decisions
 - Rows are aggregated by CUSIP: a manager reports one row per sub-account, so Berkshire's 89 rows are 29 positions. Options and bond (principal-amount) rows are kept out of share counts, so a call option is never read as owning the stock.
 - Changes are measured in shares, not value, because share counts are the manager's decisions and values move with the price. Before 2023-01-03 filings report value in thousands; the parser converts by filing date.

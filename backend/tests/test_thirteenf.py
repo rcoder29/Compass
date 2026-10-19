@@ -301,6 +301,14 @@ class TestEndpoints:
         out = client.get("/api/managers").json()["managers"]
         assert len(out) == len(catalog.MANAGERS) and next(m for m in out if m["id"] == "berkshire")["error"] is True
 
+    def test_stale_filing_is_flagged(self, client, monkeypatch):
+        filings = [{"form": "13F-HR", "accession": "n", "filed": "2025-11-14", "period": "2025-09-30"}]
+        monkeypatch.setattr(tfd, "filings_for", lambda cik: filings)
+        monkeypatch.setattr(tfd, "fetch_aggregate", lambda cik, f: agg(("A", "C1", 100, 1, "SH", None)))
+        monkeypatch.setattr(tfd, "tickers_for", lambda cs, names=None: {})
+        monkeypatch.setattr(tfd, "load_prices", lambda syms: {})
+        assert client.get("/api/managers/scion").json()["filing"]["stale"] is True
+
     def test_report_failure_is_502_and_not_cached(self, client, monkeypatch):
         monkeypatch.setattr(mh, "build_report", lambda m: (_ for _ in ()).throw(RuntimeError("boom")))
         assert client.get("/api/managers/berkshire").status_code == 502

@@ -18,7 +18,7 @@ export const CHANGELOG_BLOCKS = [
   ]},
   { type: 'h3', text: '2026-10-18 — Manager Holdings', tabId: 'managerholdings' },
   { type: 'bullets', items: [
-    'New Find Ideas → Manager Holdings follows what well-known investors own. It starts with Berkshire Hathaway and Aswath Damodaran, plus Pershing Square, Duquesne, Baupost, Third Point, Appaloosa, Himalaya, Ruane Cunniff, the Gates Foundation Trust, Soros and Bridgewater.',
+    'New Find Ideas → Manager Holdings follows what well-known investors own. It starts with Berkshire Hathaway and Aswath Damodaran, plus Pershing Square (Bill Ackman), Scion (Michael Burry), Icahn, Elliott, Tiger Global, Duquesne, Baupost, Third Point, Appaloosa, Himalaya, Ruane Cunniff, the Gates Foundation Trust, Soros and Bridgewater.',
     'Institutions are read from their quarterly SEC 13F filings: the latest holdings with weights, what was bought, added to, reduced or sold out versus the prior quarter, a six-quarter share history for each position, how the disclosed portfolio has done since the quarter ended, and when the next report is due.',
     'Aswath Damodaran files no 13F, so his tab is a log of positions he has stated publicly, each with a link to where it was said. Add your own entries with a source; nothing is inferred.',
     'A 13F is up to 45 days old and shows only long US-listed positions, so the page says so up front.',
